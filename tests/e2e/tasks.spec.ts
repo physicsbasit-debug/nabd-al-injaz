@@ -3,10 +3,14 @@ test('create, edit, complete, filter and persist a task',async({page})=>{
  await page.goto('/');
  await page.getByRole('button',{name:'الخطط والمهام'}).click();
  await expect(page.getByText('لا توجد مهام ضمن هذا العرض.')).toBeVisible();
+ await page.screenshot({path:`test-results/tasks-empty-${test.info().project.name}.png`,fullPage:true});
  await page.getByPlaceholder('مثال: متابعة تنفيذ الخطة الأسبوعية').fill('متابعة خطة العلوم');
  await page.getByRole('button',{name:'إضافة المهمة'}).click();
  await expect(page.getByText('متابعة خطة العلوم')).toBeVisible();
+ await page.screenshot({path:`test-results/tasks-list-${test.info().project.name}.png`,fullPage:true});
  await page.getByRole('button',{name:'تعديل'}).click();
+ await expect(page.getByRole('button',{name:'حفظ التعديل'})).toBeVisible();
+ await page.screenshot({path:`test-results/tasks-edit-${test.info().project.name}.png`,fullPage:true});
  await page.getByLabel('عنوان المهمة').last().fill('متابعة خطة الفيزياء');
  await page.getByRole('button',{name:'حفظ التعديل'}).click();
  await expect(page.getByText('متابعة خطة الفيزياء')).toBeVisible();
@@ -19,4 +23,11 @@ test('create, edit, complete, filter and persist a task',async({page})=>{
  await expect(page.getByText('لا توجد مهام ضمن هذا العرض.')).toBeVisible();
  await page.getByRole('button',{name:'المكتملة'}).click();
  await expect(page.getByText('متابعة خطة الفيزياء')).toBeVisible();
+});
+test('task forms and navigation fit the viewport',async({page})=>{
+ await page.goto('/');
+ await page.getByRole('button',{name:'الخطط والمهام'}).click();
+ const widths=await page.evaluate(()=>({document:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth}));
+ expect(widths.document).toBeLessThanOrEqual(widths.viewport+1);
+ await expect(page.getByRole('button',{name:'إضافة المهمة'})).toBeVisible();
 });
