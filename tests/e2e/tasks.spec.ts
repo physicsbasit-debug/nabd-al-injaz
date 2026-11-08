@@ -1,0 +1,20 @@
+import {test,expect} from '@playwright/test';
+test('create, complete, filter and persist a real task',async({page})=>{
+ await page.goto('/');
+ await page.getByRole('button',{name:'الخطط والمهام'}).click();
+ await expect(page.getByRole('heading',{name:'الخطط والمهام',level:1})).toBeVisible();
+ await expect(page.getByText('لا توجد مهام ضمن هذا العرض.')).toBeVisible();
+ await page.getByPlaceholder('مثال: متابعة تنفيذ الخطة الأسبوعية').fill('متابعة خطة العلوم');
+ await page.getByRole('button',{name:'إضافة المهمة'}).click();
+ await expect(page.getByText('متابعة خطة العلوم')).toBeVisible();
+ await expect(page.getByText('إجمالي المهام').locator('..').getByText('1')).toBeVisible();
+ await page.getByRole('checkbox').check();
+ await expect(page.getByText('نسبة الإنجاز').locator('..').getByText('100%')).toBeVisible();
+ await page.reload();
+ await page.getByRole('button',{name:'الخطط والمهام'}).click();
+ await expect(page.getByText('متابعة خطة العلوم')).toBeVisible();
+ await page.getByRole('button',{name:'المفتوحة'}).click();
+ await expect(page.getByText('لا توجد مهام ضمن هذا العرض.')).toBeVisible();
+ await page.getByRole('button',{name:'المكتملة'}).click();
+ await expect(page.getByText('متابعة خطة العلوم')).toBeVisible();
+});
