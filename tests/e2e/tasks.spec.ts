@@ -20,7 +20,8 @@ test('create, edit, complete, filter and persist a task',async({page})=>{
  await page.getByRole('checkbox').check();
  await expect(page.getByText('نسبة الإنجاز').locator('..').getByText('100%')).toBeVisible();
  await page.reload();
- await page.getByRole('button',{name:'الخطط والمهام'}).click();
+ if(test.info().project.name==='phone') await page.getByRole('button',{name:/عرض الأقسام/}).click();
+ await page.getByRole('navigation',{name:test.info().project.name==='phone'?'أقسام الهاتف':'الأقسام الرئيسية'}).getByRole('button',{name:'الخطط والمهام'}).click();
  await expect(page.getByText('متابعة خطة الفيزياء')).toBeVisible();
  await page.getByRole('button',{name:'المفتوحة'}).click();
  await expect(page.getByText('لا توجد مهام ضمن هذا العرض.')).toBeVisible();
@@ -29,7 +30,8 @@ test('create, edit, complete, filter and persist a task',async({page})=>{
 });
 test('task forms and navigation fit the viewport',async({page})=>{
  await page.goto('/');
- await page.getByRole('button',{name:'الخطط والمهام'}).click();
+ if(test.info().project.name==='phone') await page.getByRole('button',{name:/عرض الأقسام/}).click();
+ await page.getByRole('navigation',{name:test.info().project.name==='phone'?'أقسام الهاتف':'الأقسام الرئيسية'}).getByRole('button',{name:'الخطط والمهام'}).click();
  const widths=await page.evaluate(()=>({document:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth}));
  expect(widths.document).toBeLessThanOrEqual(widths.viewport+1);
  await expect(page.getByRole('button',{name:'إضافة مهمة جديدة'})).toBeVisible();
