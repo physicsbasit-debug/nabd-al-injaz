@@ -16,3 +16,11 @@ body{min-height:100vh;background:#f4f7f6;}
 .layout>main{display:flex;flex-direction:column;min-height:100vh;}
 .layout>main>footer{margin-top:auto;padding-top:26px;}
 @media(max-width:800px){.layout>aside{min-height:0}.layout>main{min-height:calc(100vh - 150px)}}
+
+/* The flex shell previously capped aside at the viewport (768px) while main reached 1871px.
+   A single desktop grid row guarantees equal column heights, including full-page captures. */
+@media(min-width:801px){
+  .layout{display:grid;grid-template-columns:250px minmax(0,1fr);align-items:stretch;min-height:100vh;}
+  .layout>aside{width:auto;min-height:100%;height:auto;align-self:stretch;}
+  .layout>main{min-height:100vh;min-width:0;}
+}
