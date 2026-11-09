@@ -112,5 +112,6 @@ test('editing and deleting plan activities updates the saved plan', async ({ pag
   await page.getByRole('button', { name: 'حذف النشاط: زيارة صفية أولى' }).click();
   await expect(page.getByText('لا توجد أنشطة معتمدة بعد')).toBeVisible();
   await page.reload();
+  await page.getByRole('button', { name: 'فتح خطة: خطة الزيارات' }).click();
   await expect(page.getByText('لا توجد أنشطة معتمدة بعد')).toBeVisible();
 });

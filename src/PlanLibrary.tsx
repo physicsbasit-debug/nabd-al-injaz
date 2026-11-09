@@ -382,7 +382,7 @@ export default function PlanLibrary({
               هذه الخطة مؤرشفة ولا تظهر في مؤشرات الصفحة الرئيسية. يمكن استعادتها في أي وقت.
             </p>
           )}
-          <div className="plan-detail-stats" aria-label="مؤشرات الخطة المحددة">
+          <div className="plan-detail-stats" role="region" aria-label="مؤشرات الخطة المحددة">
             <div>
               <span>نسبة الإنجاز</span>
               <strong>{stats?.percent === null ? 'لا توجد أنشطة' : stats?.percent + '%'}</strong>
