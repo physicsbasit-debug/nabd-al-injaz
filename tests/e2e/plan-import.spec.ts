@@ -125,3 +125,57 @@ test('PDF extracts selectable text and does not auto-approve', async ({ page }, 
   );
   await expect(page.getByText(/لا توجد أنشطة معتمدة لهذه الخطة/)).toBeVisible();
 });
+
+test('desktop sidebar stretches with content and review remains within viewport', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === 'phone', 'Desktop shell regression');
+  await page.goto('/');
+  await page
+    .getByRole('navigation', { name: 'الأقسام الرئيسية' })
+    .getByRole('button', { name: 'مكتبة الخطط' })
+    .click();
+  await page.getByRole('button', { name: 'إضافة خطة', exact: true }).click();
+  await page.getByRole('textbox', { name: 'اسم الخطة *' }).fill('خطة اختبار التوازن');
+  await page.getByRole('button', { name: 'حفظ الخطة' }).click();
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('الأنشطة');
+  sheet.addRow(['النشاط', 'المسؤول']);
+  for (let i = 0; i < 24; i++) sheet.addRow(['زيارة صفية رقم ' + (i + 1), 'المعلم الأول']);
+  await page.getByLabel('ملف الخطة للاستيراد').setInputFiles({
+    name: 'many-activities.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer: Buffer.from(await workbook.xlsx.writeBuffer()),
+  });
+  await expect(page.locator('.plan-import-candidates li')).toHaveCount(24);
+  const dimensions = await page.evaluate(() => {
+    const sidebar = document.querySelector('.layout > aside')!.getBoundingClientRect();
+    const main = document.querySelector('.layout > main')!.getBoundingClientRect();
+    const layout = document.querySelector('.layout')!.getBoundingClientRect();
+    return {
+      sidebarBottom: sidebar.bottom,
+      mainBottom: main.bottom,
+      layoutBottom: layout.bottom,
+      viewport: window.innerHeight,
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    };
+  });
+  expect(dimensions.sidebarBottom).toBeGreaterThanOrEqual(dimensions.mainBottom - 2);
+  expect(dimensions.sidebarBottom).toBeGreaterThanOrEqual(dimensions.layoutBottom - 2);
+  expect(dimensions.sidebarBottom).toBeGreaterThanOrEqual(dimensions.viewport - 2);
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 2);
+  await page.screenshot({
+    path: 'test-results/plan-import-polished-review-laptop.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
+  await page.getByRole('button', { name: 'تحديد الكل' }).click();
+  await page.getByRole('button', { name: /اعتماد 24 نشاط/ }).click();
+  await expect(page.locator('.plan-activity-list li')).toHaveCount(24);
+  await page.screenshot({
+    path: 'test-results/plan-import-polished-approved-laptop.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
+});

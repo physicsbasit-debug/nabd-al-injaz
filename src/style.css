@@ -7,3 +7,12 @@
 
 /* Compact task actions on narrow screens without changing the form contract. */
 @media(max-width:480px){.managed-tasks li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px 8px}.managed-tasks li>label{grid-column:1/-1;min-width:0;overflow-wrap:anywhere}.managed-tasks li>.task-meta{grid-column:1/-1;min-width:0}.managed-tasks li>.edit-task-form{grid-column:1/-1;min-width:0}.managed-tasks li>.edit-task{grid-column:2}.managed-tasks li>.delete-task{grid-column:3}.mobile-menu-trigger{min-height:48px}.task-filters button{min-height:40px}}
+
+/* 2-B2 visual polish: desktop shell must stretch for the full document. */
+html,body,#root{min-height:100%;}
+body{min-height:100vh;background:#f4f7f6;}
+.layout{min-height:100vh;align-items:stretch;}
+.layout>aside{align-self:stretch;min-height:100vh;}
+.layout>main{display:flex;flex-direction:column;min-height:100vh;}
+.layout>main>footer{margin-top:auto;padding-top:26px;}
+@media(max-width:800px){.layout>aside{min-height:0}.layout>main{min-height:calc(100vh - 150px)}}
