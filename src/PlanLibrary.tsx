@@ -1,22 +1,17 @@
-import { useEffect, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import {
-  ArrowRight,
-  Archive,
-  CheckCircle2,
-  ClipboardList,
-  Pencil,
-  Plus,
-  RotateCcw,
-  Trash2,
-} from 'lucide-react';
-import type { Plan, PlanActivity, PlanKind, PlanProgress } from './plan-model';
+import { useEffect, useState } from 'react';
+import type { Dispatch, FormEvent, SetStateAction } from 'react';
+import { ArrowRight, Plus, Archive, RotateCcw, CheckCircle2 } from 'lucide-react';
 import {
   PLAN_KINDS,
-  changeActivityProgress,
-  newActivity,
-  newPlan,
+  createPlan,
+  createActivity,
+  changeProgress,
   planStats,
-  validPlanDate,
+  validDate,
+  type Plan,
+  type PlanKind,
+  type PlanActivity,
+  type Progress,
 } from './plan-model';
 import { localDateKey } from './dashboard-metrics';
 
@@ -24,425 +19,319 @@ type Props = {
   plans: Plan[];
   setPlans: Dispatch<SetStateAction<Plan[]>>;
   selectedId: string | null;
-  setSelectedId: (id: string | null) => void;
-  createOpen: boolean;
-  setCreateOpen: (value: boolean) => void;
+  onSelect: (id: string | null) => void;
+  createRequested: boolean;
+  onCreateHandled: () => void;
 };
-
-type PlanForm = Pick<Plan, 'title' | 'kind' | 'owner' | 'periodStart' | 'periodEnd'>;
-type ActivityForm = Pick<PlanActivity, 'title' | 'details' | 'assignee' | 'dueDate'>;
-
-const emptyPlan = (): PlanForm => ({
+const emptyPlan = {
   title: '',
-  kind: 'خطة المادة',
+  kind: 'خطة المادة' as PlanKind,
   owner: '',
   periodStart: '',
   periodEnd: '',
-});
-const emptyActivity = (): ActivityForm => ({ title: '', details: '', assignee: '', dueDate: '' });
-
+};
+const emptyActivity = { title: '', details: '', assignee: '', dueDate: '' };
 export default function PlanLibrary({
   plans,
   setPlans,
   selectedId,
-  setSelectedId,
-  createOpen,
-  setCreateOpen,
+  onSelect,
+  createRequested,
+  onCreateHandled,
 }: Props) {
-  const [planForm, setPlanForm] = useState<PlanForm>(emptyPlan);
-  const [activityForm, setActivityForm] = useState<ActivityForm>(emptyActivity);
-  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
-  const [activityOpen, setActivityOpen] = useState(false);
+  const [form, setForm] = useState(emptyPlan);
+  const [activityForm, setActivityForm] = useState(emptyActivity);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showActivity, setShowActivity] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
-  const [editingPlan, setEditingPlan] = useState(false);
-  const [detailsForm, setDetailsForm] = useState<PlanForm>(emptyPlan);
-  const [notice, setNotice] = useState('');
-
-  const selected = plans.find((plan) => plan.id === selectedId) ?? null;
-  const today = localDateKey(new Date());
-
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState(emptyActivity);
+  const [error, setError] = useState('');
   useEffect(() => {
-    setActivityOpen(false);
-    setEditingActivityId(null);
-    setActivityForm(emptyActivity());
-    setEditingPlan(false);
-    setNotice('');
-  }, [selectedId]);
-
-  function updatePlan(id: string, transform: (plan: Plan) => Plan) {
-    setPlans((old) => old.map((plan) => (plan.id === id ? transform(plan) : plan)));
-  }
-
-  function saveNewPlan(event: FormEvent<HTMLFormElement>) {
+    if (createRequested) {
+      setShowCreate(true);
+      onCreateHandled();
+    }
+  }, [createRequested, onCreateHandled]);
+  const selected = plans.find((p) => p.id === selectedId);
+  const today = localDateKey(new Date());
+  const updatePlan = (id: string, fn: (p: Plan) => Plan) =>
+    setPlans((old) => old.map((p) => (p.id === id ? fn(p) : p)));
+  const validRange = (start: string, end: string) =>
+    !((start && !validDate(start)) || (end && !validDate(end)) || (start && end && start > end));
+  const addPlan = (event: FormEvent) => {
     event.preventDefault();
-    if (!planForm.title.trim()) return;
-    if (
-      (planForm.periodStart && !validPlanDate(planForm.periodStart)) ||
-      (planForm.periodEnd && !validPlanDate(planForm.periodEnd)) ||
-      (planForm.periodStart && planForm.periodEnd && planForm.periodEnd < planForm.periodStart)
-    ) {
-      setNotice('تحقق من تاريخ بداية الخطة ونهايتها.');
+    setError('');
+    if (!form.title.trim()) {
+      setError('أدخل اسم الخطة.');
       return;
     }
-    const plan = newPlan(planForm);
+    if (!validRange(form.periodStart, form.periodEnd)) {
+      setError('تحقق من تاريخ بداية الخطة ونهايتها.');
+      return;
+    }
+    const plan = createPlan(form);
     setPlans((old) => [...old, plan]);
-    setSelectedId(plan.id);
-    setPlanForm(emptyPlan());
-    setCreateOpen(false);
-  }
-
-  function saveActivity(event: FormEvent<HTMLFormElement>) {
+    onSelect(plan.id);
+    setForm(emptyPlan);
+    setShowCreate(false);
+  };
+  const addActivity = (event: FormEvent) => {
     event.preventDefault();
-    if (!selected || !activityForm.title.trim()) return;
-    if (activityForm.dueDate && !validPlanDate(activityForm.dueDate)) {
-      setNotice('تاريخ استحقاق النشاط غير صالح.');
+    setError('');
+    if (!selected || !activityForm.title.trim()) {
+      setError('أدخل اسم النشاط.');
       return;
     }
-    const id = editingActivityId;
-    updatePlan(selected.id, (plan) => ({
-      ...plan,
-      activities: id
-        ? plan.activities.map((activity) =>
-            activity.id === id
-              ? { ...activity, ...activityForm, title: activityForm.title.trim() }
-              : activity,
-          )
-        : [...plan.activities, newActivity(activityForm)],
-    }));
-    setEditingActivityId(null);
-    setActivityForm(emptyActivity());
-    setActivityOpen(false);
-    setNotice('');
-  }
-
-  function startEditActivity(activity: PlanActivity) {
-    setEditingActivityId(activity.id);
-    setActivityForm({
-      title: activity.title,
-      details: activity.details,
-      assignee: activity.assignee,
-      dueDate: activity.dueDate,
-    });
-    setActivityOpen(true);
-  }
-
-  function savePlanDetails(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!selected || !detailsForm.title.trim()) return;
-    if (
-      (detailsForm.periodStart && !validPlanDate(detailsForm.periodStart)) ||
-      (detailsForm.periodEnd && !validPlanDate(detailsForm.periodEnd)) ||
-      (detailsForm.periodStart &&
-        detailsForm.periodEnd &&
-        detailsForm.periodEnd < detailsForm.periodStart)
-    ) {
-      setNotice('تحقق من فترة الخطة.');
+    if (activityForm.dueDate && !validDate(activityForm.dueDate)) {
+      setError('تاريخ النشاط غير صحيح.');
       return;
     }
-    updatePlan(selected.id, (plan) => ({
-      ...plan,
-      ...detailsForm,
-      title: detailsForm.title.trim(),
+    const activity = createActivity(activityForm);
+    updatePlan(selected.id, (p) => ({ ...p, activities: [...p.activities, activity] }));
+    setActivityForm(emptyActivity);
+    setShowActivity(false);
+  };
+  const editActivity = (event: FormEvent) => {
+    event.preventDefault();
+    setError('');
+    if (!selected || !editing || !draft.title.trim()) {
+      setError('أدخل اسم النشاط.');
+      return;
+    }
+    if (draft.dueDate && !validDate(draft.dueDate)) {
+      setError('تاريخ النشاط غير صحيح.');
+      return;
+    }
+    updatePlan(selected.id, (p) => ({
+      ...p,
+      activities: p.activities.map((a) =>
+        a.id === editing ? { ...a, ...draft, title: draft.title.trim() } : a,
+      ),
     }));
-    setEditingPlan(false);
-    setNotice('');
-  }
-
-  function archivePlan() {
+    setEditing(null);
+  };
+  const changeStatus = (a: PlanActivity, progress: Progress) => {
     if (!selected) return;
-    updatePlan(selected.id, (plan) => ({ ...plan, archived: !plan.archived }));
-  }
-
-  const stats = selected ? planStats(selected, today) : null;
-  const visiblePlans = plans.filter((plan) => showArchived || !plan.archived);
-
+    updatePlan(selected.id, (p) => ({
+      ...p,
+      activities: p.activities.map((x) =>
+        x.id === a.id ? changeProgress(x, progress, new Date().toISOString()) : x,
+      ),
+    }));
+  };
+  const archive = (plan: Plan) => {
+    updatePlan(plan.id, (p) => ({ ...p, archived: !p.archived }));
+    onSelect(null);
+  };
+  const visible = plans.filter((p) => showArchived || !p.archived);
   return (
-    <div className="plan-library">
-      <section className="plan-library-intro">
+    <section className="plan-library">
+      <div className="plan-library-heading">
         <div>
-          <span className="executive-eyebrow">متابعة مستقلة لكل خطة</span>
-          <h2>مكتبة الخطط التربوية</h2>
-          <p>أنشئ الخطط والأنشطة يدويًا، وتابع تنفيذها في الصفحة الرئيسية.</p>
+          <span className="executive-eyebrow">إدارة الخطط التربوية</span>
+          <h2>مكتبة الخطط</h2>
+          <p>أنشئ خططك وأنشطتها وتابع الإنجاز الفعلي لكل خطة.</p>
         </div>
         <button
+          className="primary-action"
           type="button"
-          className="primary-action plans-add-button"
           onClick={() => {
-            setSelectedId(null);
-            setCreateOpen(!createOpen);
-            setNotice('');
+            onSelect(null);
+            setShowCreate((v) => !v);
+            setError('');
           }}
         >
-          <Plus size={17} aria-hidden="true" />
-          {createOpen ? 'إغلاق نموذج الخطة' : 'إنشاء خطة'}
+          <Plus size={17} /> إضافة خطة
         </button>
-      </section>
-
-      {createOpen && (
-        <section className="card plan-form-card" aria-label="إنشاء خطة جديدة">
+      </div>
+      {showCreate && (
+        <form className="card plan-form" onSubmit={addPlan}>
           <h3>إنشاء خطة جديدة</h3>
-          <form className="plan-form-grid" onSubmit={saveNewPlan}>
-            <label>
-              نوع الخطة
-              <select
-                value={planForm.kind}
-                onChange={(event) => {
-                  const kind = event.target.value as PlanKind;
-                  setPlanForm((old) => ({
-                    ...old,
-                    kind,
-                    title:
-                      old.title === old.kind || !old.title
-                        ? kind === 'خطة أخرى'
-                          ? ''
-                          : kind
-                        : old.title,
-                  }));
-                }}
-              >
-                {PLAN_KINDS.map((kind) => (
-                  <option key={kind} value={kind}>
-                    {kind}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              اسم الخطة
-              <input
-                required
-                maxLength={150}
-                value={planForm.title}
-                onChange={(event) => setPlanForm((old) => ({ ...old, title: event.target.value }))}
-                placeholder="مثال: خطة المادة للفصل الأول"
-              />
-            </label>
-            <label>
-              المسؤول
-              <input
-                value={planForm.owner}
-                maxLength={120}
-                onChange={(event) => setPlanForm((old) => ({ ...old, owner: event.target.value }))}
-                placeholder="اختياري"
-              />
-            </label>
-            <label>
-              من تاريخ
-              <input
-                type="date"
-                value={planForm.periodStart}
-                onChange={(event) =>
-                  setPlanForm((old) => ({ ...old, periodStart: event.target.value }))
-                }
-              />
-            </label>
-            <label>
-              إلى تاريخ
-              <input
-                type="date"
-                value={planForm.periodEnd}
-                onChange={(event) =>
-                  setPlanForm((old) => ({ ...old, periodEnd: event.target.value }))
-                }
-              />
-            </label>
+          <label>
+            اسم الخطة *
+            <input
+              value={form.title}
+              maxLength={120}
+              onChange={(e) => setForm((v) => ({ ...v, title: e.target.value }))}
+              required
+            />
+          </label>
+          <label>
+            نوع الخطة
+            <select
+              value={form.kind}
+              onChange={(e) => setForm((v) => ({ ...v, kind: e.target.value as PlanKind }))}
+            >
+              {PLAN_KINDS.map((k) => (
+                <option key={k}>{k}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            المسؤول
+            <input
+              value={form.owner}
+              maxLength={100}
+              onChange={(e) => setForm((v) => ({ ...v, owner: e.target.value }))}
+            />
+          </label>
+          <label>
+            من تاريخ
+            <input
+              type="date"
+              value={form.periodStart}
+              onChange={(e) => setForm((v) => ({ ...v, periodStart: e.target.value }))}
+            />
+          </label>
+          <label>
+            إلى تاريخ
+            <input
+              type="date"
+              value={form.periodEnd}
+              onChange={(e) => setForm((v) => ({ ...v, periodEnd: e.target.value }))}
+            />
+          </label>
+          <div className="plan-form-actions">
             <button type="submit" className="primary-action">
               حفظ الخطة
             </button>
-          </form>
-          <p className="plan-hint">
-            استخراج الأنشطة من ملفات Word وExcel وPDF سيُضاف في مرحلة الاستيراد بعد اختبار الصيغ. لا
-            تُستورد ملفات الآن.
-          </p>
-        </section>
-      )}
-
-      {notice && (
-        <p className="plan-notice" role="alert">
-          {notice}
-        </p>
-      )}
-
-      {selected ? (
-        <section className="card plan-detail" aria-label="تفاصيل الخطة">
-          <div className="plan-detail-heading">
             <button
               type="button"
-              className="plan-back"
               onClick={() => {
-                setSelectedId(null);
-                setCreateOpen(false);
+                setShowCreate(false);
+                setError('');
               }}
             >
-              <ArrowRight size={17} aria-hidden="true" /> جميع الخطط
+              إلغاء
             </button>
-            <span className="plan-kind-chip">{selected.kind}</span>
           </div>
-          <div className="plan-detail-title">
-            <div>
-              <h2>{selected.title}</h2>
-              <p>{selected.owner ? 'المسؤول: ' + selected.owner : 'لم يحدد مسؤول'}</p>
-            </div>
-            <div className="plan-detail-actions">
-              <button
-                type="button"
-                className="plan-outline-button"
-                onClick={() => {
-                  setDetailsForm({
-                    title: selected.title,
-                    kind: selected.kind,
-                    owner: selected.owner,
-                    periodStart: selected.periodStart,
-                    periodEnd: selected.periodEnd,
-                  });
-                  setEditingPlan((open) => !open);
-                }}
-              >
-                <Pencil size={16} aria-hidden="true" /> تعديل الخطة
-              </button>
-              <button type="button" className="plan-outline-button" onClick={archivePlan}>
-                {selected.archived ? (
-                  <RotateCcw size={16} aria-hidden="true" />
-                ) : (
-                  <Archive size={16} aria-hidden="true" />
-                )}
-                {selected.archived ? 'استعادة الخطة' : 'أرشفة الخطة'}
-              </button>
-            </div>
-          </div>
-
-          {editingPlan && (
-            <form
-              className="plan-form-grid plan-inline-form"
-              onSubmit={savePlanDetails}
-              aria-label="تعديل بيانات الخطة"
+        </form>
+      )}
+      <div className="plan-library-toolbar">
+        <span>{plans.filter((p) => !p.archived).length} خطة فعالة</span>
+        <label>
+          <input
+            type="checkbox"
+            checked={showArchived}
+            onChange={(e) => setShowArchived(e.target.checked)}
+          />{' '}
+          إظهار المؤرشفة
+        </label>
+      </div>
+      {visible.length === 0 && !showCreate && (
+        <div className="card plan-library-empty">
+          <strong>لا توجد خطط بعد</strong>
+          <p>ابدأ بإضافة خطة، ثم سجّل أنشطتها يدويًا.</p>
+        </div>
+      )}
+      <div className="plan-library-grid">
+        {visible.map((plan) => {
+          const stats = planStats(plan, today);
+          return (
+            <button
+              key={plan.id}
+              type="button"
+              className={'plan-list-card' + (selectedId === plan.id ? ' selected' : '')}
+              onClick={() => {
+                onSelect(plan.id);
+                setShowCreate(false);
+                setShowActivity(false);
+                setEditing(null);
+                setError('');
+              }}
             >
+              <span className="plan-list-kind">
+                {plan.kind}
+                {plan.archived ? ' • مؤرشفة' : ''}
+              </span>
+              <strong>{plan.title}</strong>
+              <span className="plan-list-stat">
+                {stats.percent === null ? 'لا توجد أنشطة معتمدة' : stats.percent + '% إنجاز'}
+              </span>
+              <span className="plan-indicator-track">
+                <span style={{ width: (stats.percent ?? 0) + '%' }} />
+              </span>
+              <small>
+                {stats.completed} من {stats.total} مكتملة{' '}
+                {stats.overdue > 0 ? '• ' + stats.overdue + ' متأخرة' : ''}
+              </small>
+            </button>
+          );
+        })}
+      </div>
+      {selected && (
+        <div className="card plan-detail" aria-label={'تفاصيل خطة ' + selected.title}>
+          <div className="plan-detail-heading">
+            <div>
+              <span className="executive-eyebrow">{selected.kind}</span>
+              <h3>{selected.title}</h3>
+              <p>
+                {selected.owner ? 'المسؤول: ' + selected.owner : 'لم يُحدد مسؤول'}
+                {selected.periodStart ? ' • من ' + selected.periodStart : ''}
+                {selected.periodEnd ? ' إلى ' + selected.periodEnd : ''}
+              </p>
+            </div>
+            <button type="button" className="plan-secondary" onClick={() => archive(selected)}>
+              {selected.archived ? <RotateCcw size={16} /> : <Archive size={16} />}{' '}
+              {selected.archived ? 'إعادة تفعيل' : 'أرشفة الخطة'}
+            </button>
+          </div>
+          <div className="plan-detail-metrics">
+            {(() => {
+              const m = planStats(selected, today);
+              return (
+                <>
+                  <div>
+                    <strong>{m.percent === null ? '—' : m.percent + '%'}</strong>
+                    <span>الإنجاز</span>
+                  </div>
+                  <div>
+                    <strong>{m.total}</strong>
+                    <span>الأنشطة</span>
+                  </div>
+                  <div>
+                    <strong>{m.completed}</strong>
+                    <span>مكتملة</span>
+                  </div>
+                  <div>
+                    <strong>{m.overdue}</strong>
+                    <span>متأخرة</span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+          <div className="plan-activity-heading">
+            <h4>أنشطة الخطة</h4>
+            <button
+              type="button"
+              className="primary-action"
+              onClick={() => {
+                setShowActivity((v) => !v);
+                setError('');
+              }}
+            >
+              <Plus size={16} /> إضافة نشاط يدوي
+            </button>
+          </div>
+          {showActivity && (
+            <form className="plan-form plan-activity-form" onSubmit={addActivity}>
               <label>
-                نوع الخطة
-                <select
-                  value={detailsForm.kind}
-                  onChange={(event) =>
-                    setDetailsForm((old) => ({ ...old, kind: event.target.value as PlanKind }))
-                  }
-                >
-                  {PLAN_KINDS.map((kind) => (
-                    <option key={kind}>{kind}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                اسم الخطة
+                اسم النشاط *
                 <input
                   required
-                  maxLength={150}
-                  value={detailsForm.title}
-                  onChange={(event) =>
-                    setDetailsForm((old) => ({ ...old, title: event.target.value }))
-                  }
+                  maxLength={160}
+                  value={activityForm.title}
+                  onChange={(e) => setActivityForm((v) => ({ ...v, title: e.target.value }))}
                 />
               </label>
               <label>
                 المسؤول
                 <input
-                  maxLength={120}
-                  value={detailsForm.owner}
-                  onChange={(event) =>
-                    setDetailsForm((old) => ({ ...old, owner: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                من تاريخ
-                <input
-                  type="date"
-                  value={detailsForm.periodStart}
-                  onChange={(event) =>
-                    setDetailsForm((old) => ({ ...old, periodStart: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                إلى تاريخ
-                <input
-                  type="date"
-                  value={detailsForm.periodEnd}
-                  onChange={(event) =>
-                    setDetailsForm((old) => ({ ...old, periodEnd: event.target.value }))
-                  }
-                />
-              </label>
-              <button type="submit" className="primary-action">
-                حفظ بيانات الخطة
-              </button>
-            </form>
-          )}
-
-          {selected.archived && (
-            <p className="plan-archived-note">
-              هذه الخطة مؤرشفة ولا تظهر في مؤشرات الصفحة الرئيسية. يمكن استعادتها في أي وقت.
-            </p>
-          )}
-          <div className="plan-detail-stats" role="region" aria-label="مؤشرات الخطة المحددة">
-            <div>
-              <span>نسبة الإنجاز</span>
-              <strong>{stats?.percent === null ? 'لا توجد أنشطة' : stats?.percent + '%'}</strong>
-            </div>
-            <div>
-              <span>الأنشطة المعتمدة</span>
-              <strong>{stats?.total}</strong>
-            </div>
-            <div>
-              <span>المكتملة</span>
-              <strong>{stats?.completed}</strong>
-            </div>
-            <div>
-              <span>المتأخرة</span>
-              <strong>{stats?.overdue}</strong>
-            </div>
-          </div>
-          <div className="plan-activities-heading">
-            <div>
-              <h3>أنشطة الخطة</h3>
-              <p>غيّر حالة النشاط حسب التنفيذ الفعلي. الشواهد ستُفعّل في مرحلة مستقلة.</p>
-            </div>
-            <button
-              type="button"
-              className="primary-action plans-add-button"
-              onClick={() => {
-                setEditingActivityId(null);
-                setActivityForm(emptyActivity());
-                setActivityOpen((open) => !open);
-              }}
-            >
-              <Plus size={17} aria-hidden="true" /> إضافة نشاط
-            </button>
-          </div>
-
-          {activityOpen && (
-            <form
-              className="plan-form-grid plan-inline-form"
-              aria-label={editingActivityId ? 'تعديل نشاط' : 'إضافة نشاط'}
-              onSubmit={saveActivity}
-            >
-              <label>
-                عنوان النشاط
-                <input
-                  required
-                  maxLength={180}
-                  value={activityForm.title}
-                  onChange={(event) =>
-                    setActivityForm((old) => ({ ...old, title: event.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                المكلف بالتنفيذ
-                <input
-                  maxLength={120}
+                  maxLength={100}
                   value={activityForm.assignee}
-                  onChange={(event) =>
-                    setActivityForm((old) => ({ ...old, assignee: event.target.value }))
-                  }
+                  onChange={(e) => setActivityForm((v) => ({ ...v, assignee: e.target.value }))}
                 />
               </label>
               <label>
@@ -450,175 +339,155 @@ export default function PlanLibrary({
                 <input
                   type="date"
                   value={activityForm.dueDate}
-                  onChange={(event) =>
-                    setActivityForm((old) => ({ ...old, dueDate: event.target.value }))
-                  }
+                  onChange={(e) => setActivityForm((v) => ({ ...v, dueDate: e.target.value }))}
                 />
               </label>
-              <label className="plan-wide-field">
-                وصف النشاط
+              <label className="plan-wide">
+                تفاصيل النشاط
                 <textarea
-                  rows={2}
-                  maxLength={1000}
                   value={activityForm.details}
-                  onChange={(event) =>
-                    setActivityForm((old) => ({ ...old, details: event.target.value }))
-                  }
+                  maxLength={1000}
+                  onChange={(e) => setActivityForm((v) => ({ ...v, details: e.target.value }))}
                 />
               </label>
-              <button type="submit" className="primary-action">
-                {editingActivityId ? 'حفظ تعديل النشاط' : 'حفظ النشاط'}
-              </button>
-              <button
-                type="button"
-                className="plan-outline-button"
-                onClick={() => {
-                  setActivityOpen(false);
-                  setEditingActivityId(null);
-                }}
-              >
-                إلغاء
-              </button>
+              <div className="plan-form-actions">
+                <button className="primary-action" type="submit">
+                  حفظ النشاط
+                </button>
+                <button type="button" onClick={() => setShowActivity(false)}>
+                  إلغاء
+                </button>
+              </div>
             </form>
           )}
-
           {selected.activities.length === 0 ? (
-            <div className="plans-empty plan-activities-empty">
-              <ClipboardList size={28} aria-hidden="true" />
-              <strong>لا توجد أنشطة معتمدة بعد</strong>
-              <p>أضف النشاط الأول، ولن تُعرض نسبة إنجاز قبل ذلك.</p>
-            </div>
+            <p className="plan-activity-empty">
+              لا توجد أنشطة معتمدة لهذه الخطة. أضف نشاطًا لبدء المتابعة.
+            </p>
           ) : (
             <ul className="plan-activity-list">
-              {selected.activities.map((activity) => (
-                <li key={activity.id}>
-                  <div className="plan-activity-description">
-                    <strong>{activity.title}</strong>
-                    {activity.details && <p>{activity.details}</p>}
-                    <div className="plan-activity-meta">
-                      {activity.assignee && <span>المكلف: {activity.assignee}</span>}
-                      {activity.dueDate && <span>الاستحقاق: {activity.dueDate}</span>}
-                      {activity.progress === 'completed' && (
-                        <span>
-                          <CheckCircle2 size={13} aria-hidden="true" /> مكتمل، ينتظر التوثيق
-                        </span>
-                      )}
-                      {activity.progress !== 'completed' &&
-                        activity.dueDate &&
-                        validPlanDate(activity.dueDate) &&
-                        activity.dueDate < today && (
-                          <span className="plan-indicator-late">متأخر</span>
+              {selected.activities.map((a) => (
+                <li key={a.id}>
+                  {editing === a.id ? (
+                    <form className="plan-form plan-activity-form" onSubmit={editActivity}>
+                      <label>
+                        اسم النشاط
+                        <input
+                          required
+                          value={draft.title}
+                          maxLength={160}
+                          onChange={(e) => setDraft((v) => ({ ...v, title: e.target.value }))}
+                        />
+                      </label>
+                      <label>
+                        المسؤول
+                        <input
+                          value={draft.assignee}
+                          maxLength={100}
+                          onChange={(e) => setDraft((v) => ({ ...v, assignee: e.target.value }))}
+                        />
+                      </label>
+                      <label>
+                        تاريخ الاستحقاق
+                        <input
+                          type="date"
+                          value={draft.dueDate}
+                          onChange={(e) => setDraft((v) => ({ ...v, dueDate: e.target.value }))}
+                        />
+                      </label>
+                      <label className="plan-wide">
+                        تفاصيل النشاط
+                        <textarea
+                          value={draft.details}
+                          maxLength={1000}
+                          onChange={(e) => setDraft((v) => ({ ...v, details: e.target.value }))}
+                        />
+                      </label>
+                      <div className="plan-form-actions">
+                        <button type="submit" className="primary-action">
+                          حفظ التعديل
+                        </button>
+                        <button type="button" onClick={() => setEditing(null)}>
+                          إلغاء
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <div className="plan-activity-text">
+                        <strong>{a.title}</strong>
+                        <small>
+                          {a.assignee ? 'المسؤول: ' + a.assignee + ' • ' : ''}
+                          {a.dueDate ? 'الاستحقاق: ' + a.dueDate : 'دون موعد'}
+                        </small>
+                        {a.details && <p>{a.details}</p>}
+                        {a.progress === 'completed' && (
+                          <span className="plan-completed-note">
+                            <CheckCircle2 size={14} /> مكتمل • ينتظر التوثيق
+                          </span>
                         )}
-                    </div>
-                  </div>
-                  <div className="plan-activity-controls">
-                    <label>
-                      حالة النشاط
-                      <select
-                        aria-label={'حالة النشاط: ' + activity.title}
-                        value={activity.progress}
-                        onChange={(event) => {
-                          const progress = event.target.value as PlanProgress;
-                          updatePlan(selected.id, (plan) => ({
-                            ...plan,
-                            activities: plan.activities.map((item) =>
-                              item.id === activity.id
-                                ? changeActivityProgress(item, progress, new Date().toISOString())
-                                : item,
-                            ),
-                          }));
-                        }}
-                      >
-                        <option value="not_started">لم يبدأ</option>
-                        <option value="in_progress">قيد التنفيذ</option>
-                        <option value="completed">مكتمل</option>
-                      </select>
-                    </label>
-                    <button
-                      type="button"
-                      className="plan-icon-button"
-                      aria-label={'تعديل النشاط: ' + activity.title}
-                      onClick={() => startEditActivity(activity)}
-                    >
-                      <Pencil size={17} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className="plan-icon-button plan-delete-button"
-                      aria-label={'حذف النشاط: ' + activity.title}
-                      onClick={() => {
-                        if (!window.confirm('حذف هذا النشاط من الخطة؟ لا يمكن التراجع.')) return;
-                        updatePlan(selected.id, (plan) => ({
-                          ...plan,
-                          activities: plan.activities.filter((item) => item.id !== activity.id),
-                        }));
-                        if (editingActivityId === activity.id) {
-                          setEditingActivityId(null);
-                          setActivityOpen(false);
-                        }
-                      }}
-                    >
-                      <Trash2 size={17} aria-hidden="true" />
-                    </button>
-                  </div>
+                      </div>
+                      <label className="plan-progress-select">
+                        الحالة
+                        <select
+                          aria-label={'حالة النشاط: ' + a.title}
+                          value={a.progress}
+                          onChange={(e) => changeStatus(a, e.target.value as Progress)}
+                        >
+                          <option value="not_started">لم يبدأ</option>
+                          <option value="in_progress">قيد التنفيذ</option>
+                          <option value="completed">مكتمل</option>
+                        </select>
+                      </label>
+                      <div className="plan-activity-actions">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditing(a.id);
+                            setDraft({
+                              title: a.title,
+                              details: a.details,
+                              assignee: a.assignee,
+                              dueDate: a.dueDate,
+                            });
+                          }}
+                        >
+                          تعديل
+                        </button>
+                        <button
+                          type="button"
+                          className="plan-delete"
+                          onClick={() => {
+                            if (window.confirm('حذف النشاط نهائيًا؟'))
+                              updatePlan(selected.id, (p) => ({
+                                ...p,
+                                activities: p.activities.filter((x) => x.id !== a.id),
+                              }));
+                          }}
+                        >
+                          حذف
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
           )}
-        </section>
-      ) : (
-        <section className="card plan-library-list">
-          <div className="plan-list-heading">
-            <h3>الخطط المسجلة ({visiblePlans.length})</h3>
-            <label>
-              <input
-                type="checkbox"
-                checked={showArchived}
-                onChange={(event) => setShowArchived(event.target.checked)}
-              />{' '}
-              إظهار المؤرشفة
-            </label>
-          </div>
-          {visiblePlans.length === 0 ? (
-            <div className="plans-empty">
-              <ClipboardList size={29} aria-hidden="true" />
-              <strong>لا توجد خطط في القائمة</strong>
-              <p>أنشئ خطة جديدة، أو أظهر الخطط المؤرشفة.</p>
-            </div>
-          ) : (
-            <div className="plan-library-cards">
-              {visiblePlans.map((plan) => {
-                const value = planStats(plan, today);
-                return (
-                  <button
-                    type="button"
-                    key={plan.id}
-                    className="plan-library-item"
-                    onClick={() => setSelectedId(plan.id)}
-                  >
-                    <span className="plan-kind-chip">
-                      {plan.kind}
-                      {plan.archived ? ' · مؤرشفة' : ''}
-                    </span>
-                    <strong>{plan.title}</strong>
-                    <span>
-                      {value.percent === null ? 'لا توجد أنشطة معتمدة' : value.percent + '% إنجاز'}
-                    </span>
-                    <span>
-                      {value.completed} من {value.total} مكتملة
-                    </span>
-                    <ArrowRight size={17} aria-hidden="true" />
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </section>
+          <p className="plan-storage-note">
+            البيانات محفوظة في هذا المتصفح فقط. استيراد الملفات وإرفاق الشواهد مرحلتان لاحقتان، ولا
+            يُحتسب رفع ملف كإنجاز.
+          </p>
+        </div>
       )}
-      <p className="plan-storage-note">
-        تُحفظ الخطط والأنشطة محليًا في هذا المتصفح. لا تتزامن بين الأجهزة، ولا يُنصح بالاعتماد عليها
-        وحدها كنسخة احتياطية دائمة.
-      </p>
-    </div>
+      {error && (
+        <p role="alert" className="plan-error">
+          {error}
+        </p>
+      )}
+      <button className="plan-back-link" type="button" onClick={() => onSelect(null)}>
+        <ArrowRight size={16} /> إغلاق تفاصيل الخطة
+      </button>
+    </section>
   );
 }

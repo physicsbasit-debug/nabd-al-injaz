@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   Activity,
   ClipboardCheck,
-  ClipboardList,
   CalendarDays,
   Users,
   GraduationCap,
@@ -18,7 +17,7 @@ import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
   ['الرئيسية', Activity],
   ['الخطط والمهام', ClipboardCheck],
-  ['مكتبة الخطط', ClipboardList],
+  ['مكتبة الخطط', ClipboardCheck],
   ['الجداول والاحتياط', CalendarDays],
   ['المتابعة الفنية', Users],
   ['الاختبارات والتحصيل', FileText],
@@ -32,18 +31,12 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>(readTasks);
   const [plans, setPlans] = useState<Plan[]>(readPlans);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [planCreateOpen, setPlanCreateOpen] = useState(false);
-  const [planStorageError, setPlanStorageError] = useState(false);
+  const [planCreateRequested, setPlanCreateRequested] = useState(false);
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
   }, [tasks]);
   useEffect(() => {
-    try {
-      localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(plans));
-      setPlanStorageError(false);
-    } catch {
-      setPlanStorageError(true);
-    }
+    localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(plans));
   }, [plans]);
   const done = tasks.filter((t) => t.done).length;
 
@@ -114,27 +107,19 @@ export default function App() {
           </div>
           <span className="tag">نسخة محلية تجريبية</span>
         </header>
-        {planStorageError && (
-          <p role="alert" className="plan-notice">
-            تعذر حفظ بيانات الخطط في هذا المتصفح. لا تغلق الصفحة قبل معالجة مساحة التخزين أو إعدادات
-            المتصفح.
-          </p>
-        )}
         {tab === 'الرئيسية' ? (
           <>
             <PlanOverview
               plans={plans}
-              onAdd={() => {
-                setSelectedPlanId(null);
-                setPlanCreateOpen(true);
-                setTab('مكتبة الخطط');
-                setMobileMenuOpen(false);
-              }}
               onOpen={(id) => {
                 setSelectedPlanId(id);
-                setPlanCreateOpen(false);
+                setPlanCreateRequested(false);
                 setTab('مكتبة الخطط');
-                setMobileMenuOpen(false);
+              }}
+              onAdd={() => {
+                setSelectedPlanId(null);
+                setPlanCreateRequested(true);
+                setTab('مكتبة الخطط');
               }}
             />
             <ExecutiveDashboard
@@ -154,9 +139,9 @@ export default function App() {
             plans={plans}
             setPlans={setPlans}
             selectedId={selectedPlanId}
-            setSelectedId={setSelectedPlanId}
-            createOpen={planCreateOpen}
-            setCreateOpen={setPlanCreateOpen}
+            onSelect={setSelectedPlanId}
+            createRequested={planCreateRequested}
+            onCreateHandled={() => setPlanCreateRequested(false)}
           />
         ) : tab === 'الخطط والمهام' ? (
           <TaskManager tasks={tasks} setTasks={setTasks} />

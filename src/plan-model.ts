@@ -1,5 +1,4 @@
 export const PLAN_STORAGE_KEY = 'nabd-al-injaz:plans:v1';
-
 export const PLAN_KINDS = [
   'خطة المادة',
   'خطة الزيارات الإشرافية',
@@ -9,22 +8,19 @@ export const PLAN_KINDS = [
   'خطة رفع المستوى التحصيلي',
   'خطة أخرى',
 ] as const;
-
 export type PlanKind = (typeof PLAN_KINDS)[number];
-export type PlanProgress = 'not_started' | 'in_progress' | 'completed';
-
-export interface PlanActivity {
+export type Progress = 'not_started' | 'in_progress' | 'completed';
+export type PlanActivity = {
   id: string;
   title: string;
   details: string;
   assignee: string;
   dueDate: string;
-  progress: PlanProgress;
+  progress: Progress;
   completedAt: string | null;
   createdAt: string;
-}
-
-export interface Plan {
+};
+export type Plan = {
   id: string;
   title: string;
   kind: PlanKind;
@@ -34,124 +30,92 @@ export interface Plan {
   archived: boolean;
   createdAt: string;
   activities: PlanActivity[];
-}
-
-const validProgress: PlanProgress[] = ['not_started', 'in_progress', 'completed'];
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function asString(value: unknown): string {
-  return typeof value === 'string' ? value : '';
-}
-
-function normalizeActivity(value: unknown): PlanActivity | null {
-  if (!isRecord(value) || !asString(value.id) || !asString(value.title).trim()) return null;
-  const progress: PlanProgress = validProgress.includes(value.progress as PlanProgress)
-    ? (value.progress as PlanProgress)
-    : 'not_started';
+};
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+const str = (v: unknown) => (typeof v === 'string' ? v : '');
+function normalizeActivity(v: unknown): PlanActivity | null {
+  if (!isRecord(v) || !str(v.id) || !str(v.title).trim()) return null;
+  const progress: Progress =
+    v.progress === 'completed' || v.progress === 'in_progress' ? v.progress : 'not_started';
   return {
-    id: asString(value.id),
-    title: asString(value.title),
-    details: asString(value.details),
-    assignee: asString(value.assignee),
-    dueDate: asString(value.dueDate),
+    id: str(v.id),
+    title: str(v.title),
+    details: str(v.details),
+    assignee: str(v.assignee),
+    dueDate: str(v.dueDate),
     progress,
-    completedAt: progress === 'completed' ? asString(value.completedAt) || null : null,
-    createdAt: asString(value.createdAt),
+    completedAt: progress === 'completed' ? str(v.completedAt) || null : null,
+    createdAt: str(v.createdAt),
   };
 }
-
-function normalizePlan(value: unknown): Plan | null {
-  if (!isRecord(value) || !asString(value.id) || !asString(value.title).trim()) return null;
-  const kind = PLAN_KINDS.includes(value.kind as PlanKind) ? (value.kind as PlanKind) : 'خطة أخرى';
-  const activities = Array.isArray(value.activities)
-    ? value.activities.map(normalizeActivity).filter((item): item is PlanActivity => item !== null)
-    : [];
+function normalizePlan(v: unknown): Plan | null {
+  if (!isRecord(v) || !str(v.id) || !str(v.title).trim()) return null;
   return {
-    id: asString(value.id),
-    title: asString(value.title),
-    kind,
-    owner: asString(value.owner),
-    periodStart: asString(value.periodStart),
-    periodEnd: asString(value.periodEnd),
-    archived: value.archived === true,
-    createdAt: asString(value.createdAt),
-    activities,
+    id: str(v.id),
+    title: str(v.title),
+    kind: PLAN_KINDS.includes(v.kind as PlanKind) ? (v.kind as PlanKind) : 'خطة أخرى',
+    owner: str(v.owner),
+    periodStart: str(v.periodStart),
+    periodEnd: str(v.periodEnd),
+    archived: v.archived === true,
+    createdAt: str(v.createdAt),
+    activities: Array.isArray(v.activities)
+      ? v.activities.map(normalizeActivity).filter((a): a is PlanActivity => a !== null)
+      : [],
   };
 }
-
 export function readPlans(): Plan[] {
   try {
     const raw = localStorage.getItem(PLAN_STORAGE_KEY);
     if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map(normalizePlan).filter((plan): plan is Plan => plan !== null);
+    const data: unknown = JSON.parse(raw);
+    return Array.isArray(data) ? data.map(normalizePlan).filter((p): p is Plan => p !== null) : [];
   } catch {
     return [];
   }
 }
-
-export function validPlanDate(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const date = new Date(value + 'T00:00:00Z');
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+export function validDate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(s + 'T00:00:00Z');
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }
-
 export function planStats(plan: Plan, today: string) {
   const total = plan.activities.length;
-  const completed = plan.activities.filter((activity) => activity.progress === 'completed').length;
-  const inProgress = plan.activities.filter(
-    (activity) => activity.progress === 'in_progress',
-  ).length;
+  const completed = plan.activities.filter((a) => a.progress === 'completed').length;
+  const inProgress = plan.activities.filter((a) => a.progress === 'in_progress').length;
   const overdue = plan.activities.filter(
-    (activity) =>
-      activity.progress !== 'completed' &&
-      validPlanDate(activity.dueDate) &&
-      activity.dueDate < today,
+    (a) => a.progress !== 'completed' && validDate(a.dueDate) && a.dueDate < today,
   ).length;
   return {
     total,
     completed,
     inProgress,
     overdue,
-    percent: total === 0 ? null : Math.round((completed / total) * 100),
+    percent: total === 0 ? null : Math.round((100 * completed) / total),
   };
 }
-
-export function changeActivityProgress(
-  activity: PlanActivity,
-  progress: PlanProgress,
-  now: string,
-): PlanActivity {
-  return {
-    ...activity,
-    progress,
-    completedAt: progress === 'completed' ? activity.completedAt || now : null,
-  };
+export function changeProgress(a: PlanActivity, progress: Progress, now: string): PlanActivity {
+  return { ...a, progress, completedAt: progress === 'completed' ? a.completedAt || now : null };
 }
-
-export function newPlan(
-  input: Pick<Plan, 'title' | 'kind' | 'owner' | 'periodStart' | 'periodEnd'>,
+export function createPlan(
+  data: Pick<Plan, 'title' | 'kind' | 'owner' | 'periodStart' | 'periodEnd'>,
 ): Plan {
   return {
-    ...input,
-    title: input.title.trim(),
+    ...data,
+    title: data.title.trim(),
     id: crypto.randomUUID(),
     archived: false,
     createdAt: new Date().toISOString(),
     activities: [],
   };
 }
-
-export function newActivity(
-  input: Pick<PlanActivity, 'title' | 'details' | 'assignee' | 'dueDate'>,
+export function createActivity(
+  data: Pick<PlanActivity, 'title' | 'details' | 'assignee' | 'dueDate'>,
 ): PlanActivity {
   return {
-    ...input,
-    title: input.title.trim(),
+    ...data,
+    title: data.title.trim(),
     id: crypto.randomUUID(),
     progress: 'not_started',
     completedAt: null,

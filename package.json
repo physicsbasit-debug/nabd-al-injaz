@@ -11,8 +11,8 @@
     "test:e2e": "playwright test",
     "lint": "eslint src tests/e2e playwright.config.ts",
     "format": "prettier --write .",
-    "format:check": "prettier --check eslint.config.mjs .prettierrc.json tests/task-storage.test.ts tests/e2e/accessibility.spec.ts tests/e2e/visual.spec.ts tests/dashboard-metrics.test.ts tests/plan-library.test.ts",
-    "test:unit": "vitest run tests/task-storage.test.ts tests/dashboard-metrics.test.ts tests/plan-library.test.ts",
+    "format:check": "prettier --check eslint.config.mjs .prettierrc.json tests/task-storage.test.ts tests/e2e/accessibility.spec.ts tests/e2e/visual.spec.ts tests/dashboard-metrics.test.ts tests/plan-model.test.ts",
+    "test:unit": "vitest run tests/task-storage.test.ts tests/dashboard-metrics.test.ts tests/plan-model.test.ts",
     "test:accessibility": "playwright test tests/e2e/accessibility.spec.ts",
     "test:visual": "playwright test tests/e2e/visual.spec.ts"
   },
