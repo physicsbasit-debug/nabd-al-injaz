@@ -178,3 +178,11 @@
     grid-column: 1 / -1;
   }
 }
+
+.task-manager-v2 .task-date-help {
+  display: block;
+  color: #526c63;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.65;
+}

@@ -16,6 +16,8 @@ test('educational fields, filters, editing and local persistence', async ({ page
   await page.getByLabel('المجال', { exact: true }).selectOption('متابعة فنية');
   await page.getByLabel('المسؤول عن التنفيذ').fill('فريق العلوم');
   await page.getByLabel('حالة التنفيذ').selectOption('قيد التنفيذ');
+  await page.getByLabel('تاريخ الاستحقاق').fill('2026-11-20');
+  await expect(page.getByText(/التاريخ المختار:.*نوفمبر/)).toBeVisible();
   await page.getByLabel('ملاحظات المتابعة').fill('مراجعة تجهيز المختبر');
   await page.getByRole('button', { name: 'إضافة المهمة' }).click();
 
@@ -23,6 +25,7 @@ test('educational fields, filters, editing and local persistence', async ({ page
   await expect(page.getByText('المسؤول: فريق العلوم')).toBeVisible();
   await expect(page.getByText('مراجعة تجهيز المختبر')).toBeVisible();
   await expect(page.getByText('قيد التنفيذ: 1')).toBeVisible();
+  await expect(page.getByText(/الاستحقاق:.*نوفمبر/)).toBeVisible();
   await page.getByLabel('تصفية حسب المجال').selectOption('تخطيط ومناهج');
   await expect(page.getByText('لا توجد مهام تطابق خيارات العرض الحالية.')).toBeVisible();
   await page.getByLabel('تصفية حسب المجال').selectOption('متابعة فنية');
@@ -49,6 +52,9 @@ test('educational fields, filters, editing and local persistence', async ({ page
   await expect(page.getByText('المسؤول: فريق العلوم')).toBeVisible();
   await expect(page.getByText('مراجعة تجهيز المختبر')).toBeVisible();
   await expect(page.getByText('100%')).toBeVisible();
+  await page.getByRole('checkbox').uncheck();
+  await expect(page.getByText('قيد التنفيذ: 1')).toBeVisible();
+  await expect(page.getByText('0%')).toBeVisible();
   await page.screenshot({
     path: 'test-results/educational-tasks-' + testInfo.project.name + '.png',
     fullPage: true,

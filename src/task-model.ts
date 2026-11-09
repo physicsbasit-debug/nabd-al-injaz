@@ -20,6 +20,7 @@ export type Task = {
   category: TaskCategory;
   assignedTo: string;
   progress: TaskProgress;
+  previousProgress?: Exclude<TaskProgress, 'مكتملة'>;
   notes: string;
 };
 
@@ -62,6 +63,10 @@ export function readTasks(): Task[] {
             : task.progress === 'قيد التنفيذ'
               ? 'قيد التنفيذ'
               : 'لم تبدأ',
+          ...(task.done &&
+          (task.previousProgress === 'قيد التنفيذ' || task.previousProgress === 'لم تبدأ')
+            ? { previousProgress: task.previousProgress }
+            : {}),
           notes: typeof task.notes === 'string' ? task.notes.slice(0, 500) : '',
         },
       ];
@@ -72,11 +77,38 @@ export function readTasks(): Task[] {
 }
 
 export function setTaskProgress(task: Task, progress: TaskProgress): Task {
-  return { ...task, progress, done: progress === 'مكتملة' };
+  if (progress === 'مكتملة') {
+    return {
+      ...task,
+      progress,
+      done: true,
+      previousProgress: task.done
+        ? (task.previousProgress ?? 'لم تبدأ')
+        : task.progress === 'قيد التنفيذ'
+          ? 'قيد التنفيذ'
+          : 'لم تبدأ',
+    };
+  }
+
+  const updated: Task = { ...task, progress, done: false };
+  delete updated.previousProgress;
+  return updated;
 }
 
 export function toggleTaskCompletion(task: Task): Task {
-  return setTaskProgress(task, task.done ? 'لم تبدأ' : 'مكتملة');
+  return setTaskProgress(task, task.done ? (task.previousProgress ?? 'لم تبدأ') : 'مكتملة');
+}
+
+export function formatDueDate(value: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(value + 'T00:00:00Z');
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) return value;
+  return new Intl.DateTimeFormat('ar-OM', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
 }
 
 export function taskCounts(tasks: Task[]) {

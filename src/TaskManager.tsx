@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   TASK_CATEGORIES,
+  formatDueDate,
   setTaskProgress,
   toggleTaskCompletion,
   taskCounts,
@@ -211,6 +212,11 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                   value={dueDate}
                   onChange={(event) => setDueDate(event.target.value)}
                 />
+                <small className="task-date-help" aria-live="polite">
+                  {dueDate
+                    ? \`التاريخ المختار: \${formatDueDate(dueDate)}\`
+                    : 'اختر التاريخ من التقويم؛ قد يختلف شكل إدخاله حسب الجهاز.'}
+                </small>
               </label>
               <label>
                 الأولوية
@@ -348,6 +354,11 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                         value={editDate}
                         onChange={(event) => setEditDate(event.target.value)}
                       />
+                      <small className="task-date-help" aria-live="polite">
+                        {editDate
+                          ? \`التاريخ المختار: \${formatDueDate(editDate)}\`
+                          : 'اختر التاريخ من التقويم؛ قد يختلف شكل إدخاله حسب الجهاز.'}
+                      </small>
                     </label>
                     <label>
                       الأولوية
@@ -420,7 +431,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                       </span>
                       {task.assignedTo && <span>المسؤول: {task.assignedTo}</span>}
                       <span>{task.priority}</span>
-                      {task.dueDate && <span>الاستحقاق: {task.dueDate}</span>}
+                      {task.dueDate && <span>الاستحقاق: {formatDueDate(task.dueDate)}</span>}
                       {!task.done && task.dueDate && task.dueDate < today && (
                         <strong>متأخرة</strong>
                       )}

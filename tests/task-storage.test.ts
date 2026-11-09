@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readTasks, STORAGE_KEY } from '../src/TaskManager';
-import { setTaskProgress, taskCounts, toggleTaskCompletion, type Task } from '../src/task-model';
+import {
+  formatDueDate,
+  setTaskProgress,
+  taskCounts,
+  toggleTaskCompletion,
+  type Task,
+} from '../src/task-model';
 
 describe('local task storage', () => {
   const values = new Map<string, string>();
@@ -89,12 +95,55 @@ describe('local task storage', () => {
     expect(completed.progress).toBe('مكتملة');
     const reopened = toggleTaskCompletion(completed);
     expect(reopened.done).toBe(false);
-    expect(reopened.progress).toBe('لم تبدأ');
+    expect(reopened.progress).toBe('قيد التنفيذ');
+    expect(reopened.previousProgress).toBeUndefined();
     expect(taskCounts([task, completed, reopened])).toEqual({
       total: 3,
       completed: 1,
-      inProgress: 1,
-      notStarted: 1,
+      inProgress: 2,
+      notStarted: 0,
     });
+  });
+
+  it('restores in-progress status after completion, including a storage round trip', () => {
+    const task = {
+      ...legacy,
+      category: 'متابعة فنية',
+      assignedTo: 'فريق العلوم',
+      progress: 'قيد التنفيذ',
+      notes: '',
+    } as Task;
+    const completed = toggleTaskCompletion(task);
+    expect(completed).toMatchObject({
+      done: true,
+      progress: 'مكتملة',
+      previousProgress: 'قيد التنفيذ',
+    });
+    values.set(STORAGE_KEY, JSON.stringify([completed]));
+    const saved = readTasks()[0];
+    expect(saved.previousProgress).toBe('قيد التنفيذ');
+    expect(toggleTaskCompletion(saved)).toMatchObject({
+      done: false,
+      progress: 'قيد التنفيذ',
+    });
+  });
+
+  it('defaults legacy completed tasks to not started and clears old restoration state on edit', () => {
+    const oldCompleted = { ...legacy, done: true, progress: 'مكتملة' } as Task;
+    expect(toggleTaskCompletion(oldCompleted).progress).toBe('لم تبدأ');
+
+    const inProgress = { ...legacy, progress: 'قيد التنفيذ' } as Task;
+    const completed = setTaskProgress(inProgress, 'مكتملة');
+    const explicitlyReset = setTaskProgress(completed, 'لم تبدأ');
+    expect(explicitlyReset.previousProgress).toBeUndefined();
+    expect(toggleTaskCompletion(setTaskProgress(explicitlyReset, 'مكتملة')).progress).toBe(
+      'لم تبدأ',
+    );
+  });
+
+  it('formats valid due dates in Arabic without changing the stored ISO date', () => {
+    expect(formatDueDate('2026-11-20')).toContain('نوفمبر');
+    expect(formatDueDate('2026-02-30')).toBe('2026-02-30');
+    expect(formatDueDate('')).toBe('');
   });
 });
