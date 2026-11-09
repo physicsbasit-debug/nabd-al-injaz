@@ -58,3 +58,18 @@
 @media(max-width:1150px){.plan-indicator-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.plan-indicator-grid,.plan-form{grid-template-columns:1fr}.plan-detail-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.plans-overview{padding:17px}.plan-library-heading,.plans-overview-heading{align-items:stretch}.plan-activity-list>li{display:grid;grid-template-columns:1fr}.plan-progress-select{min-width:0}.plan-activity-actions{justify-content:flex-start}.plan-form{padding:14px}}
 @media(max-width:420px){.plan-indicator-grid{grid-template-columns:1fr}.plan-library-grid{grid-template-columns:1fr}}
+
+.plan-import-panel{margin:20px 0;padding:18px;border:1px solid #dce9e3;border-radius:14px;background:#f7faf8;display:grid;gap:12px;min-width:0}
+.plan-import-panel h4{margin:0;color:#123b35;font-size:18px}
+.plan-import-panel p{margin:0;color:#526c63;line-height:1.6}
+.plan-import-file{display:inline-flex;align-items:center;gap:8px;justify-self:start;padding:10px 15px;border:1px solid #0d9488;color:#116b5e;border-radius:10px;cursor:pointer;font-weight:700}
+.plan-import-file input{position:absolute;width:1px;height:1px;opacity:0}
+.plan-import-warning{font-size:12px}
+.plan-import-toolbar,.plan-import-actions{display:flex;gap:10px;flex-wrap:wrap}
+.plan-import-toolbar button,.plan-import-actions button:not(.primary-action){border:1px solid #cbded7;border-radius:8px;background:#fff;padding:9px 12px}
+.plan-import-candidates{list-style:none;padding:0;margin:0;display:grid;gap:8px;max-height:420px;overflow:auto}
+.plan-import-candidates li{display:grid;grid-template-columns:minmax(120px,1fr) minmax(160px,2fr);gap:10px;align-items:center;border:1px solid #e1ece6;padding:10px;border-radius:10px;background:#fff;min-width:0}
+.plan-import-choice{display:flex;gap:8px;align-items:center;min-width:0}
+.plan-import-candidates input:not([type=checkbox]){width:100%;min-width:0;border:1px solid #cbded7;border-radius:8px;padding:9px}
+.plan-import-candidates small{grid-column:1/-1;color:#9b3232}
+@media(max-width:640px){.plan-import-candidates li{grid-template-columns:1fr}.plan-import-panel{padding:12px}}

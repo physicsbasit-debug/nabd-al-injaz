@@ -1,3 +1,4 @@
+import PlanImport from './PlanImport';
 import { useEffect, useState } from 'react';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import { ArrowRight, Plus, Archive, RotateCcw, CheckCircle2 } from 'lucide-react';
@@ -474,9 +475,18 @@ export default function PlanLibrary({
               ))}
             </ul>
           )}
+          <PlanImport
+            existingTitles={selected.activities.map((a) => a.title)}
+            onApprove={(activities) => {
+              updatePlan(selected.id, (p) => ({
+                ...p,
+                activities: [...p.activities, ...activities],
+              }));
+            }}
+          />
           <p className="plan-storage-note">
-            البيانات محفوظة في هذا المتصفح فقط. استيراد الملفات وإرفاق الشواهد مرحلتان لاحقتان، ولا
-            يُحتسب رفع ملف كإنجاز.
+            البيانات محفوظة في هذا المتصفح فقط. إرفاق الشواهد مرحلة لاحقة، ولا يُحتسب رفع ملف
+            كإنجاز.
           </p>
         </div>
       )}
