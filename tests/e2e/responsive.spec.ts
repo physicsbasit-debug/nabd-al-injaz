@@ -13,10 +13,10 @@ test('navigation and task forms fit narrow and wide screens', async ({ page }) =
       await menu.click();
       await expect(menu).toHaveAttribute('aria-expanded', 'true');
       const list = page.getByRole('navigation', { name: 'أقسام الهاتف' });
-      await expect(list.getByRole('button')).toHaveCount(8);
+      await expect(list.getByRole('button')).toHaveCount(9);
       if (width <= 420) {
-        const columns = await list.evaluate((element) =>
-          getComputedStyle(element).gridTemplateColumns.split(' ').length,
+        const columns = await list.evaluate(
+          (element) => getComputedStyle(element).gridTemplateColumns.split(' ').length,
         );
         expect(columns).toBe(2);
       }

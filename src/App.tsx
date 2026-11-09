@@ -11,9 +11,13 @@ import {
 import TaskManager, { readTasks, STORAGE_KEY, type Task } from './TaskManager';
 import { toggleTaskCompletion } from './task-model';
 import ExecutiveDashboard from './ExecutiveDashboard';
+import PlanOverview from './PlanOverview';
+import PlanLibrary from './PlanLibrary';
+import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
   ['الرئيسية', Activity],
   ['الخطط والمهام', ClipboardCheck],
+  ['مكتبة الخطط', ClipboardCheck],
   ['الجداول والاحتياط', CalendarDays],
   ['المتابعة الفنية', Users],
   ['الاختبارات والتحصيل', FileText],
@@ -25,9 +29,15 @@ export default function App() {
   const [tab, setTab] = useState<string>('الرئيسية');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>(readTasks);
+  const [plans, setPlans] = useState<Plan[]>(readPlans);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [planCreateRequested, setPlanCreateRequested] = useState(false);
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
   }, [tasks]);
+  useEffect(() => {
+    localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(plans));
+  }, [plans]);
   const done = tasks.filter((t) => t.done).length;
 
   return (
@@ -98,16 +108,40 @@ export default function App() {
           <span className="tag">نسخة محلية تجريبية</span>
         </header>
         {tab === 'الرئيسية' ? (
-          <ExecutiveDashboard
-            tasks={tasks}
-            completedCount={done}
-            onNavigate={() => {
-              setTab('الخطط والمهام');
-              setMobileMenuOpen(false);
-            }}
-            onToggleTask={(id) =>
-              setTasks((old) => old.map((x) => (x.id === id ? toggleTaskCompletion(x) : x)))
-            }
+          <>
+            <PlanOverview
+              plans={plans}
+              onOpen={(id) => {
+                setSelectedPlanId(id);
+                setPlanCreateRequested(false);
+                setTab('مكتبة الخطط');
+              }}
+              onAdd={() => {
+                setSelectedPlanId(null);
+                setPlanCreateRequested(true);
+                setTab('مكتبة الخطط');
+              }}
+            />
+            <ExecutiveDashboard
+              tasks={tasks}
+              completedCount={done}
+              onNavigate={() => {
+                setTab('الخطط والمهام');
+                setMobileMenuOpen(false);
+              }}
+              onToggleTask={(id) =>
+                setTasks((old) => old.map((x) => (x.id === id ? toggleTaskCompletion(x) : x)))
+              }
+            />
+          </>
+        ) : tab === 'مكتبة الخطط' ? (
+          <PlanLibrary
+            plans={plans}
+            setPlans={setPlans}
+            selectedId={selectedPlanId}
+            onSelect={setSelectedPlanId}
+            createRequested={planCreateRequested}
+            onCreateHandled={() => setPlanCreateRequested(false)}
           />
         ) : tab === 'الخطط والمهام' ? (
           <TaskManager tasks={tasks} setTasks={setTasks} />
