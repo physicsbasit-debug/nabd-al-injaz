@@ -196,7 +196,7 @@ export async function exportEvidenceReport(plans: Plan[]): Promise<void> {
   }
   const escape = (value: string | number) => {
     const text = String(value);
-    const safe = /^[\s\u0000-\u001f]*[=+@-]/.test(text) ? "'" + text : text;
+    const safe = /^[=+@-]/.test(text.trimStart()) ? "'" + text : text;
     return '"' + safe.replace(/"/g, '""') + '"';
   };
   const rows: (string | number)[][] = [
