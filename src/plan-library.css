@@ -106,3 +106,25 @@
 .plan-import-metadata label{display:grid;gap:5px;font-size:12px;color:#4d6b62}
 .plan-import-metadata input{width:100%;min-width:0;border:1px solid #cbded7;border-radius:8px;padding:8px;background:#fff}
 @media(max-width:640px){.plan-import-metadata{grid-template-columns:1fr}.plan-activity-pagination{justify-content:center}}
+
+.evidence-panel{border:1px solid #b8dcd0;border-radius:14px;background:#f7fbf9;padding:20px;margin:18px 0;display:grid;gap:13px}
+.evidence-panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.evidence-panel-head strong{color:#123b35;font-size:17px}
+.evidence-panel-head p{color:#617c72;margin:5px 0}
+.evidence-info{background:#eaf4f0;padding:12px;border-radius:9px;color:#365e53;font-size:13px}
+.evidence-files{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.evidence-files li{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;border:1px solid #dce9e3;padding:12px;border-radius:9px}
+.evidence-files li>div{display:grid;gap:5px;min-width:0;overflow-wrap:anywhere}
+.evidence-files li>div:last-child{display:flex;gap:8px}
+.evidence-files small,.evidence-status{font-size:12px;color:#397a69}
+.evidence-form{display:grid;gap:12px}
+.evidence-form label{display:grid;gap:6px;font-size:13px;color:#365e53}
+.evidence-form input,.evidence-form textarea{min-width:0;width:100%;padding:10px;border:1px solid #cadfd6;border-radius:9px;background:white}
+.evidence-form button{justify-self:start}
+@media(max-width:640px){.evidence-panel{padding:13px}.evidence-files li{flex-direction:column;align-items:stretch}}
+
+.plan-detail-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.evidence-dialog-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(14,36,30,.56);display:flex;justify-content:flex-end;align-items:stretch}
+.evidence-dialog{width:min(540px,100%);height:100%;overflow:auto;background:#fff;box-shadow:-12px 0 35px rgba(0,0,0,.15);padding:18px}
+.evidence-dialog .evidence-panel{margin:0}
+@media(max-width:640px){.evidence-dialog{width:100%;padding:10px}.evidence-dialog-backdrop{justify-content:stretch}}
