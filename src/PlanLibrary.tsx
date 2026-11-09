@@ -130,8 +130,8 @@ export default function PlanLibrary({
       <div className="plan-library-heading">
         <div>
           <span className="executive-eyebrow">إدارة الخطط التربوية</span>
-          <h2>مكتبة الخطط</h2>
-          <p>أنشئ خططك وأنشطتها وتابع الإنجاز الفعلي لكل خطة.</p>
+          <h2>خططك التربوية</h2>
+          <p>أنشئ الخطط، وأضف أنشطتها، وتابع مستوى تنفيذها.</p>
         </div>
         <button
           className="primary-action"
