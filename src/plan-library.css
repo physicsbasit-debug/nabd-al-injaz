@@ -154,4 +154,8 @@
 .plan-backup-actions button,.plan-backup-upload{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid #aacdc0;background:white;border-radius:9px;padding:9px 13px;color:#17594d;font:inherit;font-size:13px;font-weight:650}
 .plan-backup-actions button:disabled{opacity:.5;cursor:not-allowed}
 .plan-backup-upload:has(input:disabled){opacity:.5;pointer-events:none}
+.plan-backup-upload{position:relative}
 .plan-backup-upload input{position:absolute;width:1px;height:1px;opacity:0}
+.plan-backup-upload:focus-within{outline:3px solid #367f71;outline-offset:3px}
+@media(max-width:520px){.plan-backup-actions{display:grid;grid-template-columns:1fr}.plan-backup-actions button,.plan-backup-upload{width:100%;min-height:42px}}
+

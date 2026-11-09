@@ -46,6 +46,12 @@ function validPlan(value: unknown): value is Plan {
     !!value.id &&
     typeof value.title === 'string' &&
     !!value.title.trim() &&
+    typeof value.kind === 'string' &&
+    typeof value.owner === 'string' &&
+    typeof value.periodStart === 'string' &&
+    typeof value.periodEnd === 'string' &&
+    typeof value.archived === 'boolean' &&
+    typeof value.createdAt === 'string' &&
     Array.isArray(value.activities) &&
     value.activities.every(
       (activity: unknown) =>
@@ -54,6 +60,11 @@ function validPlan(value: unknown): value is Plan {
         !!activity.id &&
         typeof activity.title === 'string' &&
         !!activity.title.trim() &&
+        typeof activity.details === 'string' &&
+        typeof activity.assignee === 'string' &&
+        typeof activity.dueDate === 'string' &&
+        typeof activity.createdAt === 'string' &&
+        (activity.completedAt === null || typeof activity.completedAt === 'string') &&
         ['not_started', 'in_progress', 'completed'].includes(String(activity.progress)),
     )
   );
@@ -65,6 +76,8 @@ export async function exportPlansBackup(plans: Plan[]): Promise<void> {
   for (const record of records) {
     if (!linked.has(record.planId + ':' + record.activityId)) continue;
     const bytes = new Uint8Array(await record.blob.arrayBuffer());
+    if (bytes.length !== record.size)
+      throw new Error('حجم أحد الشواهد المحفوظة لا يطابق بياناته؛ لم تُنشأ النسخة.');
     evidence.push({
       id: record.id,
       planId: record.planId,
@@ -183,7 +196,7 @@ export async function exportEvidenceReport(plans: Plan[]): Promise<void> {
   }
   const escape = (value: string | number) => {
     const text = String(value);
-    const safe = /^[=+@-]/.test(text) ? "'" + text : text;
+    const safe = /^[\s\u0000-\u001f]*[=+@-]/.test(text) ? "'" + text : text;
     return '"' + safe.replace(/"/g, '""') + '"';
   };
   const rows: (string | number)[][] = [

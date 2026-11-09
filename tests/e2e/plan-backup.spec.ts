@@ -54,8 +54,27 @@ test('backup includes evidence and restores plans without losing file bytes', as
   await page.getByRole('button', { name: 'الشواهد والتوثيق' }).click();
   await expect(page.getByText('original.pdf')).toBeVisible();
 
-  const invalid = { ...archive, evidence: [{ ...archive.evidence[0], activityId: 'missing' }] };
+  const malformed = { ...archive, plans: [{ ...archive.plans[0], archived: 'false' }] };
   await page.getByRole('button', { name: 'إغلاق', exact: true }).click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByLabel('استعادة نسخة').setInputFiles({
+    name: 'malformed.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(malformed)),
+  });
+  await expect(
+    page.getByText('ملف النسخة غير مطابق لإصدار النسخ الاحتياطي المعتمد.'),
+  ).toBeVisible();
+  const [report] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'تقرير الشواهد CSV' }).click(),
+  ]);
+  const reportText = (
+    await (await import('node:fs/promises')).readFile(await report.path())
+  ).toString();
+  expect(reportText).toContain('نشاط شاهد');
+  expect(reportText).toContain('1');
+  const invalid = { ...archive, evidence: [{ ...archive.evidence[0], activityId: 'missing' }] };
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByLabel('استعادة نسخة').setInputFiles({
     name: 'invalid.json',
