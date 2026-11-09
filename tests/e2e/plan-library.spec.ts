@@ -87,7 +87,7 @@ test('plan archive removes only its indicator and can be restored', async ({ pag
   await expect(page.getByText('لا توجد أنشطة معتمدة').first()).toBeVisible();
 });
 
-test('editing and deleting plan activities updates the saved plan', async ({ page }, testInfo) => {
+test('editing and deleting plan activities updates the saved plan', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'إضافة خطة' }).click();
   await page
