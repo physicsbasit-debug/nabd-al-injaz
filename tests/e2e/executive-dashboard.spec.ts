@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test('executive dashboard shows real overdue and priority indicators', async ({ page }, testInfo) => {
+test('executive dashboard shows real overdue and priority indicators', async ({
+  page,
+}, testInfo) => {
   await page.goto('/');
   await page.evaluate(() => {
     const key = 'nabd-al-injaz:tasks:v1';
@@ -26,26 +28,39 @@ test('executive dashboard shows real overdue and priority indicators', async ({ 
       notes: '',
       ...overrides,
     });
-    localStorage.setItem(key, JSON.stringify([
-      task('متابعة متأخرة', { dueDate: dateKey(-1), progress: 'قيد التنفيذ' }),
-      task('متابعة عاجلة', { dueDate: dateKey(4), priority: 'عاجلة' }),
-      task('مهمة مكتملة', { dueDate: dateKey(-3), done: true, progress: 'مكتملة' }),
-      task('مهمة لاحقة', { dueDate: dateKey(7) }),
-    ]));
+    localStorage.setItem(
+      key,
+      JSON.stringify([
+        task('متابعة متأخرة', { dueDate: dateKey(-1), progress: 'قيد التنفيذ' }),
+        task('متابعة عاجلة', { dueDate: dateKey(4), priority: 'عاجلة' }),
+        task('مهمة مكتملة', { dueDate: dateKey(-3), done: true, progress: 'مكتملة' }),
+        task('مهمة لاحقة', { dueDate: dateKey(7) }),
+      ]),
+    );
   });
   await page.reload();
 
   const stats = page.getByRole('region', { name: 'مؤشرات المهام' });
-  await expect(stats.locator('article').filter({ hasText: 'إجمالي المهام' }).locator('strong')).toHaveText('4');
-  await expect(stats.locator('article').filter({ hasText: 'المكتملة' }).locator('strong')).toHaveText('1');
-  await expect(stats.locator('article').filter({ hasText: 'قيد التنفيذ' }).locator('strong')).toHaveText('1');
-  await expect(stats.locator('article').filter({ hasText: 'المتأخرة' }).locator('strong')).toHaveText('1');
+  await expect(
+    stats.locator('article').filter({ hasText: 'إجمالي المهام' }).locator('strong'),
+  ).toHaveText('4');
+  await expect(
+    stats.locator('article').filter({ hasText: 'المكتملة' }).locator('strong'),
+  ).toHaveText('1');
+  await expect(
+    stats.locator('article').filter({ hasText: 'قيد التنفيذ' }).locator('strong'),
+  ).toHaveText('1');
+  await expect(
+    stats.locator('article').filter({ hasText: 'المتأخرة' }).locator('strong'),
+  ).toHaveText('1');
   await expect(page.getByRole('img', { name: 'نسبة الإنجاز 25%' })).toBeVisible();
 
   const titles = await page.locator('.executive-task-content > strong').allTextContents();
   expect(titles.slice(0, 2)).toEqual(['متابعة متأخرة', 'متابعة عاجلة']);
   await page.getByRole('button', { name: 'إكمال المهمة: متابعة متأخرة' }).click();
-  await expect(stats.locator('article').filter({ hasText: 'المتأخرة' }).locator('strong')).toHaveText('0');
+  await expect(
+    stats.locator('article').filter({ hasText: 'المتأخرة' }).locator('strong'),
+  ).toHaveText('0');
   await expect(page.getByRole('img', { name: 'نسبة الإنجاز 50%' })).toBeVisible();
 
   await page.reload();

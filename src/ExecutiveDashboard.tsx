@@ -1,10 +1,4 @@
-import {
-  AlertTriangle,
-  ArrowLeft,
-  CheckCircle2,
-  Clock3,
-  ListTodo,
-} from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, Clock3, ListTodo } from 'lucide-react';
 import type { Task } from './task-model';
 import { formatDueDate } from './task-model';
 import { dashboardMetrics, isTaskOverdue, localDateKey, priorityTasks } from './dashboard-metrics';
@@ -89,8 +83,14 @@ export default function ExecutiveDashboard({
           {attention.length === 0 ? (
             <div className="executive-empty">
               <CheckCircle2 size={30} aria-hidden="true" />
-              <strong>{tasks.length ? 'لا توجد مهام مفتوحة حاليًا' : 'لا توجد مهام مسجلة بعد'}</strong>
-              <p>{tasks.length ? 'جميع المهام المسجلة مكتملة.' : 'ابدأ بإضافة مهمة من قسم الخطط والمهام.'}</p>
+              <strong>
+                {tasks.length ? 'لا توجد مهام مفتوحة حاليًا' : 'لا توجد مهام مسجلة بعد'}
+              </strong>
+              <p>
+                {tasks.length
+                  ? 'جميع المهام المسجلة مكتملة.'
+                  : 'ابدأ بإضافة مهمة من قسم الخطط والمهام.'}
+              </p>
               <button type="button" className="executive-text-link" onClick={onNavigate}>
                 الانتقال إلى الخطط والمهام <ArrowLeft size={16} aria-hidden="true" />
               </button>
@@ -143,13 +143,14 @@ export default function ExecutiveDashboard({
             role="img"
             aria-label={'نسبة الإنجاز ' + metrics.percent + '%'}
             style={{
-              background:
-                'conic-gradient(#0d9488 ' + metrics.percent + '%, #e8efec 0)',
+              background: 'conic-gradient(#0d9488 ' + metrics.percent + '%, #e8efec 0)',
             }}
           >
             <div>{metrics.percent}%</div>
           </div>
-          <p>{metrics.completed} من {metrics.total} مكتملة</p>
+          <p>
+            {metrics.completed} من {metrics.total} مكتملة
+          </p>
           <div className="executive-progress-note">
             {metrics.urgentOpen > 0
               ? 'لديك ' + metrics.urgentOpen + ' مهام عاجلة لم تكتمل بعد.'

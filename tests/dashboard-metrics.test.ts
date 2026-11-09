@@ -7,10 +7,7 @@ import {
   priorityTasks,
 } from '../src/dashboard-metrics';
 
-function task(
-  id: string,
-  overrides: Partial<Task> = {},
-): Task {
+function task(id: string, overrides: Partial<Task> = {}): Task {
   return {
     id,
     title: id,
@@ -65,7 +62,10 @@ describe('executive dashboard metrics', () => {
       task('done', { done: true, dueDate: '2026-11-01' }),
     ];
     expect(priorityTasks(tasks, today).map((item) => item.id)).toEqual([
-      'late', 'urgent', 'soon', 'later',
+      'late',
+      'urgent',
+      'soon',
+      'later',
     ]);
     expect(tasks.map((item) => item.id)[0]).toBe('later');
     expect(priorityTasks(tasks, today, 2)).toHaveLength(2);
