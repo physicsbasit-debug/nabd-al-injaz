@@ -12,6 +12,7 @@ test('backup includes evidence and restores plans without losing file bytes', as
     })
     .getByRole('button', { name: 'مكتبة الخطط' })
     .click();
+  await page.screenshot({ path: 'test-results/backup-tools-' + testInfo.project.name + '.png', fullPage: true });
   await page.getByRole('button', { name: 'إضافة خطة', exact: true }).click();
   await page.getByRole('textbox', { name: 'اسم الخطة *' }).fill('خطة النسخ الآمن');
   await page.getByRole('button', { name: 'حفظ الخطة' }).click();
