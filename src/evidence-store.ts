@@ -96,7 +96,7 @@ export function countEvidence(activityId: string): Promise<number> {
 }
 export function deleteActivityEvidence(activityId: string): Promise<void> {
   return transaction<void>('readwrite', (store, set) => {
-    const r = store.index('by_activity').openCursor();
+    const r = store.index('by_activity').openCursor(IDBKeyRange.only(activityId));
     r.onsuccess = () => {
       const cursor = r.result;
       if (cursor) {

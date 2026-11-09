@@ -4,7 +4,7 @@ import { deleteActivityEvidence } from './evidence-store';
 import PlanImport from './PlanImport';
 import { useEffect, useState } from 'react';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
-import { ArrowRight, Plus, Archive, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Plus, Archive, RotateCcw } from 'lucide-react';
 import {
   PLAN_KINDS,
   createPlan,
