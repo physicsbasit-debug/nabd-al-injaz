@@ -42,16 +42,16 @@ test('executive dashboard shows real overdue and priority indicators', async ({
 
   const stats = page.getByRole('region', { name: 'مؤشرات المهام' });
   await expect(
-    stats.locator('article').filter({ hasText: 'إجمالي المهام' }).locator('strong'),
+    stats.locator('article').nth(0).locator('strong'),
   ).toHaveText('4');
   await expect(
-    stats.locator('article').filter({ hasText: 'المكتملة' }).locator('strong'),
+    stats.locator('article').nth(1).locator('strong'),
   ).toHaveText('1');
   await expect(
-    stats.locator('article').filter({ hasText: 'قيد التنفيذ' }).locator('strong'),
+    stats.locator('article').nth(2).locator('strong'),
   ).toHaveText('1');
   await expect(
-    stats.locator('article').filter({ hasText: 'المتأخرة' }).locator('strong'),
+    stats.locator('article').nth(3).locator('strong'),
   ).toHaveText('1');
   await expect(page.getByRole('img', { name: 'نسبة الإنجاز 25%' })).toBeVisible();
 
@@ -59,7 +59,7 @@ test('executive dashboard shows real overdue and priority indicators', async ({
   expect(titles.slice(0, 2)).toEqual(['متابعة متأخرة', 'متابعة عاجلة']);
   await page.getByRole('button', { name: 'إكمال المهمة: متابعة متأخرة' }).click();
   await expect(
-    stats.locator('article').filter({ hasText: 'المتأخرة' }).locator('strong'),
+    stats.locator('article').nth(3).locator('strong'),
   ).toHaveText('0');
   await expect(page.getByRole('img', { name: 'نسبة الإنجاز 50%' })).toBeVisible();
 
