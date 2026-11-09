@@ -138,3 +138,17 @@ export function evidenceCounts(): Promise<Record<string, number>> {
     };
   });
 }
+
+export function allEvidence(): Promise<Evidence[]> {
+  return transaction<Evidence[]>('readonly', (store, set) => {
+    const request = store.getAll();
+    request.onsuccess = () => set(request.result as Evidence[]);
+  });
+}
+export function replaceAllEvidence(records: Evidence[]): Promise<void> {
+  return transaction<void>('readwrite', (store, set) => {
+    store.clear();
+    for (const record of records) store.put(record);
+    set(undefined);
+  });
+}
