@@ -214,7 +214,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                 />
                 <small className="task-date-help" aria-live="polite">
                   {dueDate
-                    ? \`التاريخ المختار: \${formatDueDate(dueDate)}\`
+                    ? `التاريخ المختار: ${formatDueDate(dueDate)}`
                     : 'اختر التاريخ من التقويم؛ قد يختلف شكل إدخاله حسب الجهاز.'}
                 </small>
               </label>
@@ -356,7 +356,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                       />
                       <small className="task-date-help" aria-live="polite">
                         {editDate
-                          ? \`التاريخ المختار: \${formatDueDate(editDate)}\`
+                          ? `التاريخ المختار: ${formatDueDate(editDate)}`
                           : 'اختر التاريخ من التقويم؛ قد يختلف شكل إدخاله حسب الجهاز.'}
                       </small>
                     </label>
