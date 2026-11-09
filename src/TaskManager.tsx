@@ -186,6 +186,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
               <label>
                 المجال
                 <select
+                  aria-label="المجال"
                   value={category}
                   onChange={(event) => setCategory(event.target.value as TaskCategory)}
                 >
@@ -224,6 +225,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
               <label>
                 حالة التنفيذ
                 <select
+                  aria-label="حالة التنفيذ"
                   value={progress}
                   onChange={(event) => setProgress(event.target.value as TaskProgress)}
                 >
@@ -285,6 +287,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
           <label>
             تصفية حسب المجال
             <select
+              aria-label="تصفية حسب المجال"
               value={categoryFilter}
               onChange={(event) =>
                 setCategoryFilter(event.target.value as TaskCategory | 'كل المجالات')
@@ -321,6 +324,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                     <label>
                       المجال
                       <select
+                        aria-label="المجال"
                         value={editCategory}
                         onChange={(event) => setEditCategory(event.target.value as TaskCategory)}
                       >
@@ -358,6 +362,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                     <label>
                       حالة التنفيذ
                       <select
+                        aria-label="حالة التنفيذ"
                         value={editProgress}
                         onChange={(event) => setEditProgress(event.target.value as TaskProgress)}
                       >
