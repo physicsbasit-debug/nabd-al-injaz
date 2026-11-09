@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 test('creates independent plans and updates home indicators from real activities', async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'إضافة خطة', exact: true }).click();
   await page.getByRole('textbox', { name: 'اسم الخطة *' }).fill('خطة المادة 2026');
