@@ -1,0 +1,234 @@
+/* Phase 2: real executive overview, with the existing task and navigation contracts intact. */
+.executive-dashboard {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.executive-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 25px 28px;
+  border: 1px solid #d7e8e1;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #e6f5ee 0%, #f8fcfa 85%);
+}
+.executive-eyebrow {
+  display: inline-block;
+  color: #087765;
+  font-size: 13px;
+  font-weight: 800;
+}
+.executive-intro h2 {
+  margin: 8px 0;
+  font-size: 25px;
+  color: #123b35;
+}
+.executive-intro p {
+  margin: 0;
+  color: #526c63;
+  line-height: 1.7;
+}
+.executive-open-tasks {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 18px;
+  background: #126f60;
+  color: #fff;
+  font-weight: 800;
+}
+.executive-open-tasks:hover { background: #0b5549; }
+.executive-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.executive-stats article {
+  min-width: 0;
+  padding: 21px;
+  border: 1px solid #dfeae5;
+  border-top: 3px solid #a8d7c9;
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(18,59,53,.04);
+}
+.executive-stat-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  color: #4a655a;
+  font-weight: 700;
+}
+.executive-stat-top svg { color: #087765; flex-shrink: 0; }
+.executive-stats strong {
+  display: block;
+  margin: 12px 0 3px;
+  color: #123b35;
+  font-size: 37px;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.executive-stats small { color: #526c63; font-size: 12px; }
+.executive-stats .executive-stat-warning {
+  border-top-color: #d99064;
+  background: #fffcf9;
+}
+.executive-stat-warning .executive-stat-top svg,
+.executive-stat-warning strong { color: #9a4a21; }
+.executive-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(270px, 1fr);
+  align-items: start;
+  gap: 18px;
+}
+.executive-attention, .executive-progress { min-width: 0; }
+.executive-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-bottom: 16px;
+}
+.executive-section-heading h2, .executive-progress h2 {
+  margin: 6px 0 5px;
+  color: #193b33;
+  font-size: 21px;
+}
+.executive-section-heading p {
+  margin: 0;
+  line-height: 1.65;
+  font-size: 13px;
+}
+.executive-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  padding: 8px 0;
+  color: #086b5b;
+  font-weight: 800;
+  text-align: right;
+}
+.executive-text-link:hover { text-decoration: underline; }
+.executive-task-list { list-style: none; margin: 0; padding: 0; }
+.executive-task-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 17px 0;
+  border-top: 1px solid #e7efeb;
+}
+.executive-task-list .executive-task-overdue { border-right: 3px solid #c6764a; padding-right: 10px; }
+.executive-task-check {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  height: 34px;
+  border: 1px solid #b7d5c9;
+  border-radius: 10px;
+  background: #f0f8f4;
+  color: #126f60;
+  font-size: 24px;
+  line-height: 1;
+}
+.executive-task-check:hover { background: #d9efe5; }
+.executive-task-content { min-width: 0; flex: 1; }
+.executive-task-content > strong {
+  display: block;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  font-size: 15px;
+}
+.executive-task-details {
+  display: flex;
+  gap: 6px 12px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  color: #526c63;
+  font-size: 12px;
+}
+.executive-task-badges {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+  flex-wrap: wrap;
+  max-width: 145px;
+}
+.executive-chip {
+  display: inline-block;
+  border-radius: 100px;
+  padding: 5px 9px;
+  background: #edf5f1;
+  color: #28594b;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.executive-chip.overdue { background: #fff0e6; color: #91421c; }
+.executive-chip.urgent { background: #fce9e9; color: #9b3232; }
+.executive-chip.working { background: #e5f4ee; color: #0b6857; }
+.executive-empty {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  padding: 30px 12px;
+  border-top: 1px solid #e7efeb;
+  text-align: center;
+}
+.executive-empty svg { color: #126f60; }
+.executive-empty p { margin: 0; }
+.executive-progress { padding-top: 29px; }
+.executive-progress .ring { margin: 20px auto 12px; }
+.executive-progress > p { margin: 8px 0 15px; }
+.executive-progress-note {
+  padding: 13px;
+  border-radius: 12px;
+  background: #f2f8f5;
+  color: #385e50;
+  line-height: 1.6;
+  font-size: 13px;
+}
+.executive-data-note {
+  margin: 0;
+  color: #526c63;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.executive-dashboard button:focus-visible {
+  outline: 3px solid #0d9488;
+  outline-offset: 3px;
+}
+@media (min-width: 801px) {
+  .layout > aside { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .desktop-navigation button { min-height: 46px; }
+}
+@media (max-width: 1100px) {
+  .executive-columns { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 800px) {
+  .executive-intro { padding: 19px; }
+  .executive-intro h2 { font-size: 22px; }
+  .executive-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .executive-stats article { padding: 17px; }
+  .executive-stats strong { font-size: 31px; }
+}
+@media (max-width: 480px) {
+  .executive-intro { align-items: stretch; flex-direction: column; }
+  .executive-open-tasks { align-self: flex-start; }
+  .executive-task-list li { flex-wrap: wrap; }
+  .executive-task-badges { flex: 1 0 100%; max-width: none; padding-right: 45px; justify-content: flex-start; }
+  .executive-section-heading h2 { font-size: 19px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .executive-dashboard button { transition: none; }
+}
