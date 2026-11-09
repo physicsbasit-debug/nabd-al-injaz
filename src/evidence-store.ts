@@ -106,3 +106,18 @@ export function deleteActivityEvidence(activityId: string): Promise<void> {
     };
   });
 }
+
+export function deletePlanEvidence(planId: string): Promise<void> {
+  return transaction<void>('readwrite', (store, set) => {
+    const request = store.openCursor();
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) {
+        set(undefined);
+        return;
+      }
+      if ((cursor.value as Evidence).planId === planId) cursor.delete();
+      cursor.continue();
+    };
+  });
+}

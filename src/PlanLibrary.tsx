@@ -1,6 +1,6 @@
 import EvidencePanel from './EvidencePanel';
 import EvidenceStatus from './EvidenceStatus';
-import { deleteActivityEvidence } from './evidence-store';
+import { deleteActivityEvidence, deletePlanEvidence } from './evidence-store';
 import PlanImport from './PlanImport';
 import { useEffect, useState } from 'react';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
@@ -131,6 +131,20 @@ export default function PlanLibrary({
         x.id === a.id ? changeProgress(x, progress, new Date().toISOString()) : x,
       ),
     }));
+  };
+  const deletePlan = async (plan: Plan) => {
+    if (
+      !window.confirm('حذف الخطة وجميع أنشطتها وشواهدها نهائيًا من هذا المتصفح؟ لا يمكن التراجع.')
+    )
+      return;
+    try {
+      await deletePlanEvidence(plan.id);
+      setPlans((old) => old.filter((p) => p.id !== plan.id));
+      setEvidenceActivity(null);
+      onSelect(null);
+    } catch {
+      setError('تعذّر حذف شواهد الخطة؛ لم تُحذف الخطة حفاظًا على البيانات.');
+    }
   };
   const archive = (plan: Plan) => {
     updatePlan(plan.id, (p) => ({ ...p, archived: !p.archived }));
@@ -285,10 +299,19 @@ export default function PlanLibrary({
                 {selected.periodEnd ? ' إلى ' + selected.periodEnd : ''}
               </p>
             </div>
-            <button type="button" className="plan-secondary" onClick={() => archive(selected)}>
-              {selected.archived ? <RotateCcw size={16} /> : <Archive size={16} />}{' '}
-              {selected.archived ? 'إعادة تفعيل' : 'أرشفة الخطة'}
-            </button>
+            <div className="plan-detail-actions">
+              <button type="button" className="plan-secondary" onClick={() => archive(selected)}>
+                {selected.archived ? <RotateCcw size={16} /> : <Archive size={16} />}{' '}
+                {selected.archived ? 'إعادة تفعيل' : 'أرشفة الخطة'}
+              </button>
+              <button
+                type="button"
+                className="plan-delete"
+                onClick={() => void deletePlan(selected)}
+              >
+                حذف الخطة وشواهدها
+              </button>
+            </div>
           </div>
           <div className="plan-detail-metrics">
             {(() => {
@@ -505,18 +528,35 @@ export default function PlanLibrary({
             </ul>
           )}
           {evidenceActivity && selected.activities.some((a) => a.id === evidenceActivity) && (
-            <EvidencePanel
-              key={evidenceActivity}
-              planId={selected.id}
-              activityId={evidenceActivity}
-              activityTitle={
-                selected.activities.find((a) => a.id === evidenceActivity)?.title ?? ''
-              }
-              onClose={() => {
-                setEvidenceActivity(null);
-                setEvidenceRevision((v) => v + 1);
+            <div
+              className="evidence-dialog-backdrop"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) {
+                  setEvidenceActivity(null);
+                  setEvidenceRevision((v) => v + 1);
+                }
               }}
-            />
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="الشواهد والتوثيق"
+                className="evidence-dialog"
+              >
+                <EvidencePanel
+                  key={evidenceActivity}
+                  planId={selected.id}
+                  activityId={evidenceActivity}
+                  activityTitle={
+                    selected.activities.find((a) => a.id === evidenceActivity)?.title ?? ''
+                  }
+                  onClose={() => {
+                    setEvidenceActivity(null);
+                    setEvidenceRevision((v) => v + 1);
+                  }}
+                />
+              </div>
+            </div>
           )}
           {selected.activities.length > PAGE_SIZE && (
             <nav className="plan-activity-pagination" aria-label="صفحات أنشطة الخطة">
