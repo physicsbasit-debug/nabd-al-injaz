@@ -23,6 +23,11 @@ test('manual plan creation, activity completion and independent dashboard indica
   await expect(page.getByText('لا توجد خطط مضافة بعد')).toBeVisible();
   await page.getByRole('button', { name: 'إضافة خطة' }).click();
   const form = page.getByRole('region', { name: 'إنشاء خطة جديدة' });
+  await page.screenshot({
+    path: 'test-results/plan-create-' + testInfo.project.name + '.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
   await form.getByLabel('اسم الخطة').fill('خطة العلوم الفصل الأول');
   await form.getByLabel('المسؤول').fill('معلم أول العلوم');
   await form.getByRole('button', { name: 'حفظ الخطة' }).click();
@@ -46,6 +51,11 @@ test('manual plan creation, activity completion and independent dashboard indica
     page.getByRole('region', { name: 'مؤشرات الخطة المحددة' }).getByText('100%'),
   ).toBeVisible();
   await expect(page.getByText('مكتمل، ينتظر التوثيق')).toBeVisible();
+  await page.screenshot({
+    path: 'test-results/plan-detail-' + testInfo.project.name + '.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
 
   await openHome(page, testInfo.project.name);
   await expect(page.getByRole('img', { name: 'إنجاز خطة العلوم الفصل الأول: 100%' })).toBeVisible();
