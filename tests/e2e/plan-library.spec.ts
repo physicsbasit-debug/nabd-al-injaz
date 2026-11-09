@@ -14,6 +14,7 @@ test('creates independent plans and updates home indicators from real activities
     .getByRole('combobox', { name: 'حالة النشاط: تنفيذ درس تطبيقي' })
     .selectOption('completed');
   await expect(page.getByText('100%').first()).toBeVisible();
+  await page.screenshot({path:'test-results/plan-library-detail-'+testInfo.project.name+'.png',fullPage:true,animations:'disabled'});
   if (await page.locator('.desktop-navigation').isVisible()) {
     await page.locator('.desktop-navigation').getByRole('button', { name: 'الرئيسية' }).click();
   } else {
