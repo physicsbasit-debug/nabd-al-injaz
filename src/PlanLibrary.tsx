@@ -1,3 +1,4 @@
+import { exportPlansBackup, restorePlansBackup, exportEvidenceReport } from './plan-backup';
 import EvidencePanel from './EvidencePanel';
 import EvidenceStatus from './EvidenceStatus';
 import { deleteActivityEvidence, deletePlanEvidence } from './evidence-store';
@@ -53,6 +54,8 @@ export default function PlanLibrary({
   const [activityPage, setActivityPage] = useState(1);
   const [draft, setDraft] = useState(emptyActivity);
   const [error, setError] = useState('');
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [backupMessage, setBackupMessage] = useState('');
   const [evidenceActivity, setEvidenceActivity] = useState<string | null>(null);
   const [evidenceRevision, setEvidenceRevision] = useState(0);
   useEffect(() => {
@@ -171,6 +174,79 @@ export default function PlanLibrary({
           <Plus size={17} /> إضافة خطة
         </button>
       </div>
+      <section className="plan-backup-tools" aria-label="حماية الخطط والشواهد">
+        <div>
+          <h3>حماية الخطط والشواهد</h3>
+          <p>
+            الملفات محفوظة في هذا المتصفح فقط. نزّل نسخة احتياطية دورية تشمل الخطط وأنشطتها وملفات
+            الشواهد.
+          </p>
+        </div>
+        <div className="plan-backup-actions">
+          <button
+            type="button"
+            disabled={backupBusy}
+            onClick={() => {
+              setBackupBusy(true);
+              setBackupMessage('');
+              void exportPlansBackup(plans)
+                .then(() => setBackupMessage('تم تجهيز ملف النسخة الاحتياطية للتنزيل.'))
+                .catch(() => setBackupMessage('تعذّر إنشاء النسخة. تأكد من إتاحة تخزين المتصفح.'))
+                .finally(() => setBackupBusy(false));
+            }}
+          >
+            تنزيل نسخة احتياطية
+          </button>
+          <label className="plan-backup-upload">
+            استعادة نسخة
+            <input
+              type="file"
+              accept=".json,application/json"
+              disabled={backupBusy}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = '';
+                if (
+                  !file ||
+                  !window.confirm(
+                    'الاستعادة ستستبدل جميع الخطط والشواهد الحالية. تأكد من تنزيل نسخة منها أولًا. متابعة؟',
+                  )
+                )
+                  return;
+                setBackupBusy(true);
+                setBackupMessage('');
+                void restorePlansBackup(file)
+                  .then((restored) => {
+                    setPlans(restored);
+                    onSelect(null);
+                    setEvidenceActivity(null);
+                    setBackupMessage('استُعيدت الخطط والشواهد بنجاح.');
+                  })
+                  .catch((err: unknown) =>
+                    setBackupMessage(
+                      err instanceof Error ? err.message : 'فشلت الاستعادة دون تعديل الخطط.',
+                    ),
+                  )
+                  .finally(() => setBackupBusy(false));
+              }}
+            />
+          </label>
+          <button
+            type="button"
+            disabled={backupBusy}
+            onClick={() => {
+              setBackupBusy(true);
+              setBackupMessage('');
+              void exportEvidenceReport(plans)
+                .catch(() => setBackupMessage('تعذّر إعداد تقرير الشواهد.'))
+                .finally(() => setBackupBusy(false));
+            }}
+          >
+            تقرير الشواهد CSV
+          </button>
+        </div>
+        {backupMessage && <p role="status">{backupMessage}</p>}
+      </section>
       {showCreate && (
         <form className="card plan-form" onSubmit={addPlan}>
           <h3>إنشاء خطة جديدة</h3>

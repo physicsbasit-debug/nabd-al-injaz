@@ -146,3 +146,12 @@
 .plan-progress-tile .plan-indicator-track,.plan-progress-tile .plan-documentation-track{height:7px;margin:0;width:100%}
 .plan-indicator-card>.plan-documentation-warning{display:flex;align-items:center;gap:6px;color:#95651f;font-size:12px;margin:8px 0}
 @media(max-width:420px){.plan-progress-pair{gap:7px}.plan-progress-tile{padding:9px}.plan-progress-value{font-size:22px}}
+
+.plan-backup-tools{background:#f5f9f7;border:1px solid #dcebe4;border-radius:14px;padding:16px;margin:14px 0 20px;display:grid;gap:12px}
+.plan-backup-tools h3{margin:0 0 5px;color:#185d50}
+.plan-backup-tools p{margin:0;color:#536c63;font-size:13px;line-height:1.7}
+.plan-backup-actions{display:flex;flex-wrap:wrap;gap:9px}
+.plan-backup-actions button,.plan-backup-upload{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid #aacdc0;background:white;border-radius:9px;padding:9px 13px;color:#17594d;font:inherit;font-size:13px;font-weight:650}
+.plan-backup-actions button:disabled{opacity:.5;cursor:not-allowed}
+.plan-backup-upload:has(input:disabled){opacity:.5;pointer-events:none}
+.plan-backup-upload input{position:absolute;width:1px;height:1px;opacity:0}
