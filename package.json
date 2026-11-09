@@ -8,7 +8,13 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "node --test tests/*.test.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "lint": "eslint src tests/e2e playwright.config.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check eslint.config.mjs .prettierrc.json tests/task-storage.test.ts tests/e2e/accessibility.spec.ts tests/e2e/visual.spec.ts",
+    "test:unit": "vitest run tests/task-storage.test.ts",
+    "test:accessibility": "playwright test tests/e2e/accessibility.spec.ts",
+    "test:visual": "playwright test tests/e2e/visual.spec.ts"
   },
   "dependencies": {
     "vite": "^6.3.0",
@@ -20,6 +26,13 @@
   "devDependencies": {
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
-    "@playwright/test": "^1.56.1"
+    "@playwright/test": "^1.56.1",
+    "@axe-core/playwright": "^4.11.0",
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "prettier": "^3.6.2",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^3.2.4"
   }
 }
