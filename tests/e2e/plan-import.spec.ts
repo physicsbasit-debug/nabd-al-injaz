@@ -89,13 +89,11 @@ test('Word document extracts preview without auto-approval', async ({ page }, te
   await page.getByRole('button', { name: 'إضافة خطة', exact: true }).click();
   await page.getByRole('textbox', { name: 'اسم الخطة *' }).fill('خطة Word');
   await page.getByRole('button', { name: 'حفظ الخطة' }).click();
-  await page
-    .getByLabel('ملف الخطة للاستيراد')
-    .setInputFiles({
-      name: 'sample.docx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      buffer,
-    });
+  await page.getByLabel('ملف الخطة للاستيراد').setInputFiles({
+    name: 'sample.docx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    buffer,
+  });
   await expect(page.getByRole('textbox', { name: 'عنوان مقترح: سطر 1' })).toHaveValue(
     'Visit classrooms next week',
   );
