@@ -121,3 +121,20 @@ export function deletePlanEvidence(planId: string): Promise<void> {
     };
   });
 }
+
+export function evidenceCounts(): Promise<Record<string, number>> {
+  return transaction<Record<string, number>>('readonly', (store, set) => {
+    const counts: Record<string, number> = {};
+    const request = store.index('by_activity').openKeyCursor();
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) {
+        set(counts);
+        return;
+      }
+      const id = String(cursor.key);
+      counts[id] = (counts[id] ?? 0) + 1;
+      cursor.continue();
+    };
+  });
+}
