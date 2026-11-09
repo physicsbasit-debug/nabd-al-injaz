@@ -30,9 +30,28 @@ test('file import previews Excel rows and requires explicit approval', async ({
     'زيارة صفية تجريبية',
   );
   await expect(page.getByText(/لا توجد أنشطة معتمدة لهذه الخطة/)).toBeVisible();
+  await page.screenshot({
+    path: 'test-results/plan-import-preview-' + testInfo.project.name + '.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
   await page.getByRole('button', { name: 'تحديد الكل' }).click();
   await page.getByRole('button', { name: /اعتماد [1-9]/ }).click();
   await expect(page.locator('.plan-activity-list')).toContainText('زيارة صفية تجريبية');
+  await page.screenshot({
+    path: 'test-results/plan-import-approved-' + testInfo.project.name + '.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
   await page.reload();
+  if (testInfo.project.name === 'phone')
+    await page.getByRole('button', { name: /عرض الأقسام/ }).click();
+  await page
+    .getByRole('navigation', {
+      name: testInfo.project.name === 'phone' ? 'أقسام الهاتف' : 'الأقسام الرئيسية',
+    })
+    .getByRole('button', { name: 'مكتبة الخطط' })
+    .click();
+  await page.getByRole('button', { name: /خطة مستوردة/ }).click();
   await expect(page.locator('.plan-activity-list')).toContainText('زيارة صفية تجريبية');
 });
