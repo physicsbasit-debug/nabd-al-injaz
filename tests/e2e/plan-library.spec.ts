@@ -125,3 +125,75 @@ test('editing and deleting plan activities updates the saved plan', async ({ pag
   await page.getByRole('button', { name: 'فتح خطة: خطة الزيارات' }).click();
   await expect(page.getByText('لا توجد أنشطة معتمدة بعد')).toBeVisible();
 });
+
+test('six independent plan indicators remain separate and responsive', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    const kinds = [
+      'خطة المادة',
+      'خطة الزيارات الإشرافية',
+      'خطة الزيارات المتبادلة',
+      'خطة الإنماء المهني',
+      'خطة الاجتماعات الدورية',
+      'خطة رفع المستوى التحصيلي',
+    ];
+    const activities = (index: number) => {
+      if (index === 0) return [];
+      return Array.from({ length: 4 }, (_, j) => ({
+        id: 'activity-' + index + '-' + j,
+        title: 'نشاط ' + (j + 1),
+        details: '',
+        assignee: '',
+        dueDate: '',
+        progress: j < index - 1 ? 'completed' : 'not_started',
+        completedAt: j < index - 1 ? new Date().toISOString() : null,
+        createdAt: new Date().toISOString(),
+      }));
+    };
+    localStorage.setItem(
+      'nabd-al-injaz:plans:v1',
+      JSON.stringify(
+        kinds.map((kind, index) => ({
+          id: 'plan-' + index,
+          title: kind,
+          kind,
+          owner: '',
+          periodStart: '',
+          periodEnd: '',
+          archived: false,
+          createdAt: new Date().toISOString(),
+          activities: activities(index),
+        })),
+      ),
+    );
+  });
+  await page.reload();
+  const overview = page.getByRole('region', { name: 'متابعة تنفيذ الخطط' });
+  await expect(overview.getByRole('button', { name: /^فتح خطة:/ })).toHaveCount(6);
+  await expect(overview.getByRole('img', { name: 'لا توجد أنشطة معتمدة' })).toHaveCount(1);
+  await expect(
+    overview.getByRole('img', { name: 'إنجاز خطة الزيارات الإشرافية: 0%' }),
+  ).toBeVisible();
+  await expect(
+    overview.getByRole('img', { name: 'إنجاز خطة الزيارات المتبادلة: 25%' }),
+  ).toBeVisible();
+  await expect(overview.getByRole('img', { name: 'إنجاز خطة الإنماء المهني: 50%' })).toBeVisible();
+  await expect(
+    overview.getByRole('img', { name: 'إنجاز خطة الاجتماعات الدورية: 75%' }),
+  ).toBeVisible();
+  await expect(
+    overview.getByRole('img', { name: 'إنجاز خطة رفع المستوى التحصيلي: 100%' }),
+  ).toBeVisible();
+  const dimensions = await page.evaluate(() => ({
+    document: document.documentElement.scrollWidth,
+    viewport: document.documentElement.clientWidth,
+  }));
+  expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport + 1);
+  await page.screenshot({
+    path: 'test-results/plan-six-cards-' + testInfo.project.name + '.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
+});
