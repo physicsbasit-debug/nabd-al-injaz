@@ -5,6 +5,7 @@ import './style.css';
 import './edit-task.css';
 import './task-manager-v2.css';
 import './executive-dashboard.css';
+import './plan-library.css';
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
