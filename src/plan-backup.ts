@@ -183,7 +183,7 @@ export async function exportEvidenceReport(plans: Plan[]): Promise<void> {
   }
   const escape = (value: string | number) => {
     const text = String(value);
-    const safe = /^[=+@\-]/.test(text) ? "'" + text : text;
+    const safe = /^[=+@-]/.test(text) ? "'" + text : text;
     return '"' + safe.replace(/"/g, '""') + '"';
   };
   const rows: (string | number)[][] = [
