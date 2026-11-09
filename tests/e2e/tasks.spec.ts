@@ -24,7 +24,7 @@ test('create, edit, complete, filter and persist a task',async({page})=>{
  await page.getByRole('navigation',{name:test.info().project.name==='phone'?'أقسام الهاتف':'الأقسام الرئيسية'}).getByRole('button',{name:'الخطط والمهام'}).click();
  await expect(page.getByText('متابعة خطة الفيزياء')).toBeVisible();
  await page.getByRole('button',{name:'المفتوحة'}).click();
- await expect(page.getByText('لا توجد مهام ضمن هذا العرض.')).toBeVisible();
+ await expect(page.getByText('لا توجد مهام تطابق خيارات العرض الحالية.')).toBeVisible();
  await page.getByRole('button',{name:'المكتملة'}).click();
  await expect(page.getByText('متابعة خطة الفيزياء')).toBeVisible();
 });

@@ -1,0 +1,188 @@
+.task-manager-v2 .task-form,
+.task-manager-v2 .edit-task-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 15px 18px;
+  width: 100%;
+}
+
+.task-manager-v2 .task-form label,
+.task-manager-v2 .edit-task-form label,
+.task-manager-v2 .task-search-row label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  font-weight: 700;
+}
+
+.task-manager-v2 .task-form label:first-child,
+.task-manager-v2 .edit-task-form label:first-child,
+.task-manager-v2 .task-notes-field,
+.task-manager-v2 .task-edit-actions {
+  grid-column: 1 / -1;
+}
+
+.task-manager-v2 .task-form input,
+.task-manager-v2 .task-form select,
+.task-manager-v2 .task-form textarea,
+.task-manager-v2 .edit-task-form input,
+.task-manager-v2 .edit-task-form select,
+.task-manager-v2 .edit-task-form textarea,
+.task-manager-v2 .task-search-row input,
+.task-manager-v2 .task-search-row select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #cbded7;
+  border-radius: 10px;
+  padding: 11px;
+  background: #fff;
+  color: #193b33;
+}
+
+.task-manager-v2 textarea {
+  resize: vertical;
+  min-height: 74px;
+  font: inherit;
+}
+
+.task-manager-v2 .task-form .primary-action {
+  grid-column: 1 / -1;
+  justify-self: start;
+  min-height: 43px;
+}
+
+.task-manager-v2 .task-form-hint,
+.task-manager-v2 .task-list-subtitle {
+  margin: 0 0 17px;
+  color: #526c63;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.task-manager-v2 .task-list-subtitle {
+  margin: 4px 0 0;
+}
+
+.task-manager-v2 .task-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+  padding: 14px;
+  background: #f6faf8;
+  border: 1px solid #e3ede8;
+  border-radius: 13px;
+}
+
+.task-manager-v2 .managed-tasks li {
+  gap: 10px 12px;
+  padding: 17px 0;
+}
+
+.task-manager-v2 .managed-tasks li > .task-title,
+.task-manager-v2 .managed-tasks li > .task-meta,
+.task-manager-v2 .managed-tasks li > .task-notes-preview {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.task-manager-v2 .managed-tasks li > .task-title {
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.task-manager-v2 .task-meta {
+  align-items: center;
+  gap: 8px;
+  line-height: 1.7;
+}
+
+.task-manager-v2 .task-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border: 1px solid #dbe8e2;
+  border-radius: 999px;
+  background: #f2f7f5;
+  color: #315c50;
+  font-size: 12px;
+}
+
+.task-manager-v2 .task-chip-active {
+  border-color: #b5ddd4;
+  background: #e7f6f1;
+  color: #145d50;
+}
+
+.task-manager-v2 .task-chip-done {
+  border-color: #b9dfca;
+  background: #e9f7ed;
+  color: #246442;
+}
+
+.task-manager-v2 .task-notes-preview {
+  margin: 0;
+  padding: 9px 13px;
+  background: #f6faf8;
+  border-right: 3px solid #b9ded3;
+  border-radius: 7px;
+  color: #526c63;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.task-manager-v2 .task-edit-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.task-manager-v2 .task-edit-actions button {
+  min-height: 42px;
+}
+
+.task-manager-v2 .task-search-row input:focus-visible,
+.task-manager-v2 .task-search-row select:focus-visible,
+.task-manager-v2 .task-form input:focus-visible,
+.task-manager-v2 .task-form select:focus-visible,
+.task-manager-v2 .task-form textarea:focus-visible,
+.task-manager-v2 .edit-task-form input:focus-visible,
+.task-manager-v2 .edit-task-form select:focus-visible,
+.task-manager-v2 .edit-task-form textarea:focus-visible {
+  outline: 2px solid #0d9488;
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .task-manager-v2 .task-form,
+  .task-manager-v2 .edit-task-form,
+  .task-manager-v2 .task-search-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .task-manager-v2 .task-search-row {
+    padding: 12px;
+  }
+
+  .task-manager-v2 .task-form .primary-action {
+    width: 100%;
+    justify-self: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-manager-v2 .managed-tasks li > .task-notes-preview {
+    grid-column: 1 / -1;
+  }
+}
+
+.task-manager-v2 .task-date-help {
+  display: block;
+  color: #526c63;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.65;
+}
