@@ -97,3 +97,12 @@
 .plan-import-toolbar button{min-height:36px;}
 @media(max-width:800px){.plan-library-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));}}
 @media(max-width:640px){.plan-library-grid{grid-template-columns:1fr;}.plan-list-card{min-height:0}.plan-activity-list>li{padding:13px}.plan-activity-actions{margin-inline-start:0}.plan-import-candidates li{grid-template-columns:1fr;}.plan-import-panel{padding:14px}}
+
+.plan-activity-pagination{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:10px;padding:14px 4px;color:#4d6b62;font-size:13px}
+.plan-activity-pagination button{border:1px solid #cbded7;border-radius:9px;background:#fff;color:#164e44;padding:8px 13px;cursor:pointer}
+.plan-activity-pagination button:disabled{opacity:.45;cursor:not-allowed}
+.plan-import-counter{font-weight:700;color:#116b5e;background:#e8f4ef;border-radius:9px;padding:10px 13px}
+.plan-import-metadata{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.plan-import-metadata label{display:grid;gap:5px;font-size:12px;color:#4d6b62}
+.plan-import-metadata input{width:100%;min-width:0;border:1px solid #cbded7;border-radius:8px;padding:8px;background:#fff}
+@media(max-width:640px){.plan-import-metadata{grid-template-columns:1fr}.plan-activity-pagination{justify-content:center}}

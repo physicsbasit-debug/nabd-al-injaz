@@ -31,6 +31,7 @@ const emptyPlan = {
   periodStart: '',
   periodEnd: '',
 };
+const PAGE_SIZE = 8;
 const emptyActivity = { title: '', details: '', assignee: '', dueDate: '' };
 export default function PlanLibrary({
   plans,
@@ -46,6 +47,7 @@ export default function PlanLibrary({
   const [showActivity, setShowActivity] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
+  const [activityPage, setActivityPage] = useState(1);
   const [draft, setDraft] = useState(emptyActivity);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -56,6 +58,10 @@ export default function PlanLibrary({
   }, [createRequested, onCreateHandled]);
   const selected = plans.find((p) => p.id === selectedId);
   const today = localDateKey(new Date());
+  const pageCount = Math.max(1, Math.ceil((selected?.activities.length ?? 0) / PAGE_SIZE));
+  const currentPage = Math.min(activityPage, pageCount);
+  const shownActivities =
+    selected?.activities.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE) ?? [];
   const updatePlan = (id: string, fn: (p: Plan) => Plan) =>
     setPlans((old) => old.map((p) => (p.id === id ? fn(p) : p)));
   const validRange = (start: string, end: string) =>
@@ -239,6 +245,7 @@ export default function PlanLibrary({
                 setShowCreate(false);
                 setShowActivity(false);
                 setEditing(null);
+                setActivityPage(1);
                 setError('');
               }}
             >
@@ -254,7 +261,7 @@ export default function PlanLibrary({
                 <span style={{ width: (stats.percent ?? 0) + '%' }} />
               </span>
               <small>
-                {stats.completed} من {stats.total} مكتملة{' '}
+                {stats.total} نشاطًا معتمدًا • {stats.completed} مكتملة{' '}
                 {stats.overdue > 0 ? '• ' + stats.overdue + ' متأخرة' : ''}
               </small>
             </button>
@@ -367,7 +374,7 @@ export default function PlanLibrary({
             </p>
           ) : (
             <ul className="plan-activity-list">
-              {selected.activities.map((a) => (
+              {shownActivities.map((a) => (
                 <li key={a.id}>
                   {editing === a.id ? (
                     <form className="plan-form plan-activity-form" onSubmit={editActivity}>
@@ -474,6 +481,32 @@ export default function PlanLibrary({
                 </li>
               ))}
             </ul>
+          )}
+          {selected.activities.length > PAGE_SIZE && (
+            <nav className="plan-activity-pagination" aria-label="صفحات أنشطة الخطة">
+              <span>
+                عرض {(currentPage - 1) * PAGE_SIZE + 1}–
+                {Math.min(currentPage * PAGE_SIZE, selected.activities.length)} من{' '}
+                {selected.activities.length} نشاطًا
+              </span>
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setActivityPage((n) => Math.max(1, n - 1))}
+              >
+                السابق
+              </button>
+              <span>
+                صفحة {currentPage} من {pageCount}
+              </span>
+              <button
+                type="button"
+                disabled={currentPage === pageCount}
+                onClick={() => setActivityPage((n) => Math.min(pageCount, n + 1))}
+              >
+                التالي
+              </button>
+            </nav>
           )}
           <PlanImport
             existingTitles={selected.activities.map((a) => a.title)}

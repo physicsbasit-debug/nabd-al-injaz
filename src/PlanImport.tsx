@@ -81,7 +81,14 @@ export default function PlanImport({ onApprove, existingTitles }: Props) {
               {warning}
             </p>
           ))}
-          <p>{items.length} مقترحًا. اختر الأنشطة الصحيحة، وعدّل عناوينها قبل الاعتماد.</p>
+          <p role="status" className="plan-import-counter">
+            تم اختيار {selected.length} من أصل {items.length} نشاطًا • الصالح للاعتماد{' '}
+            {valid.length}
+          </p>
+          <p>
+            راجع العنوان والمسؤول وتاريخ الاستحقاق لكل نشاط. الحقول غير الموجودة في الملف تظل غير
+            محددة.
+          </p>
           <div className="plan-import-toolbar">
             <button type="button" onClick={() => setSelected(items.map((c) => c.key))}>
               تحديد الكل
@@ -115,6 +122,37 @@ export default function PlanImport({ onApprove, existingTitles }: Props) {
                     )
                   }
                 />
+                <div className="plan-import-metadata">
+                  <label>
+                    المسؤول
+                    <input
+                      aria-label={'مسؤول النشاط: ' + c.source}
+                      placeholder="غير محدد"
+                      maxLength={100}
+                      value={c.assignee}
+                      onChange={(e) =>
+                        setItems((old) =>
+                          old.map((x) =>
+                            x.key === c.key ? { ...x, assignee: e.target.value } : x,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label>
+                    تاريخ الاستحقاق
+                    <input
+                      aria-label={'تاريخ النشاط: ' + c.source}
+                      type="date"
+                      value={c.dueDate}
+                      onChange={(e) =>
+                        setItems((old) =>
+                          old.map((x) => (x.key === c.key ? { ...x, dueDate: e.target.value } : x)),
+                        )
+                      }
+                    />
+                  </label>
+                </div>
                 {existing.has(c.title.trim().toLocaleLowerCase('ar')) && (
                   <small>نشاط موجود بالفعل، لن يُكرر.</small>
                 )}

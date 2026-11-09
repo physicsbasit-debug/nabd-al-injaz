@@ -171,8 +171,24 @@ test('desktop sidebar stretches with content and review remains within viewport'
     animations: 'disabled',
   });
   await page.getByRole('button', { name: 'تحديد الكل' }).click();
+  await expect(page.getByText(/تم اختيار 24 من أصل 24 نشاطًا/)).toBeVisible();
   await page.getByRole('button', { name: /اعتماد 24 نشاط/ }).click();
-  await expect(page.locator('.plan-activity-list li')).toHaveCount(24);
+  await expect(page.locator('.plan-activity-list li')).toHaveCount(8);
+  await expect(page.getByRole('navigation', { name: 'صفحات أنشطة الخطة' })).toContainText(
+    '1–8 من 24',
+  );
+  await expect(page.getByText('24 نشاطًا معتمدًا')).toBeVisible();
+  await page.getByRole('button', { name: 'التالي' }).click();
+  await expect(page.getByRole('navigation', { name: 'صفحات أنشطة الخطة' })).toContainText(
+    '9–16 من 24',
+  );
+  await page.getByRole('button', { name: 'التالي' }).click();
+  await expect(page.getByRole('navigation', { name: 'صفحات أنشطة الخطة' })).toContainText(
+    '17–24 من 24',
+  );
+  await expect(page.locator('.plan-activity-list li')).toHaveCount(8);
+  await page.getByRole('button', { name: 'السابق' }).click();
+  await page.getByRole('button', { name: 'السابق' }).click();
   await page.screenshot({
     path: 'test-results/plan-import-polished-approved-laptop.png',
     fullPage: true,
