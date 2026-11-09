@@ -72,6 +72,15 @@ export async function previewPlanFile(file: File): Promise<ImportPreview> {
           })
           .filter(Boolean);
         if (!cells.length) return;
+        if (
+          index <= 4 &&
+          cells.some((c) =>
+            /^(النشاط|الأنشطة|الفعالية|الفعاليات|الإجراء|الإجراءات|اسم النشاط|activity|activities)$/i.test(
+              c,
+            ),
+          )
+        )
+          return;
         const title = cells.find(validTitle);
         if (!title) return;
         candidates.push({

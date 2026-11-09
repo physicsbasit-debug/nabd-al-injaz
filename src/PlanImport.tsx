@@ -36,12 +36,13 @@ export default function PlanImport({ onApprove, existingTitles }: Props) {
   }
   const existing = new Set(existingTitles.map((s) => s.trim().toLocaleLowerCase('ar')));
   const chosen = items.filter((c) => selected.includes(c.key));
-  const valid = chosen.filter(
-    (c) =>
-      c.title.trim().length >= 4 &&
-      c.title.trim().length <= 160 &&
-      !existing.has(c.title.trim().toLocaleLowerCase('ar')),
-  );
+  const unique = new Set<string>();
+  const valid = chosen.filter((candidate) => {
+    const key = candidate.title.trim().toLocaleLowerCase('ar');
+    if (key.length < 4 || key.length > 160 || existing.has(key) || unique.has(key)) return false;
+    unique.add(key);
+    return true;
+  });
   function approve() {
     if (!valid.length) return;
     onApprove(approvedActivities(valid));
