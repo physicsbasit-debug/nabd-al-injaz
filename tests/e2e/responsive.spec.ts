@@ -8,7 +8,7 @@ test('navigation and task forms fit narrow and wide screens', async ({ page }) =
     await page.goto('/');
 
     if (width <= 800) {
-      const menu = page.getByRole('button', { name: /عرض الأقسام/ });
+      const menu = page.locator('.mobile-menu-trigger');
       await expect(menu).toBeVisible();
       await menu.click();
       await expect(menu).toHaveAttribute('aria-expanded', 'true');
