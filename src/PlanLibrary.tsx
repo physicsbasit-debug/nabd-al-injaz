@@ -1,3 +1,6 @@
+import EvidencePanel from './EvidencePanel';
+import EvidenceStatus from './EvidenceStatus';
+import { deleteActivityEvidence } from './evidence-store';
 import PlanImport from './PlanImport';
 import { useEffect, useState } from 'react';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
@@ -50,6 +53,8 @@ export default function PlanLibrary({
   const [activityPage, setActivityPage] = useState(1);
   const [draft, setDraft] = useState(emptyActivity);
   const [error, setError] = useState('');
+  const [evidenceActivity, setEvidenceActivity] = useState<string | null>(null);
+  const [evidenceRevision, setEvidenceRevision] = useState(0);
   useEffect(() => {
     if (createRequested) {
       setShowCreate(true);
@@ -429,11 +434,11 @@ export default function PlanLibrary({
                           {a.dueDate ? 'الاستحقاق: ' + a.dueDate : 'دون موعد'}
                         </small>
                         {a.details && <p>{a.details}</p>}
-                        {a.progress === 'completed' && (
-                          <span className="plan-completed-note">
-                            <CheckCircle2 size={14} /> مكتمل • ينتظر التوثيق
-                          </span>
-                        )}
+                        <EvidenceStatus
+                          activityId={a.id}
+                          completed={a.progress === 'completed'}
+                          revision={evidenceRevision}
+                        />
                       </div>
                       <label className="plan-progress-select">
                         الحالة
@@ -448,6 +453,14 @@ export default function PlanLibrary({
                         </select>
                       </label>
                       <div className="plan-activity-actions">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEvidenceActivity(evidenceActivity === a.id ? null : a.id)
+                          }
+                        >
+                          الشواهد والتوثيق
+                        </button>
                         <button
                           type="button"
                           onClick={() => {
@@ -465,12 +478,21 @@ export default function PlanLibrary({
                         <button
                           type="button"
                           className="plan-delete"
-                          onClick={() => {
-                            if (window.confirm('حذف النشاط نهائيًا؟'))
+                          onClick={async () => {
+                            if (!window.confirm('حذف النشاط وشواهده نهائيًا من هذا المتصفح؟'))
+                              return;
+                            try {
+                              await deleteActivityEvidence(a.id);
                               updatePlan(selected.id, (p) => ({
                                 ...p,
                                 activities: p.activities.filter((x) => x.id !== a.id),
                               }));
+                              setEvidenceActivity(null);
+                            } catch {
+                              setError(
+                                'تعذّر حذف شواهد النشاط؛ لم يُحذف النشاط حفاظًا على البيانات.',
+                              );
+                            }
                           }}
                         >
                           حذف
@@ -481,6 +503,20 @@ export default function PlanLibrary({
                 </li>
               ))}
             </ul>
+          )}
+          {evidenceActivity && selected.activities.some((a) => a.id === evidenceActivity) && (
+            <EvidencePanel
+              key={evidenceActivity}
+              planId={selected.id}
+              activityId={evidenceActivity}
+              activityTitle={
+                selected.activities.find((a) => a.id === evidenceActivity)?.title ?? ''
+              }
+              onClose={() => {
+                setEvidenceActivity(null);
+                setEvidenceRevision((v) => v + 1);
+              }}
+            />
           )}
           {selected.activities.length > PAGE_SIZE && (
             <nav className="plan-activity-pagination" aria-label="صفحات أنشطة الخطة">
@@ -518,8 +554,8 @@ export default function PlanLibrary({
             }}
           />
           <p className="plan-storage-note">
-            البيانات محفوظة في هذا المتصفح فقط. إرفاق الشواهد مرحلة لاحقة، ولا يُحتسب رفع ملف
-            كإنجاز.
+            الخطط محفوظة محليًا، والشواهد في IndexedDB داخل هذا المتصفح فقط. لا يُحتسب رفع ملف
+            كإنجاز. احفظ نسخًا من الملفات الأصلية خارج المتصفح.
           </p>
         </div>
       )}
