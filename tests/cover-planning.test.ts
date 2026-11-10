@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { addLesson, setDayVerification, type Schedule } from '../src/schedule-model';
-import { addCoverAssignment, draftCandidates, getCoverDay, readCoverStore, removeCoverAssignment, setCoverAbsences, validateAssignment, weekdayForDate, EMPTY_COVER_STORE } from '../src/cover-planning';
+import { addCoverAssignment, autoAssignCovers, draftCandidates, getCoverDay, getCoverBalance, readCoverStore, removeCoverAssignment, setCoverAbsences, setCoverTeacherPolicy, validateAssignment, weekdayForDate, EMPTY_COVER_STORE } from '../src/cover-planning';
 
 function sample() {
   let schedule: Schedule = { teachers: ['أحمد', 'سالم', 'نورة', 'علي'], lessons: [], verifiedDays: [] };
@@ -60,4 +60,44 @@ describe('date-scoped cover planning', () => {
     try { expect(readCoverStore()).toEqual({ version: 1, days: {} }); }
     finally { vi.unstubAllGlobals(); }
   });
+  it('excludes exempt teachers and ranks by balance before explicit priority', () => {
+    const schedule = sample();
+    let store = setCoverAbsences(EMPTY_COVER_STORE, date, ['أحمد'], schedule);
+    store = setCoverTeacherPolicy(store, 'سالم', { carryInBalance: 3, priority: 5 });
+    store = setCoverTeacherPolicy(store, 'نورة', { carryInBalance: 3, priority: 1 });
+    expect(getCoverBalance(schedule, store, 'سالم')).toBe(3);
+    expect(draftCandidates(schedule, store, date, schedule.lessons[0].id).slice(0, 2)).toEqual(['نورة', 'سالم']);
+    store = setCoverTeacherPolicy(store, 'نورة', { exempt: true });
+    expect(draftCandidates(schedule, store, date, schedule.lessons[0].id)).toEqual(['سالم']);
+    const exemptAssignment = { id: 'manual', date, lessonId: schedule.lessons[0].id, absentTeacher: 'أحمد', substitute: 'نورة' };
+    const withAssignment = { ...store, days: { ...store.days, [date]: { ...getCoverDay(store, date), assignments: [exemptAssignment] } } };
+    expect(validateAssignment(schedule, withAssignment, exemptAssignment)).toMatch(/مستثنى/);
+  });
+  it('automatically covers multiple absences without assigning one teacher twice in a period', () => {
+    let schedule: Schedule = { teachers: ['أحمد', 'سالم', 'علي', 'ناصر', 'يوسف'], lessons: [], verifiedDays: [] };
+    for (const teacher of ['أحمد', 'سالم', 'علي']) schedule = addLesson(schedule, { teacher, day: 'الثلاثاء', period: 1, description: 'علوم' });
+    for (const teacher of schedule.teachers) schedule = setDayVerification(schedule, teacher, 'الثلاثاء', true);
+    let store = setCoverAbsences(EMPTY_COVER_STORE, date, ['أحمد', 'سالم'], schedule);
+    store = setCoverTeacherPolicy(store, 'ناصر', { carryInBalance: 2 });
+    const result = autoAssignCovers(schedule, store, date);
+    expect(result.blockedReason).toBeUndefined();
+    expect(result.added).toHaveLength(2);
+    expect(result.uncovered).toEqual([]);
+    expect(result.added.map((assignment) => assignment.substitute)).toEqual(['يوسف', 'ناصر']);
+    expect(new Set(result.added.map((assignment) => assignment.substitute)).size).toBe(2);
+    expect(result.added.every((assignment) => validateAssignment(schedule, result.store, assignment) === null)).toBe(true);
+  });
+  it('leaves a slot uncovered when the only other available teacher is exempt', () => {
+    let schedule: Schedule = { teachers: ['أحمد', 'سالم', 'علي', 'ناصر', 'يوسف'], lessons: [], verifiedDays: [] };
+    for (const teacher of ['أحمد', 'سالم', 'علي']) schedule = addLesson(schedule, { teacher, day: 'الثلاثاء', period: 1, description: 'علوم' });
+    for (const teacher of schedule.teachers) schedule = setDayVerification(schedule, teacher, 'الثلاثاء', true);
+    let store = setCoverAbsences(EMPTY_COVER_STORE, date, ['أحمد', 'سالم'], schedule);
+    store = setCoverTeacherPolicy(store, 'ناصر', { exempt: true });
+    const result = autoAssignCovers(schedule, store, date);
+    expect(result.added).toHaveLength(1);
+    expect(result.added[0].substitute).toBe('يوسف');
+    expect(result.uncovered).toHaveLength(1);
+    expect(getCoverDay(result.store, date).assignments.map((assignment) => assignment.substitute)).not.toContain('ناصر');
+  });
+
 });
