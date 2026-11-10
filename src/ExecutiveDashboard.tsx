@@ -1,24 +1,69 @@
-import { AlertTriangle, ArrowLeft, CheckCircle2, Clock3, ListTodo } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  Clock3,
+  ListTodo,
+  CalendarDays,
+} from 'lucide-react';
 import type { Task } from './task-model';
 import { formatDueDate } from './task-model';
-import { dashboardMetrics, isTaskOverdue, localDateKey, priorityTasks } from './dashboard-metrics';
+import {
+  dashboardMetrics,
+  isTaskOverdue,
+  localDateKey,
+  priorityTasks,
+  tasksDueToday,
+} from './dashboard-metrics';
+import { validDate, type Plan } from './plan-model';
 
 type Props = {
   tasks: Task[];
   completedCount: number;
+  plans: Plan[];
   onNavigate: () => void;
+  onOpenPlan: (id: string) => void;
   onToggleTask: (id: string) => void;
 };
 
 export default function ExecutiveDashboard({
   tasks,
   completedCount,
+  plans,
   onNavigate,
+  onOpenPlan,
   onToggleTask,
 }: Props) {
   const today = localDateKey(new Date());
   const metrics = dashboardMetrics(tasks, today);
   const attention = priorityTasks(tasks, today);
+  const dueToday = tasksDueToday(tasks, today);
+  const planActivities = plans.flatMap((plan) =>
+    plan.archived
+      ? []
+      : plan.activities
+          .filter((activity) => activity.progress !== 'completed' && activity.dueDate === today)
+          .map((activity) => ({ plan, activity })),
+  );
+  const overdueActivities = plans.reduce(
+    (count, plan) =>
+      count +
+      (plan.archived
+        ? 0
+        : plan.activities.filter(
+            (activity) =>
+              activity.progress !== 'completed' &&
+              validDate(activity.dueDate) &&
+              activity.dueDate < today,
+          ).length),
+    0,
+  );
+  const todayLabel = new Intl.DateTimeFormat('ar-OM', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date());
 
   return (
     <div className="executive-dashboard">
@@ -66,6 +111,73 @@ export default function ExecutiveDashboard({
           <strong>{metrics.overdue}</strong>
           <small>تجاوزت تاريخ الاستحقاق</small>
         </article>
+      </section>
+
+      <section className="card executive-today" aria-label="مهام اليوم ومتابعته">
+        <div className="executive-section-heading">
+          <div>
+            <span className="executive-eyebrow">{todayLabel}</span>
+            <h2>ماذا عليّ اليوم؟</h2>
+            <p>المهام وأنشطة الخطط المفتوحة التي حُدد استحقاقها لهذا اليوم.</p>
+          </div>
+          <span className="executive-today-count">
+            {dueToday.length + planActivities.length} مستحق اليوم
+          </span>
+        </div>
+        {dueToday.length + planActivities.length === 0 ? (
+          <div className="executive-today-empty">
+            <CalendarDays size={22} aria-hidden="true" />
+            <span>لا توجد مهام أو أنشطة خطط مستحقة اليوم مسجلة.</span>
+          </div>
+        ) : (
+          <div className="executive-today-list">
+            {dueToday.map((task) => (
+              <article key={'task-' + task.id}>
+                <button
+                  className="executive-task-check"
+                  type="button"
+                  aria-label={'إكمال المهمة: ' + task.title}
+                  onClick={() => onToggleTask(task.id)}
+                >
+                  <span aria-hidden="true">○</span>
+                </button>
+                <div>
+                  <strong>{task.title}</strong>
+                  <small>مهمة · {task.category}</small>
+                </div>
+                {task.priority === 'عاجلة' && <span className="executive-chip urgent">عاجلة</span>}
+              </article>
+            ))}
+            {planActivities.map(({ plan, activity }) => (
+              <button
+                key={'activity-' + activity.id}
+                className="executive-today-activity"
+                type="button"
+                onClick={() => onOpenPlan(plan.id)}
+              >
+                <CalendarDays size={18} aria-hidden="true" />
+                <span>
+                  <strong>{activity.title}</strong>
+                  <small>
+                    {plan.title} · {plan.kind}
+                  </small>
+                </span>
+                <ArrowLeft size={16} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        )}
+        {metrics.overdue + overdueActivities > 0 && (
+          <div className="executive-today-followup" role="status">
+            <AlertTriangle size={17} aria-hidden="true" />
+            <span>
+              متابعة مطلوبة: {metrics.overdue} مهام متأخرة و{overdueActivities} أنشطة خطط متأخرة.
+            </span>
+            <button type="button" className="executive-text-link" onClick={onNavigate}>
+              فتح المهام <ArrowLeft size={15} aria-hidden="true" />
+            </button>
+          </div>
+        )}
       </section>
 
       <div className="executive-columns">

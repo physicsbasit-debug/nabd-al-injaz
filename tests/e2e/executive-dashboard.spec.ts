@@ -81,6 +81,31 @@ test('executive dashboard shows real overdue and priority indicators', async ({
   await expect(page.getByRole('heading', { name: 'الخطط والمهام', level: 1 })).toBeVisible();
 });
 
+test('dashboard brings today task and plan activity into one view', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    const dueDate = [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+    localStorage.setItem('nabd-al-injaz:tasks:v1', JSON.stringify([{
+      id: 'task-today', title: 'مراجعة تحضير الدرس', dueDate, priority: 'عاجلة', done: false,
+      createdAt: new Date().toISOString(), category: 'تخطيط ومناهج', assignedTo: '', progress: 'لم تبدأ', notes: '',
+    }]));
+    localStorage.setItem('nabd-al-injaz:plans:v1', JSON.stringify([{
+      id: 'plan-today', title: 'خطة المادة التجريبية', kind: 'خطة المادة', owner: '',
+      periodStart: '', periodEnd: '', archived: false, createdAt: '',
+      activities: [{ id: 'activity-today', title: 'زيارة صفية', details: '', assignee: '', dueDate, progress: 'not_started', completedAt: null, createdAt: '' }],
+    }]));
+  });
+  await page.reload();
+  const today = page.getByRole('region', { name: 'مهام اليوم ومتابعته' });
+  await expect(today).toContainText('مراجعة تحضير الدرس');
+  await expect(today).toContainText('زيارة صفية');
+  await expect(today).toContainText('2 مستحق اليوم');
+  await today.getByRole('button', { name: /زيارة صفية/ }).click();
+  await expect(page.getByRole('heading', { name: 'خطة المادة التجريبية' })).toBeVisible();
+});
+
 test('empty dashboard links to task creation without fabricated data', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText('لا توجد مهام مسجلة بعد')).toBeVisible();

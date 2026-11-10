@@ -5,6 +5,7 @@ import {
   isTaskOverdue,
   localDateKey,
   priorityTasks,
+  tasksDueToday,
 } from '../src/dashboard-metrics';
 
 function task(id: string, overrides: Partial<Task> = {}): Task {
@@ -69,6 +70,20 @@ describe('executive dashboard metrics', () => {
     ]);
     expect(tasks.map((item) => item.id)[0]).toBe('later');
     expect(priorityTasks(tasks, today, 2)).toHaveLength(2);
+  });
+
+  it('shows only unfinished tasks due today and puts urgent tasks first', () => {
+    const tasks = [
+      task('عادية اليوم', { dueDate: today }),
+      task('عاجلة اليوم', { dueDate: today, priority: 'عاجلة' }),
+      task('متأخرة', { dueDate: '2026-11-08' }),
+      task('مكتملة اليوم', { dueDate: today, done: true }),
+      task('تاريخ غير صالح', { dueDate: '2026-02-30' }),
+    ];
+    expect(tasksDueToday(tasks, today).map((item) => item.id)).toEqual([
+      'عاجلة اليوم',
+      'عادية اليوم',
+    ]);
   });
 
   it('generates local calendar dates without UTC day shifts', () => {

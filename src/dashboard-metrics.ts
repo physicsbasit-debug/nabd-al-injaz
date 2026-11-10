@@ -17,6 +17,15 @@ export function isTaskOverdue(task: Task, today: string): boolean {
   return !task.done && validDateKey(task.dueDate) && task.dueDate < today;
 }
 
+export function tasksDueToday(tasks: Task[], today: string): Task[] {
+  return tasks
+    .filter((task) => !task.done && validDateKey(task.dueDate) && task.dueDate === today)
+    .sort((a, b) => {
+      const urgent = Number(b.priority === 'عاجلة') - Number(a.priority === 'عاجلة');
+      return urgent || a.title.localeCompare(b.title, 'ar');
+    });
+}
+
 export function dashboardMetrics(tasks: Task[], today: string) {
   const completed = tasks.filter((task) => task.done).length;
   return {

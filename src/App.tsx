@@ -126,6 +126,12 @@ export default function App() {
             <ExecutiveDashboard
               tasks={tasks}
               completedCount={done}
+              plans={plans}
+              onOpenPlan={(id) => {
+                setSelectedPlanId(id);
+                setPlanCreateRequested(false);
+                setTab('مكتبة الخطط');
+              }}
               onNavigate={() => {
                 setTab('الخطط والمهام');
                 setMobileMenuOpen(false);
