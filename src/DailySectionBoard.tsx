@@ -163,7 +163,6 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
               key={item.name}
               type="button"
               onClick={() => onNavigate(target)}
-              aria-label={`${item.name}: ${item.status}`}
             >
               <span className="daily-section-icon">
                 <Icon size={19} aria-hidden="true" />
