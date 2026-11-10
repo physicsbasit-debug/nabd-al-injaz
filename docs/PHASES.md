@@ -14,3 +14,10 @@
 - 2-D2: استيراد أفقي مع تحقق اكتمال اليوم ومعاينة الغياب (انظر SCHEDULE_PHASE_2D2.md).
 - التالي: قبول عينة Excel مدرسية حقيقية، ثم 2-D3 توزيع احتياط منضبط (دون افتراض فراغ المعلم من غياب الحصة).
 - لاحقًا: المتابعة الفنية، الاختبارات والتحصيل، الإنماء المهني، الإنجازات والتقارير، ثم الربط الآمن والقبول النهائي.
+
+
+### Phase 2-D3A: manual cover draft
+
+- 2-D3A implements local, date-scoped manual cover assignment drafts with hard conflict and completeness gates.
+- The **production 2-D3** remains pending real-school Excel acceptance and approval of substitution policies, exemptions and balance rules. No automated assignment or external notifications in 2-D3A.
+- Next: 2-D3B real-template integration, policy and balance approval; then 2-D3C guarded allocation and acceptance.
