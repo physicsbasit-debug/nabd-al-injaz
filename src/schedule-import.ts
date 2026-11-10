@@ -1,4 +1,27 @@
 import { DAYS, normalizeTeacher, validPeriod, type Day, type DayCoverage, type LessonInput, type ScheduleImportBatch } from './schedule-model';
+import JSZip from 'jszip';
+
+const SPREADSHEET_NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+
+async function excelJsCompatibleData(data: ArrayBuffer): Promise<Uint8Array> {
+  const archive = await JSZip.loadAsync(data);
+  for (const entry of Object.values(archive.files)) {
+    if (entry.dir || !entry.name.startsWith('xl/') || !entry.name.endsWith('.xml')) continue;
+    const xml = await entry.async('string');
+    const namespace = xml.match(/xmlns:x=(["'])([^"']+)\\1/);
+    if (namespace?.[2] !== SPREADSHEET_NS || !/<\\/?x:[\\w.-]+\\b/.test(xml)) continue;
+    const defaultNamespace = xml.match(/xmlns=(["'])([^"']+)\\1/);
+    if (defaultNamespace && defaultNamespace[2] !== SPREADSHEET_NS) {
+      throw new Error('صيغة XML داخل ملف Excel غير مدعومة. أعد حفظ الملف بصيغة XLSX من Excel.');
+    }
+    const compatibleXml = (defaultNamespace
+      ? xml
+      : xml.replace(namespace[0], namespace[0] + ' xmlns="' + SPREADSHEET_NS + '"')
+    ).replace(/(<\\/?)(x:)/g, '$1');
+    archive.file(entry.name, compatibleXml);
+  }
+  return archive.generateAsync({ type: 'uint8array' });
+}
 export type SchedulePreview = ScheduleImportBatch & { errors: string[]; sheet: string; format: 'long' | 'wide'; totalRows: number };
 const aliases = {
   teacher: ['المعلم', 'اسم المعلم', 'teacher'],
@@ -117,7 +140,7 @@ export async function previewScheduleExcel(file: File): Promise<SchedulePreview>
   if (!/\.xlsx$/i.test(file.name) || file.size > 5 * 1024 * 1024 || !file.size) throw new Error('ارفع ملف XLSX بحجم لا يتجاوز 5MB.');
   const ExcelJS = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(new Uint8Array(await file.arrayBuffer()) as never);
+  await workbook.xlsx.load((await excelJsCompatibleData(await file.arrayBuffer())) as never);
   const headers = workbook.worksheets.flatMap(findHeaders);
   if (!headers.length) throw new Error('قالب غير مدعوم: لم أجد أعمدة المعلم واليوم والحصة أو ح1، ح2... لا يُسمح بالتخمين.');
   if (headers.length > 1) throw new Error('وجدت أكثر من جدول محتمل في الملف. افصل الجدول المطلوب في ملف مستقل لتجنب استيراد ناقص.');

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import ExcelJS from 'exceljs';
+import JSZip from 'jszip';
 
 async function openSchedules(page: import('@playwright/test').Page, mobile: boolean) {
   await page.goto('/');
@@ -251,6 +252,38 @@ test('imports the approved 9-teacher, 45-day, 162-lesson workbook shape atomical
   await expect(
     page.getByText('تم اعتماد 162 حصة و45 يومًا موثق الاكتمال، دون استبدال البيانات السابقة.'),
   ).toBeVisible();
+});
+
+test('imports Excel files with prefixed SpreadsheetML namespaces', async ({ page }, testInfo) => {
+  const wb = new ExcelJS.Workbook();
+  const sheet = wb.addWorksheet('جدول');
+  sheet.addRow(['المعلم', 'اليوم', 'الحصة', 'المادة']);
+  sheet.addRow(['أحمد', 'الأحد', 1, '10/1 فيزياء']);
+  const archive = await JSZip.loadAsync(Buffer.from(await wb.xlsx.writeBuffer()));
+  const namespace = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+  for (const name of Object.keys(archive.files)) {
+    if (!name.startsWith('xl/') || !name.endsWith('.xml')) continue;
+    const entry = archive.file(name);
+    if (!entry) continue;
+    const xml = await entry.async('string');
+    if (!xml.includes('xmlns="' + namespace + '"')) continue;
+    const prefixedXml = xml
+      .replace('xmlns="' + namespace + '"', 'xmlns:x="' + namespace + '"')
+      .replace(/(<\\/?)([A-Za-z_][\\w.-]*)(?=[\\s/>])/g, '$1x:$2');
+    archive.file(name, prefixedXml);
+  }
+  const buffer = await archive.generateAsync({ type: 'nodebuffer' });
+  await openSchedules(page, testInfo.project.name === 'phone');
+  await page.getByLabel('ملف جدول المعلمين').setInputFiles({
+    name: 'prefixed-schedule.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer,
+  });
+  await expect(page.getByText('وصل الملف وقُرئ بنجاح')).toBeVisible();
+  await expect(page.getByText(/نوع القالب: قائمة حصص/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'اعتماد الجدول (1)' })).toBeEnabled();
+  await page.getByRole('button', { name: 'اعتماد الجدول (1)' }).click();
+  await expect(page.getByRole('heading', { name: 'الحصص المسجلة (1)' })).toBeVisible();
 });
 
 test('automatic cover respects exemptions and leaves same-period overflow visible', async ({
