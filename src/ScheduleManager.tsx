@@ -37,32 +37,41 @@ function currentSchoolDay(): Day {
 const PERIOD_NAMES = ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة'];
 
 function lessonTone(description: string): number {
-  let hash = 0;
-  for (const character of description) hash = (hash * 31 + character.charCodeAt(0)) | 0;
-  return (Math.abs(hash) % 6) + 1;
+  if (/(فيزياء|الفيزياء)/u.test(description)) return 1;
+  if (/(كيمياء|الكيمياء)/u.test(description)) return 2;
+  if (/(أحياء|احياء|الأحياء)/u.test(description)) return 3;
+  return 4;
 }
 
 function lessonDisplay(description: string): {
   subject: string;
   className: string;
-  classCode: string;
 } {
   const subjectMatch = description.match(
     /(العلوم العامة|الفيزياء|الكيمياء|الأحياء|العلوم|علوم عامة|فيزياء|كيمياء|أحياء|علوم)/u,
   );
   const cleaned = (subjectMatch ? description.replace(subjectMatch[0], '') : description)
     .replace(/^[\s\-–—|:،/]+|[\s\-–—|:،/]+$/g, '')
-    .replace(/\s+/g, ' ');
+    .replace(/\s+/g, ' ')
+    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
   const gradeMatch = cleaned.match(
-    /(الثامن|التاسع|العاشر|10|9|8)\s*(?:أساسي)?\s*[/ -]\s*([0-9٠-٩]+)/u,
+    /(الثامن|التاسع|العاشر|10|9|8)\s*(?:أساسي)?\s*[/ -]\s*([0-9٠-٩]+)|([0-9٠-٩]+)\s*\/\s*(10|9|8)/u,
   );
+  const grades: Record<string, string> = { الثامن: '8', التاسع: '9', العاشر: '10' };
   const gradeCode = gradeMatch
-    ? ({ الثامن: '8', التاسع: '9', العاشر: '10' }[gradeMatch[1]] ?? gradeMatch[1])
+    ? grades[gradeMatch[1]] ?? gradeMatch[1] ?? gradeMatch[4]
     : '';
+  const sectionCode = gradeMatch
+    ? gradeMatch[2]
+      ? gradeMatch[2]
+      : gradeMatch[3]
+    : '';
+  const className = gradeMatch
+    ? cleaned.replace(gradeMatch[0], `${gradeCode}/${sectionCode}`)
+    : cleaned || 'غير محدد';
   return {
     subject: subjectMatch?.[0] ?? '',
-    className: cleaned || 'غير محدد',
-    classCode: gradeMatch ? `${gradeCode}-${gradeMatch[2]}` : '',
+    className,
   };
 }
 
@@ -236,11 +245,15 @@ export default function ScheduleManager() {
             <p className="schedule-empty-hint">اختر اسم المعلم لعرض جدوله الأسبوعي كاملًا.</p>
           ) : (
             <>
-              <p className="schedule-grid-hint">الأحد إلى الخميس</p>
+              <p className="schedule-grid-hint">
+                <span>الأحد إلى الخميس</span>
+                <span className="schedule-swipe-note">مرّر الجدول أفقيًا لبقية الحصص</span>
+              </p>
               <div className="schedule-table-wrap schedule-week-wrap">
                 <table
                   className="schedule-week-grid"
                   aria-label={`الجدول الأسبوعي للمعلم ${lookupTeacher}`}
+                  style={{ minWidth: `${92 + visiblePeriods.length * 96}px` }}
                 >
                   <thead>
                     <tr>
@@ -249,8 +262,8 @@ export default function ScheduleManager() {
                       </th>
                       {visiblePeriods.map((period) => (
                         <th key={period} scope="col" aria-label={`الحصة ${period}`}>
-                          {PERIOD_NAMES[period - 1] ?? `الحصة ${period}`}
-                          <small>الحصة {period}</small>
+                          <span className="schedule-period-number">{period.toLocaleString('ar')}</span>
+                          <small>{PERIOD_NAMES[period - 1] ?? 'حصة'}</small>
                         </th>
                       ))}
                     </tr>
@@ -270,11 +283,13 @@ export default function ScheduleManager() {
                               <td
                                 key={period}
                                 className="schedule-week-empty"
-                                aria-label={`${day}، الحصة ${period}، لا توجد حصة مسجلة`}
-                              />
+                                aria-label={`${day}، الحصة ${period}، فارغة`}
+                              >
+                                <span aria-hidden="true">—</span>
+                              </td>
                             );
                           }
-                          const display = lessonDisplay(lesson.description || 'غير محدد');
+              const display = lessonDisplay(lesson.description || 'غير محدد');
                           return (
                             <td
                               key={period}
@@ -283,11 +298,6 @@ export default function ScheduleManager() {
                               <div className="schedule-week-lesson-content">
                                 {display.subject && (
                                   <small className="schedule-week-subject">{display.subject}</small>
-                                )}
-                                {display.classCode && (
-                                  <small className="schedule-week-class-code">
-                                    {display.classCode}
-                                  </small>
                                 )}
                                 <strong>{display.className}</strong>
                               </div>
