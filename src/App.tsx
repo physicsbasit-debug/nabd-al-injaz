@@ -13,6 +13,7 @@ import { toggleTaskCompletion } from './task-model';
 import ExecutiveDashboard from './ExecutiveDashboard';
 import PlanOverview from './PlanOverview';
 import PlanLibrary from './PlanLibrary';
+import ScheduleManager from './ScheduleManager';
 import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
   ['الرئيسية', Activity],
@@ -145,6 +146,8 @@ export default function App() {
           />
         ) : tab === 'الخطط والمهام' ? (
           <TaskManager tasks={tasks} setTasks={setTasks} />
+        ) : tab === 'الجداول والاحتياط' ? (
+          <ScheduleManager />
         ) : (
           <section className="card">
             <h2>{tab}</h2>
