@@ -50,7 +50,7 @@ describe('teacher schedule safeguards', () => {
   it('recovers safely from corrupt local storage', () => {
     const old = globalThis.localStorage;
     Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: () => '{bad json' } });
-    try { expect(readSchedule()).toEqual({ teachers: [], lessons: [] }); }
+    try { expect(readSchedule()).toEqual({ teachers: [], lessons: [], verifiedDays: [] }); }
     finally { Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: old }); }
   });
 });
