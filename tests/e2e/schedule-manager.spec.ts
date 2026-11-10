@@ -6,6 +6,16 @@ async function openSchedules(page: import('@playwright/test').Page, mobile: bool
   if (mobile) await page.getByRole('button', { name: /عرض الأقسام/ }).click();
   await page.getByRole('navigation', { name: mobile ? 'أقسام الهاتف' : 'الأقسام الرئيسية' })
     .getByRole('button', { name: 'الجداول والاحتياط' }).click();
+  await page.getByText('إعداد وتعديل الجدول', { exact: true }).click();
+}
+
+async function dateForWeekday(page: import('@playwright/test').Page, weekday: number) {
+  return page.evaluate((target) => {
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    while (date.getDay() !== target) date.setDate(date.getDate() + 1);
+    return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+  }, weekday);
 }
 test('manual schedules persist, reject conflicts and show free teachers', async ({ page }, testInfo) => {
   await openSchedules(page, testInfo.project.name === 'phone');
@@ -26,9 +36,7 @@ test('manual schedules persist, reject conflicts and show free teachers', async 
   await page.getByRole('button', { name: 'حفظ الحصة' }).click();
   await expect(page.getByText('تعارض: لدى المعلم حصة مسجلة في هذا الموعد.')).toBeVisible();
   await page.reload();
-  if (testInfo.project.name === 'phone') await page.getByRole('button', { name: /عرض الأقسام/ }).click();
-  await page.getByRole('navigation', { name: testInfo.project.name === 'phone' ? 'أقسام الهاتف' : 'الأقسام الرئيسية' })
-    .getByRole('button', { name: 'الجداول والاحتياط' }).click();
+  await openSchedules(page, testInfo.project.name === 'phone');
   await expect(page.getByRole('heading', { name: 'الحصص المسجلة (1)' })).toBeVisible();
   await expect(page.getByText(/متفرغون مؤكّدون:/)).toContainText('1 من 2');
   await page.screenshot({ path: 'test-results/schedules-' + testInfo.project.name + '.png', fullPage: true });
@@ -41,6 +49,8 @@ test('Excel preview requires approval and rejects duplicate rows', async ({ page
   const buffer = Buffer.from(await wb.xlsx.writeBuffer());
   await openSchedules(page, testInfo.project.name === 'phone');
   await page.getByLabel('ملف جدول المعلمين').setInputFiles({ name: 'schedule.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer });
+  await expect(page.getByText('وصل الملف وقُرئ بنجاح')).toBeVisible();
+  await expect(page.getByText(/الملف المحدد: schedule\.xlsx/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'اعتماد الجدول (1)' })).toBeEnabled();
   await expect(page.getByRole('heading', { name: 'الحصص المسجلة (0)' })).toBeVisible();
   await page.getByRole('button', { name: 'اعتماد الجدول (1)' }).click();
@@ -66,12 +76,16 @@ test('wide template imports blank free periods only after explicit completeness 
   await page.getByRole('checkbox', { name: /أؤكد أن صفوف الأيام كاملة/ }).check();
   await page.getByRole('button', { name: 'اعتماد الجدول (2)' }).click();
   await expect(page.getByRole('heading', { name: 'الحصص المسجلة (2)' })).toBeVisible();
+  await page.getByLabel('يوم التوفر').selectOption('الأحد');
+  await page.getByLabel('حصة التوفر').fill('1');
   await expect(page.getByText(/متفرغون مؤكّدون:/)).toContainText('1 من 2');
+  await page.getByLabel('تاريخ مسودة الاحتياط').fill(await dateForWeekday(page, 0));
   await page.locator('.schedule-absent').getByLabel('أحمد').check();
   await expect(page.getByRole('heading', { name: 'معاينة الاحتياط للغياب' }).locator('..').locator('tbody')).toContainText('سالم');
   await page.reload();
-  if (testInfo.project.name === 'phone') await page.getByRole('button', { name: /عرض الأقسام/ }).click();
-  await page.getByRole('navigation', { name: testInfo.project.name === 'phone' ? 'أقسام الهاتف' : 'الأقسام الرئيسية' }).getByRole('button', { name: 'الجداول والاحتياط' }).click();
+  await openSchedules(page, testInfo.project.name === 'phone');
+  await page.getByLabel('يوم التوفر').selectOption('الأحد');
+  await page.getByLabel('حصة التوفر').fill('1');
   await expect(page.getByText(/متفرغون مؤكّدون:/)).toContainText('1 من 2');
 });
 test('wide template with missing period column is rejected without partial import', async ({ page }, testInfo) => {
@@ -85,6 +99,31 @@ test('wide template with missing period column is rejected without partial impor
   await expect(page.getByText(/أعمدة الحصص يجب أن تبدأ من ح1/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'اعتماد الجدول (2)' })).toBeDisabled();
   await expect(page.getByRole('heading', { name: 'الحصص المسجلة (0)' })).toBeVisible();
+});
+
+test('teacher lookup and period availability use the same verified schedule data', async ({ page }, testInfo) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    localStorage.setItem('nabd-al-injaz:schedules:v1', JSON.stringify({
+      teachers: ['وليد', 'سالم', 'أحمد'],
+      lessons: [
+        { id: 'lesson-1', teacher: 'وليد', day: 'الأحد', period: 1, description: '10/1 فيزياء' },
+        { id: 'lesson-2', teacher: 'أحمد', day: 'الأحد', period: 2, description: '9/2 فيزياء' },
+      ],
+      verifiedDays: [{ teacher: 'وليد', day: 'الأحد' }, { teacher: 'أحمد', day: 'الأحد' }],
+    }));
+  });
+  await page.reload();
+  await openSchedules(page, testInfo.project.name === 'phone');
+  await page.getByLabel('معلم الجدول').selectOption('وليد');
+  await page.getByLabel('يوم الجدول').selectOption('الأحد');
+  await expect(page.getByRole('region', { name: 'عرض جدول المعلم' })).toContainText('10/1 فيزياء');
+  await page.getByLabel('يوم التوفر').selectOption('الأحد');
+  await page.getByLabel('حصة التوفر').fill('1');
+  const availability = page.getByRole('region', { name: 'المتفرغون حسب الحصة' });
+  await expect(availability).toContainText('أحمد');
+  await expect(availability).toContainText('سالم');
+  await expect(availability).toContainText('لا يمكن تأكيد تفرغهم');
 });
 
 test('date-scoped cover draft persists and invalidates stale assignments', async ({ page }, testInfo) => {
@@ -111,8 +150,7 @@ test('date-scoped cover draft persists and invalidates stale assignments', async
   await expect(panel.getByText('تكليفات المسودة (1)')).toBeVisible();
   await expect(panel.getByText('صالح للمراجعة اليدوية')).toBeVisible();
   await page.reload();
-  if (testInfo.project.name === 'phone') await page.getByRole('button', { name: /عرض الأقسام/ }).click();
-  await page.getByRole('navigation', { name: testInfo.project.name === 'phone' ? 'أقسام الهاتف' : 'الأقسام الرئيسية' }).getByRole('button', { name: 'الجداول والاحتياط' }).click();
+  await openSchedules(page, testInfo.project.name === 'phone');
   const restored = page.getByRole('region', { name: 'مسودة توزيع الاحتياط' });
   await restored.getByLabel('تاريخ مسودة الاحتياط').fill('2026-11-10');
   await expect(restored.getByText('تكليفات المسودة (1)')).toBeVisible();

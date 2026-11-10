@@ -43,7 +43,7 @@ export default function CoverDraftPanel({ schedule }: { schedule: Schedule }) {
   const invalidCount = record.assignments.filter((a) => validateAssignment(schedule, store, a)).length;
   return (
     <section className="card cover-draft" aria-label="مسودة توزيع الاحتياط">
-      <h3>مسودة توزيع الاحتياط</h3>
+      <h3>معاينة الاحتياط للغياب</h3>
       <p>توزيع يدوي أو آلي مقترح، بتاريخ محدد، دون اعتماد رسمي أو رسائل. لا يُتاح البديل إلا إذا كان جدوله مكتملًا ومؤكدًا، وغير غائب أو مشغول.</p>
       <label>تاريخ الغياب<input aria-label="تاريخ مسودة الاحتياط" type="date" value={date} onChange={(e) => { setDate(e.target.value); setChoices({}); setMessage(''); }} /></label>
       <h4>سياسة توزيع البدائل</h4>
@@ -63,7 +63,7 @@ export default function CoverDraftPanel({ schedule }: { schedule: Schedule }) {
       </div>
       {!day ? <p role="status">اختر يومًا دراسيًا صالحًا من الأحد إلى الخميس.</p> : <>
         <p>اليوم: <strong>{day}</strong>. اختر الغائبين بعد التأكد من صحة التاريخ.</p>
-        <div className="cover-absences">
+        <div className="cover-absences schedule-absent">
           {schedule.teachers.map((name) => <label key={name}><input type="checkbox" checked={record.absent.includes(name)} onChange={(e) => saveAbsent(name, e.target.checked)} />{name}</label>)}
         </div>
         {record.absent.length > 0 && <>
