@@ -105,7 +105,7 @@ test('date-scoped cover draft persists and invalidates stale assignments', async
   await page.getByRole('button', { name: 'تأكيد اكتمال اليوم' }).click();
   const panel = page.getByRole('region', { name: 'مسودة توزيع الاحتياط' });
   await panel.getByLabel('تاريخ مسودة الاحتياط').fill('2026-11-10');
-  await panel.getByLabel('أحمد').check();
+  await panel.getByRole('checkbox', { name: 'أحمد' }).check();
   await panel.getByLabel('بديل أحمد الحصة 1').selectOption('سالم');
   await panel.getByRole('button', { name: 'إضافة للمسودة' }).click();
   await expect(panel.getByText('تكليفات المسودة (1)')).toBeVisible();
@@ -116,7 +116,7 @@ test('date-scoped cover draft persists and invalidates stale assignments', async
   const restored = page.getByRole('region', { name: 'مسودة توزيع الاحتياط' });
   await restored.getByLabel('تاريخ مسودة الاحتياط').fill('2026-11-10');
   await expect(restored.getByText('تكليفات المسودة (1)')).toBeVisible();
-  await restored.getByLabel('أحمد').uncheck();
+  await restored.getByRole('checkbox', { name: 'أحمد' }).uncheck();
   await expect(restored.getByRole('alert')).toContainText('تكليف غير صالح');
   await restored.getByRole('button', { name: 'إلغاء تكليف سالم عن أحمد' }).click();
   await expect(restored.getByText('تكليفات المسودة (0)')).toBeVisible();
