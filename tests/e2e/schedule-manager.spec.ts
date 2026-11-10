@@ -24,13 +24,17 @@ test('manual schedules persist, reject conflicts and show free teachers', async 
   await page.getByRole('textbox', { name: 'اسم المعلم' }).fill('سالم');
   await page.getByRole('button', { name: 'إضافة معلم' }).click();
   await page.getByLabel('معلم الحصة').selectOption('أحمد');
+  await page.getByLabel('يوم الحصة').selectOption('الأحد');
   await page.getByRole('button', { name: 'حفظ الحصة' }).click();
   await expect(page.getByText('تم تسجيل الحصة.')).toBeVisible();
+  await page.getByLabel('يوم التوفر').selectOption('الأحد');
   await expect(page.getByText(/متفرغون مؤكّدون:/)).toContainText('0 من 2');
   await page.getByLabel('معلم التحقق').selectOption('سالم');
+  await page.getByLabel('يوم التحقق').selectOption('الأحد');
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'تأكيد اكتمال اليوم' }).click();
   await expect(page.getByText(/متفرغون مؤكّدون:/)).toContainText('1 من 2');
+  await page.getByLabel('تاريخ مسودة الاحتياط').fill(await dateForWeekday(page, 0));
   await page.locator('.schedule-absent').getByLabel('أحمد').check();
   await expect(page.getByRole('heading', { name: 'معاينة الاحتياط للغياب' }).locator('..').locator('tbody')).toContainText('سالم');
   await page.getByRole('button', { name: 'حفظ الحصة' }).click();
@@ -38,6 +42,7 @@ test('manual schedules persist, reject conflicts and show free teachers', async 
   await page.reload();
   await openSchedules(page, testInfo.project.name === 'phone');
   await expect(page.getByRole('heading', { name: 'الحصص المسجلة (1)' })).toBeVisible();
+  await page.getByLabel('يوم التوفر').selectOption('الأحد');
   await expect(page.getByText(/متفرغون مؤكّدون:/)).toContainText('1 من 2');
   await page.screenshot({ path: 'test-results/schedules-' + testInfo.project.name + '.png', fullPage: true });
 });
