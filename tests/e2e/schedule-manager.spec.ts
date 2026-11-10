@@ -156,8 +156,15 @@ test('teacher lookup and period availability use the same verified schedule data
       JSON.stringify({
         teachers: ['وليد', 'سالم', 'أحمد'],
         lessons: [
-          { id: 'lesson-1', teacher: 'وليد', day: 'الأحد', period: 1, description: '10/1 فيزياء' },
-          { id: 'lesson-2', teacher: 'أحمد', day: 'الأحد', period: 2, description: '9/2 فيزياء' },
+          {
+            id: 'lesson-1',
+            teacher: 'وليد',
+            day: 'الأحد',
+            period: 1,
+            description: '10/1 الفيزياء',
+          },
+          { id: 'lesson-2', teacher: 'وليد', day: 'الثلاثاء', period: 3, description: '9/4 أحياء' },
+          { id: 'lesson-3', teacher: 'أحمد', day: 'الأحد', period: 2, description: '9/2 فيزياء' },
         ],
         verifiedDays: [
           { teacher: 'وليد', day: 'الأحد' },
@@ -169,8 +176,19 @@ test('teacher lookup and period availability use the same verified schedule data
   await page.reload();
   await openSchedules(page, testInfo.project.name === 'phone');
   await page.getByLabel('معلم الجدول').selectOption('وليد');
-  await page.getByLabel('يوم الجدول').selectOption('الأحد');
-  await expect(page.getByRole('region', { name: 'عرض جدول المعلم' })).toContainText('10/1 فيزياء');
+  const teacherGrid = page.getByRole('table', { name: 'الجدول الأسبوعي للمعلم وليد' });
+  await expect(teacherGrid.locator('thead th')).toHaveCount(8);
+  await expect(teacherGrid.locator('tbody tr')).toHaveCount(5);
+  const sunday = teacherGrid.locator('tbody tr').nth(0);
+  await expect(sunday).toContainText('10/1');
+  await expect(sunday).toContainText('الفيزياء');
+  const tuesday = teacherGrid.locator('tbody tr').nth(2);
+  await expect(tuesday.locator('td').nth(2)).toContainText('9/4');
+  await expect(tuesday.locator('td').nth(2)).toContainText('أحياء');
+  await expect(tuesday.locator('td').nth(0)).toHaveAttribute(
+    'aria-label',
+    'الثلاثاء، الحصة 1، لا توجد حصة مسجلة',
+  );
   await page.getByLabel('يوم التوفر').selectOption('الأحد');
   await page.getByLabel('حصة التوفر').fill('1');
   const availability = page.getByRole('region', { name: 'المتفرغون حسب الحصة' });

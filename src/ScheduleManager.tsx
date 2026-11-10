@@ -34,6 +34,25 @@ function currentSchoolDay(): Day {
   return weekday <= 4 ? DAYS[weekday] : 'الأحد';
 }
 
+const PERIOD_NAMES = ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة'];
+
+function lessonTone(description: string): number {
+  let hash = 0;
+  for (const character of description) hash = (hash * 31 + character.charCodeAt(0)) | 0;
+  return (Math.abs(hash) % 6) + 1;
+}
+
+function lessonDisplay(description: string): { subject: string; className: string } {
+  const subjectMatch = description.match(
+    /(العلوم العامة|الفيزياء|الكيمياء|الأحياء|العلوم|علوم عامة|فيزياء|كيمياء|أحياء|علوم)/u,
+  );
+  if (!subjectMatch) return { subject: '', className: description };
+  return {
+    subject: subjectMatch[0],
+    className: description.replace(subjectMatch[0], '').replace(/\s+/g, ' ').trim(),
+  };
+}
+
 export default function ScheduleManager() {
   const [schedule, setSchedule] = useState<Schedule>(readSchedule);
   const [teacherName, setTeacherName] = useState('');
@@ -48,7 +67,6 @@ export default function ScheduleManager() {
   const [wideConfirmed, setWideConfirmed] = useState(false);
   const [verificationTeacher, setVerificationTeacher] = useState('');
   const [lookupTeacher, setLookupTeacher] = useState('');
-  const [lookupDay, setLookupDay] = useState<Day>(currentSchoolDay);
   const [availabilityDay, setAvailabilityDay] = useState<Day>(currentSchoolDay);
   const [selectedFileName, setSelectedFileName] = useState('');
 
@@ -62,9 +80,11 @@ export default function ScheduleManager() {
   const provisionalFree = freeTeachers(schedule, availabilityDay, availabilityPeriod);
   const confirmedFree = verifiedFreeTeachers(schedule, availabilityDay, availabilityPeriod);
   const unverifiedFree = provisionalFree.filter((name) => !confirmedFree.includes(name));
-  const teacherLessons = schedule.lessons
-    .filter((lesson) => lesson.teacher === lookupTeacher && lesson.day === lookupDay)
-    .sort((a, b) => a.period - b.period);
+  const teacherLessons = schedule.lessons.filter((lesson) => lesson.teacher === lookupTeacher);
+  const visiblePeriods = Array.from(
+    { length: Math.max(7, ...teacherLessons.map((lesson) => lesson.period)) },
+    (_, index) => index + 1,
+  );
 
   const addTeacher = (event: FormEvent) => {
     event.preventDefault();
@@ -183,7 +203,7 @@ export default function ScheduleManager() {
           <div className="schedule-card-heading">
             <div>
               <span className="schedule-eyebrow">بحث سريع</span>
-              <h3>جدول معلم</h3>
+              <h3>{lookupTeacher ? `جدول ${lookupTeacher}` : 'جدول معلم'}</h3>
             </div>
             <CalendarDays size={21} aria-hidden="true" />
           </div>
@@ -201,44 +221,68 @@ export default function ScheduleManager() {
                 ))}
               </select>
             </label>
-            <label>
-              اليوم
-              <select
-                aria-label="يوم الجدول"
-                value={lookupDay}
-                onChange={(event) => setLookupDay(event.target.value as Day)}
-              >
-                {DAYS.map((day) => (
-                  <option key={day}>{day}</option>
-                ))}
-              </select>
-            </label>
           </div>
           {!lookupTeacher ? (
-            <p className="schedule-empty-hint">اختر اسم المعلم لعرض حصصه المسجلة في اليوم.</p>
-          ) : teacherLessons.length === 0 ? (
-            <p className="schedule-empty-hint">لا توجد حصص مسجلة لهذا المعلم في {lookupDay}.</p>
+            <p className="schedule-empty-hint">اختر اسم المعلم لعرض جدوله الأسبوعي كاملًا.</p>
           ) : (
-            <div className="schedule-table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>الحصة</th>
-                    <th>الصف أو المادة</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {teacherLessons.map((lesson) => (
-                    <tr key={lesson.id}>
-                      <td>
-                        <strong>{lesson.period}</strong>
-                      </td>
-                      <td>{lesson.description || 'غير محدد'}</td>
+            <>
+              <p className="schedule-grid-hint">
+                عرض أسبوعي من الأحد إلى الخميس. اسحب أفقيًا على الهاتف لرؤية جميع الحصص.
+              </p>
+              <div className="schedule-table-wrap schedule-week-wrap">
+                <table
+                  className="schedule-week-grid"
+                  aria-label={`الجدول الأسبوعي للمعلم ${lookupTeacher}`}
+                >
+                  <thead>
+                    <tr>
+                      <th className="schedule-week-day-heading" scope="col">
+                        اليوم
+                      </th>
+                      {visiblePeriods.map((period) => (
+                        <th key={period} scope="col" aria-label={`الحصة ${period}`}>
+                          {PERIOD_NAMES[period - 1] ?? `الحصة ${period}`}
+                          <small>الحصة {period}</small>
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {DAYS.map((day) => (
+                      <tr key={day}>
+                        <th scope="row" className="schedule-week-day">
+                          {day}
+                        </th>
+                        {visiblePeriods.map((period) => {
+                          const lesson = teacherLessons.find(
+                            (item) => item.day === day && item.period === period,
+                          );
+                          if (!lesson) {
+                            return (
+                              <td
+                                key={period}
+                                className="schedule-week-empty"
+                                aria-label={`${day}، الحصة ${period}، لا توجد حصة مسجلة`}
+                              />
+                            );
+                          }
+                          const display = lessonDisplay(lesson.description || 'غير محدد');
+                          return (
+                            <td
+                              key={period}
+                              className={`schedule-week-lesson schedule-tone-${lessonTone(lesson.description)}`}
+                            >
+                              {display.subject && <small>{display.subject}</small>}
+                              <strong>{display.className || 'غير محدد'}</strong>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </section>
 
