@@ -8,16 +8,16 @@ async function excelJsCompatibleData(data: ArrayBuffer): Promise<Uint8Array> {
   for (const entry of Object.values(archive.files)) {
     if (entry.dir || !entry.name.startsWith('xl/') || !entry.name.endsWith('.xml')) continue;
     const xml = await entry.async('string');
-    const namespace = xml.match(/xmlns:x=(["'])([^"']+)\\1/);
-    if (namespace?.[2] !== SPREADSHEET_NS || !/<\\/?x:[\\w.-]+\\b/.test(xml)) continue;
-    const defaultNamespace = xml.match(/xmlns=(["'])([^"']+)\\1/);
+    const namespace = xml.match(/xmlns:x=(["'])([^"']+)\1/);
+    if (namespace?.[2] !== SPREADSHEET_NS || !/<\/?x:[\w.-]+\b/.test(xml)) continue;
+    const defaultNamespace = xml.match(/xmlns=(["'])([^"']+)\1/);
     if (defaultNamespace && defaultNamespace[2] !== SPREADSHEET_NS) {
       throw new Error('صيغة XML داخل ملف Excel غير مدعومة. أعد حفظ الملف بصيغة XLSX من Excel.');
     }
     const compatibleXml = (defaultNamespace
       ? xml
       : xml.replace(namespace[0], namespace[0] + ' xmlns="' + SPREADSHEET_NS + '"')
-    ).replace(/(<\\/?)(x:)/g, '$1');
+    ).replace(/(<\/?)(x:)/g, '$1');
     archive.file(entry.name, compatibleXml);
   }
   return archive.generateAsync({ type: 'uint8array' });

@@ -269,7 +269,7 @@ test('imports Excel files with prefixed SpreadsheetML namespaces', async ({ page
     if (!xml.includes('xmlns="' + namespace + '"')) continue;
     const prefixedXml = xml
       .replace('xmlns="' + namespace + '"', 'xmlns:x="' + namespace + '"')
-      .replace(/(<\\/?)([A-Za-z_][\\w.-]*)(?=[\\s/>])/g, '$1x:$2');
+      .replace(/(<\/?)([A-Za-z_][\w.-]*)(?=[\s/>])/g, '$1x:$2');
     archive.file(name, prefixedXml);
   }
   const buffer = await archive.generateAsync({ type: 'nodebuffer' });
