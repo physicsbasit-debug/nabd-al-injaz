@@ -11,6 +11,7 @@ import {
 import TaskManager, { readTasks, STORAGE_KEY, type Task } from './TaskManager';
 import { toggleTaskCompletion } from './task-model';
 import ExecutiveDashboard from './ExecutiveDashboard';
+import DailySectionBoard from './DailySectionBoard';
 import PlanOverview from './PlanOverview';
 import PlanLibrary from './PlanLibrary';
 import ScheduleManager from './ScheduleManager';
@@ -110,6 +111,14 @@ export default function App() {
         </header>
         {tab === 'الرئيسية' ? (
           <>
+            <DailySectionBoard
+              tasks={tasks}
+              plans={plans}
+              onNavigate={(section) => {
+                setTab(section);
+                setMobileMenuOpen(false);
+              }}
+            />
             <PlanOverview
               plans={plans}
               onOpen={(id) => {

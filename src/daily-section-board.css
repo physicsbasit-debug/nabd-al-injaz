@@ -1,0 +1,161 @@
+.daily-section-board {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin-bottom: 20px;
+  padding: 22px;
+  border: 1px solid #dce9e3;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #f2f8f5 0%, #fff 72%);
+}
+.daily-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.daily-section-heading h2 {
+  margin: 5px 0 3px;
+  color: #193b33;
+  font-size: 23px;
+}
+.daily-section-heading p {
+  margin: 0;
+  color: #526c63;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.daily-section-count {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: #e5f1eb;
+  color: #126f60;
+  font-size: 12px;
+  font-weight: 800;
+}
+.daily-section-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.daily-section-card {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 16px;
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+  min-height: 108px;
+  padding: 14px 12px;
+  border: 1px solid #e0ebe5;
+  border-radius: 15px;
+  background: #fff;
+  color: #193b33;
+  text-align: right;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+.daily-section-card:hover {
+  border-color: #91c4b3;
+  box-shadow: 0 7px 18px rgba(18, 59, 53, 0.07);
+  transform: translateY(-1px);
+}
+.daily-section-card.is-attention {
+  border-right: 3px solid #cf8a5f;
+}
+.daily-section-card.is-pending {
+  background: #fbfcfb;
+}
+.daily-section-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: #eaf5ef;
+  color: #126f60;
+}
+.daily-section-copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.daily-section-copy strong {
+  font-size: 14px;
+  line-height: 1.45;
+}
+.daily-section-status {
+  color: #245d4e;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+.daily-section-card.is-attention .daily-section-status {
+  color: #94522d;
+}
+.daily-section-card.is-pending .daily-section-status {
+  color: #68766f;
+}
+.daily-section-copy small {
+  color: #60736a;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.daily-section-arrow {
+  align-self: center;
+  color: #709084;
+}
+.daily-section-card:focus-visible {
+  outline: 3px solid #0d9488;
+  outline-offset: 3px;
+}
+@media (max-width: 1100px) {
+  .daily-section-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .daily-section-board {
+    gap: 13px;
+    padding: 16px;
+    border-radius: 17px;
+  }
+  .daily-section-heading h2 {
+    font-size: 20px;
+  }
+  .daily-section-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .daily-section-card {
+    grid-template-columns: 30px minmax(0, 1fr) 12px;
+    gap: 6px;
+    min-height: 116px;
+    padding: 9px;
+  }
+  .daily-section-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+  }
+  .daily-section-copy strong {
+    font-size: 12px;
+  }
+  .daily-section-status {
+    font-size: 11px;
+  }
+  .daily-section-copy small {
+    font-size: 10px;
+  }
+  .daily-section-arrow {
+    width: 13px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .daily-section-card {
+    transition: none;
+  }
+}
