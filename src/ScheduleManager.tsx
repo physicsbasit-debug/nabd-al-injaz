@@ -6,12 +6,14 @@ import {
   CheckCircle2,
   Clock3,
   FileSpreadsheet,
+  RotateCcw,
   Users,
 } from 'lucide-react';
 import { previewScheduleExcel, type SchedulePreview } from './schedule-import';
 import {
   addLesson,
   DAYS,
+  EMPTY_SCHEDULE,
   freeTeachers,
   verifiedFreeTeachers,
   isDayVerified,
@@ -116,6 +118,19 @@ export default function ScheduleManager() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const clearSchedule = () => {
+    if (!schedule.teachers.length && !schedule.lessons.length) return;
+    const confirmed = window.confirm(
+      'سيُحذف جدول المعلمين الحالي بالكامل، بما فيه الحصص وتأكيدات اكتمال الأيام. ستبقى مسودات الاحتياط محفوظة، لكن ستُراجع صلاحيتها مقابل الجدول الجديد. هل تريد المتابعة؟',
+    );
+    if (!confirmed) return;
+    setSchedule(EMPTY_SCHEDULE);
+    setPreview(null);
+    setWideConfirmed(false);
+    setSelectedFileName('');
+    setMessage('تم حذف الجدول الحالي. يمكنك الآن اختيار ملف الجدول الجديد.');
   };
 
   const approve = () => {
@@ -326,6 +341,17 @@ export default function ScheduleManager() {
               ارفع ملف XLSX من تطبيق «الملفات» أو iCloud Drive. نعرض المعاينة والأخطاء قبل اعتماد أي
               بيانات.
             </p>
+            {schedule.teachers.length > 0 || schedule.lessons.length > 0 ? (
+              <button
+                type="button"
+                className="schedule-reset-button"
+                onClick={clearSchedule}
+                disabled={busy}
+              >
+                <RotateCcw size={17} aria-hidden="true" />
+                حذف الجدول الحالي لإتاحة استيراد جديد
+              </button>
+            ) : null}
             <label className="schedule-file-picker">
               <FileSpreadsheet size={20} aria-hidden="true" />
               <span>{busy ? 'جارٍ قراءة الملف…' : 'اختيار ملف Excel'}</span>

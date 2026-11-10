@@ -319,3 +319,51 @@ test('automatic cover respects exemptions and leaves same-period overflow visibl
   await expect(panel.locator('table').last()).toContainText('يوسف');
   await expect(panel.locator('table').last()).not.toContainText('ناصر');
 });
+
+test('existing schedule can be safely cleared before importing a replacement', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    localStorage.setItem(
+      'nabd-al-injaz:schedules:v1',
+      JSON.stringify({
+        teachers: ['أحمد'],
+        lessons: [
+          { id: 'old-lesson', teacher: 'أحمد', day: 'الأحد', period: 1, description: 'قديم' },
+        ],
+        verifiedDays: [{ teacher: 'أحمد', day: 'الأحد' }],
+      }),
+    );
+  });
+  await page.reload();
+  await openSchedules(page, testInfo.project.name === 'phone');
+  await expect(page.getByRole('heading', { name: 'الحصص المسجلة (1)' })).toBeVisible();
+
+  page.once('dialog', (dialog) => dialog.dismiss());
+  await page.getByRole('button', { name: 'حذف الجدول الحالي لإتاحة استيراد جديد' }).click();
+  await expect(page.getByRole('heading', { name: 'الحصص المسجلة (1)' })).toBeVisible();
+
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'حذف الجدول الحالي لإتاحة استيراد جديد' }).click();
+  await expect(page.getByRole('heading', { name: 'الحصص المسجلة (0)' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'حذف الجدول الحالي لإتاحة استيراد جديد' }),
+  ).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('nabd-al-injaz:schedules:v1')))
+    .toBe(JSON.stringify({ teachers: [], lessons: [], verifiedDays: [] }));
+
+  const wb = new ExcelJS.Workbook();
+  const sheet = wb.addWorksheet('جدول');
+  sheet.addRow(['المعلم', 'اليوم', 'الحصة', 'المادة']);
+  sheet.addRow(['سالم', 'الإثنين', 2, 'العلوم']);
+  await page.getByLabel('ملف جدول المعلمين').setInputFiles({
+    name: 'replacement.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer: Buffer.from(await wb.xlsx.writeBuffer()),
+  });
+  await expect(page.getByText('وصل الملف وقُرئ بنجاح')).toBeVisible();
+  await page.getByRole('button', { name: 'اعتماد الجدول (1)' }).click();
+  await expect(page.getByRole('heading', { name: 'الحصص المسجلة (1)' })).toBeVisible();
+});

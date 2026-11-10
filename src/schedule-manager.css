@@ -256,6 +256,21 @@
   outline: 3px solid #0d9488;
   outline-offset: 2px;
 }
+.schedule-reset-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 12px 0;
+  border-color: #b5473f !important;
+  background: #fff7f6 !important;
+  color: #8b2e28 !important;
+}
+.schedule-reset-button:focus-visible {
+  outline: 3px solid #b5473f;
+  outline-offset: 2px;
+}
 .schedule-selected-file {
   margin-top: 10px !important;
   padding: 10px 12px;
