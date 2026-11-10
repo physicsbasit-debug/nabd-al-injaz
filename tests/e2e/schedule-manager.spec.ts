@@ -86,3 +86,38 @@ test('wide template with missing period column is rejected without partial impor
   await expect(page.getByRole('button', { name: 'اعتماد الجدول (2)' })).toBeDisabled();
   await expect(page.getByRole('heading', { name: 'الحصص المسجلة (0)' })).toBeVisible();
 });
+
+test('date-scoped cover draft persists and invalidates stale assignments', async ({ page }, testInfo) => {
+  await openSchedules(page, testInfo.project.name === 'phone');
+  await page.getByRole('textbox', { name: 'اسم المعلم' }).fill('أحمد');
+  await page.getByRole('button', { name: 'إضافة معلم' }).click();
+  await page.getByRole('textbox', { name: 'اسم المعلم' }).fill('سالم');
+  await page.getByRole('button', { name: 'إضافة معلم' }).click();
+  await page.getByLabel('معلم الحصة').selectOption('أحمد');
+  await page.getByLabel('يوم الحصة').selectOption('الثلاثاء');
+  await page.getByRole('button', { name: 'حفظ الحصة' }).click();
+  await page.getByLabel('يوم التحقق').selectOption('الثلاثاء');
+  await page.getByLabel('معلم التحقق').selectOption('أحمد');
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'تأكيد اكتمال اليوم' }).click();
+  await page.getByLabel('معلم التحقق').selectOption('سالم');
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'تأكيد اكتمال اليوم' }).click();
+  const panel = page.getByRole('region', { name: 'مسودة توزيع الاحتياط' });
+  await panel.getByLabel('تاريخ مسودة الاحتياط').fill('2026-11-10');
+  await panel.getByRole('checkbox', { name: 'أحمد' }).check();
+  await panel.getByLabel('بديل أحمد الحصة 1').selectOption('سالم');
+  await panel.getByRole('button', { name: 'إضافة للمسودة' }).click();
+  await expect(panel.getByText('تكليفات المسودة (1)')).toBeVisible();
+  await expect(panel.getByText('صالح للمراجعة اليدوية')).toBeVisible();
+  await page.reload();
+  if (testInfo.project.name === 'phone') await page.getByRole('button', { name: /عرض الأقسام/ }).click();
+  await page.getByRole('navigation', { name: testInfo.project.name === 'phone' ? 'أقسام الهاتف' : 'الأقسام الرئيسية' }).getByRole('button', { name: 'الجداول والاحتياط' }).click();
+  const restored = page.getByRole('region', { name: 'مسودة توزيع الاحتياط' });
+  await restored.getByLabel('تاريخ مسودة الاحتياط').fill('2026-11-10');
+  await expect(restored.getByText('تكليفات المسودة (1)')).toBeVisible();
+  await restored.getByRole('checkbox', { name: 'أحمد' }).uncheck();
+  await expect(restored.getByRole('alert')).toContainText('تكليف غير صالح');
+  await restored.getByRole('button', { name: 'إلغاء تكليف سالم عن أحمد' }).click();
+  await expect(restored.getByText('تكليفات المسودة (0)')).toBeVisible();
+});

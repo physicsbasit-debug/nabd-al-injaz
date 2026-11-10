@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { previewScheduleExcel, type SchedulePreview } from './schedule-import';
 import { addLesson, DAYS, freeTeachers, verifiedFreeTeachers, isDayVerified, setDayVerification, mergeScheduleBatch, removeLesson, absenceSlots, coverCandidates, normalizeTeacher, readSchedule, SCHEDULE_STORAGE_KEY, type Day, type Schedule } from './schedule-model';
 import './schedule-manager.css';
+import CoverDraftPanel from './CoverDraftPanel';
 
 export default function ScheduleManager() {
   const [schedule, setSchedule] = useState<Schedule>(readSchedule);
@@ -137,6 +138,7 @@ export default function ScheduleManager() {
           return <tr key={slot.id}><td>{slot.teacher}</td><td>{slot.period}</td><td>{slot.description || 'غير محدد'}</td><td>{candidates.length ? candidates.join('، ') : 'لا يوجد مرشح مؤكد'}</td></tr>;
         })}</tbody></table></div>)}
       </section>
+      <CoverDraftPanel schedule={schedule} />
       <section className="card">
         <h3>الحصص المسجلة ({schedule.lessons.length})</h3>
         <div className="schedule-table-wrap"><table><thead><tr><th>المعلم</th><th>اليوم</th><th>الحصة</th><th>المادة</th><th>إجراء</th></tr></thead><tbody>{schedule.lessons.map((lesson) => <tr key={lesson.id}><td>{lesson.teacher}</td><td>{lesson.day}</td><td>{lesson.period}</td><td>{lesson.description}</td><td><button type="button" aria-label={'حذف حصة ' + lesson.teacher + ' ' + lesson.day + ' ' + lesson.period} onClick={() => { if (window.confirm('حذف هذه الحصة من الجدول؟')) setSchedule((current) => removeLesson(current, lesson.id)); }}>حذف</button></td></tr>)}</tbody></table></div>
