@@ -42,14 +42,27 @@ function lessonTone(description: string): number {
   return (Math.abs(hash) % 6) + 1;
 }
 
-function lessonDisplay(description: string): { subject: string; className: string } {
+function lessonDisplay(description: string): {
+  subject: string;
+  className: string;
+  classCode: string;
+} {
   const subjectMatch = description.match(
     /(العلوم العامة|الفيزياء|الكيمياء|الأحياء|العلوم|علوم عامة|فيزياء|كيمياء|أحياء|علوم)/u,
   );
-  if (!subjectMatch) return { subject: '', className: description };
+  const cleaned = (subjectMatch ? description.replace(subjectMatch[0], '') : description)
+    .replace(/^[\s\-–—|:،/]+|[\s\-–—|:،/]+$/g, '')
+    .replace(/\s+/g, ' ');
+  const gradeMatch = cleaned.match(
+    /(الثامن|التاسع|العاشر|10|9|8)\s*(?:أساسي)?\s*[/ -]\s*([0-9٠-٩]+)/u,
+  );
+  const gradeCode = gradeMatch
+    ? ({ الثامن: '8', التاسع: '9', العاشر: '10' }[gradeMatch[1]] ?? gradeMatch[1])
+    : '';
   return {
-    subject: subjectMatch[0],
-    className: description.replace(subjectMatch[0], '').replace(/\s+/g, ' ').trim(),
+    subject: subjectMatch?.[0] ?? '',
+    className: cleaned || 'غير محدد',
+    classCode: gradeMatch ? `${gradeCode}-${gradeMatch[2]}` : '',
   };
 }
 
@@ -200,12 +213,9 @@ export default function ScheduleManager() {
 
       <div className="schedule-quick-grid">
         <section className="card schedule-lookup" aria-label="عرض جدول المعلم">
-          <div className="schedule-card-heading">
-            <div>
-              <span className="schedule-eyebrow">بحث سريع</span>
-              <h3>{lookupTeacher ? `جدول ${lookupTeacher}` : 'جدول معلم'}</h3>
-            </div>
-            <CalendarDays size={21} aria-hidden="true" />
+          <div className="schedule-week-titlebar">
+            <span>مدرسة الباسط للتعليم الأساسي (8–10)</span>
+            <h3>{lookupTeacher || 'الجدول الأسبوعي للمعلم'}</h3>
           </div>
           <div className="schedule-query">
             <label>
@@ -226,9 +236,7 @@ export default function ScheduleManager() {
             <p className="schedule-empty-hint">اختر اسم المعلم لعرض جدوله الأسبوعي كاملًا.</p>
           ) : (
             <>
-              <p className="schedule-grid-hint">
-                عرض أسبوعي من الأحد إلى الخميس. اسحب أفقيًا على الهاتف لرؤية جميع الحصص.
-              </p>
+              <p className="schedule-grid-hint">الأحد إلى الخميس</p>
               <div className="schedule-table-wrap schedule-week-wrap">
                 <table
                   className="schedule-week-grid"
@@ -272,8 +280,17 @@ export default function ScheduleManager() {
                               key={period}
                               className={`schedule-week-lesson schedule-tone-${lessonTone(lesson.description)}`}
                             >
-                              {display.subject && <small>{display.subject}</small>}
-                              <strong>{display.className || 'غير محدد'}</strong>
+                              <div className="schedule-week-lesson-content">
+                                {display.subject && (
+                                  <small className="schedule-week-subject">{display.subject}</small>
+                                )}
+                                {display.classCode && (
+                                  <small className="schedule-week-class-code">
+                                    {display.classCode}
+                                  </small>
+                                )}
+                                <strong>{display.className}</strong>
+                              </div>
                             </td>
                           );
                         })}

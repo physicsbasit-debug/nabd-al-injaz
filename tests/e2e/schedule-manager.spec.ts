@@ -161,9 +161,15 @@ test('teacher lookup and period availability use the same verified schedule data
             teacher: 'وليد',
             day: 'الأحد',
             period: 1,
-            description: '10/1 الفيزياء',
+            description: 'الفيزياء - العاشر أساسي/1',
           },
-          { id: 'lesson-2', teacher: 'وليد', day: 'الثلاثاء', period: 3, description: '9/4 أحياء' },
+          {
+            id: 'lesson-2',
+            teacher: 'وليد',
+            day: 'الثلاثاء',
+            period: 3,
+            description: 'الأحياء - التاسع أساسي/4',
+          },
           { id: 'lesson-3', teacher: 'أحمد', day: 'الأحد', period: 2, description: '9/2 فيزياء' },
         ],
         verifiedDays: [
@@ -180,11 +186,13 @@ test('teacher lookup and period availability use the same verified schedule data
   await expect(teacherGrid.locator('thead th')).toHaveCount(8);
   await expect(teacherGrid.locator('tbody tr')).toHaveCount(5);
   const sunday = teacherGrid.locator('tbody tr').nth(0);
-  await expect(sunday).toContainText('10/1');
+  await expect(sunday).toContainText('العاشر أساسي/1');
   await expect(sunday).toContainText('الفيزياء');
+  await expect(sunday).toContainText('10-1');
   const tuesday = teacherGrid.locator('tbody tr').nth(2);
-  await expect(tuesday.locator('td').nth(2)).toContainText('9/4');
+  await expect(tuesday.locator('td').nth(2)).toContainText('التاسع أساسي/4');
   await expect(tuesday.locator('td').nth(2)).toContainText('أحياء');
+  await expect(tuesday.locator('td').nth(2)).toContainText('9-4');
   await expect(tuesday.locator('td').nth(0)).toHaveAttribute(
     'aria-label',
     'الثلاثاء، الحصة 1، لا توجد حصة مسجلة',
