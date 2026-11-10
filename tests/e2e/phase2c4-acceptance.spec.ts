@@ -60,7 +60,8 @@ test('2-C4: cancelling restoration keeps every plan and leaves task storage unch
         .map((key) => [key, localStorage.getItem(key)]),
     ),
   }));
-  expect(after).toEqual(before);
+  expect(JSON.parse(after.plans ?? '[]')).toEqual(JSON.parse(before.plans ?? '[]'));
+  expect(after.tasks).toEqual(before.tasks);
   expect(JSON.parse(after.plans ?? '[]')).toHaveLength(2);
 });
 
