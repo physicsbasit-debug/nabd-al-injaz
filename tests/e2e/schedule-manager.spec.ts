@@ -121,3 +121,63 @@ test('date-scoped cover draft persists and invalidates stale assignments', async
   await restored.getByRole('button', { name: 'إلغاء تكليف سالم عن أحمد' }).click();
   await expect(restored.getByText('تكليفات المسودة (0)')).toBeVisible();
 });
+
+test('imports the approved 9-teacher, 45-day, 162-lesson workbook shape atomically', async ({ page }, testInfo) => {
+  const wb = new ExcelJS.Workbook();
+  const sheet = wb.addWorksheet('بيانات الاستيراد');
+  sheet.addRow(['المعلم', 'اليوم', 'ح1', 'ح2', 'ح3', 'ح4', 'ح5', 'ح6', 'ح7', 'التخصص']);
+  let placed = 0;
+  for (const teacher of Array.from({ length: 9 }, (_, index) => 'معلم ' + (index + 1))) {
+    for (const day of ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس']) {
+      const row: (string | number)[] = [teacher, day];
+      for (let period = 1; period <= 7; period += 1) {
+        row.push(placed < 162 ? '10/' + ((placed % 7) + 1) + ' فيزياء' : '');
+        if (placed < 162) placed += 1;
+      }
+      row.push('فيزياء');
+      sheet.addRow(row);
+    }
+  }
+  const buffer = Buffer.from(await wb.xlsx.writeBuffer());
+  await openSchedules(page, testInfo.project.name === 'phone');
+  await page.getByLabel('ملف جدول المعلمين').setInputFiles({ name: 'approved-shape.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer });
+  await expect(page.getByText(/نوع القالب: جدول حصص أفقي، صفوف المعلمين: 45، حصص صالحة: 162، أيام قابلة للتوثيق: 45، أخطاء: 0/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'اعتماد الجدول (162)' })).toBeDisabled();
+  await page.getByRole('checkbox', { name: /أؤكد أن صفوف الأيام كاملة/ }).check();
+  await page.getByRole('button', { name: 'اعتماد الجدول (162)' }).click();
+  await expect(page.getByRole('heading', { name: 'الحصص المسجلة (162)' })).toBeVisible();
+  await expect(page.getByText('تم اعتماد 162 حصة و45 يومًا موثق الاكتمال، دون استبدال البيانات السابقة.')).toBeVisible();
+});
+
+test('automatic cover respects exemptions and leaves same-period overflow visible', async ({ page }, testInfo) => {
+  await openSchedules(page, testInfo.project.name === 'phone');
+  for (const name of ['أحمد', 'سالم', 'علي', 'ناصر', 'يوسف']) {
+    await page.getByRole('textbox', { name: 'اسم المعلم' }).fill(name);
+    await page.getByRole('button', { name: 'إضافة معلم' }).click();
+  }
+  await page.getByLabel('يوم الحصة').selectOption('الثلاثاء');
+  for (const name of ['أحمد', 'سالم', 'علي']) {
+    await page.getByLabel('معلم الحصة').selectOption(name);
+    await page.getByRole('button', { name: 'حفظ الحصة' }).click();
+  }
+  await page.getByLabel('يوم التحقق').selectOption('الثلاثاء');
+  for (const name of ['أحمد', 'سالم', 'علي', 'ناصر', 'يوسف']) {
+    await page.getByLabel('معلم التحقق').selectOption(name);
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'تأكيد اكتمال اليوم' }).click();
+  }
+  const panel = page.getByRole('region', { name: 'مسودة توزيع الاحتياط' });
+  await panel.getByLabel('تاريخ مسودة الاحتياط').fill('2026-11-10');
+  await panel.getByRole('checkbox', { name: 'أحمد' }).check();
+  await panel.getByRole('checkbox', { name: 'سالم' }).check();
+  const exemptPolicy = panel.locator('[data-teacher="ناصر"]');
+  await exemptPolicy.locator('summary').click();
+  await panel.getByLabel('استثناء ناصر').check();
+  await panel.getByRole('button', { name: 'توزيع تلقائي للمسودة' }).click();
+  await expect(panel.getByRole('status')).toContainText('أُضيف 1 تكليفًا');
+  await expect(panel.getByText('تكليفات المسودة (1)')).toBeVisible();
+  await expect(panel.locator('table').first()).toContainText('لا يوجد بديل مؤكد');
+  await expect(panel.locator('table').last()).toContainText('يوسف');
+  await expect(panel.locator('table').last()).not.toContainText('ناصر');
+});
+

@@ -131,9 +131,9 @@ export default function ScheduleManager() {
       </section>
       <section className="card">
         <h3>معاينة الاحتياط للغياب</h3>
-        <p>اختر المعلمين الغائبين في اليوم المحدد. تُعرض حصصهم التي تحتاج تغطية والمرشحون المتفرغون المؤكدون فقط. لا يجري أي توزيع أو إرسال تلقائي.</p>
+        <p>اختر المعلمين الغائبين في اليوم المحدد. هذه معاينة أولية للمتفرغين المؤكدين فقط؛ راجع الاستثناءات والرصيد في لوحة المسودة قبل اختيار البديل. لا يجري هنا أي توزيع أو إرسال.</p>
         <div className="schedule-absent">{schedule.teachers.map((name) => <label key={name}><input type="checkbox" checked={absentTeachers.includes(name)} onChange={(e) => setAbsentTeachers((old) => e.target.checked ? [...old, name] : old.filter((n) => n !== name))} />{name}</label>)}</div>
-        {absentTeachers.length > 0 && (slots.length === 0 ? <p>لا توجد حصص مسجلة للغائبين في هذا اليوم؛ قد يكون الجدول ناقصًا، فلا يمكن الجزم بعدم وجود احتياط.</p> : <div className="schedule-table-wrap"><table><thead><tr><th>الغائب</th><th>الحصة</th><th>الصف أو المادة</th><th>مرشحون مؤكدون</th></tr></thead><tbody>{slots.map((slot) => {
+        {absentTeachers.length > 0 && (slots.length === 0 ? <p>لا توجد حصص مسجلة للغائبين في هذا اليوم؛ قد يكون الجدول ناقصًا، فلا يمكن الجزم بعدم وجود احتياط.</p> : <div className="schedule-table-wrap"><table><thead><tr><th>الغائب</th><th>الحصة</th><th>الصف أو المادة</th><th>متفرغون مبدئيًا</th></tr></thead><tbody>{slots.map((slot) => {
           const candidates = coverCandidates(schedule, day, slot.period, absentTeachers);
           return <tr key={slot.id}><td>{slot.teacher}</td><td>{slot.period}</td><td>{slot.description || 'غير محدد'}</td><td>{candidates.length ? candidates.join('، ') : 'لا يوجد مرشح مؤكد'}</td></tr>;
         })}</tbody></table></div>)}
