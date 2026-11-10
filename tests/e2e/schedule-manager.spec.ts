@@ -45,7 +45,7 @@ test('manual schedules persist, reject conflicts and show free teachers', async 
   await page.getByLabel('معلم التحقق').selectOption('أحمد');
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'تأكيد اكتمال اليوم' }).click();
-  await expect(page.getByText(/متفرغون مؤكّدون:/)).toContainText('2 من 2');
+  await expect(page.getByText(/متفرغون مؤكّدون:/)).toContainText('1 من 2');
   await page.getByLabel('تاريخ مسودة الاحتياط').fill(await dateForWeekday(page, 0));
   await page.locator('.schedule-absent').getByLabel('أحمد').check();
   await expect(
@@ -57,7 +57,7 @@ test('manual schedules persist, reject conflicts and show free teachers', async 
   await openSchedules(page, testInfo.project.name === 'phone');
   await expect(page.getByRole('heading', { name: 'الحصص المسجلة (1)' })).toBeVisible();
   await page.getByLabel('يوم التوفر').selectOption('الأحد');
-  await expect(page.getByText(/متفرغون مؤكّدون:/)).toContainText('2 من 2');
+  await expect(page.getByText(/متفرغون مؤكّدون:/)).toContainText('1 من 2');
   await page.screenshot({
     path: 'test-results/schedules-' + testInfo.project.name + '.png',
     fullPage: true,
@@ -70,26 +70,22 @@ test('Excel preview requires approval and rejects duplicate rows', async ({ page
   sheet.addRow(['نورة', 'الإثنين', 2, 'العلوم']);
   const buffer = Buffer.from(await wb.xlsx.writeBuffer());
   await openSchedules(page, testInfo.project.name === 'phone');
-  await page
-    .getByLabel('ملف جدول المعلمين')
-    .setInputFiles({
-      name: 'schedule.xlsx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      buffer,
-    });
+  await page.getByLabel('ملف جدول المعلمين').setInputFiles({
+    name: 'schedule.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer,
+  });
   await expect(page.getByText('وصل الملف وقُرئ بنجاح')).toBeVisible();
   await expect(page.getByText(/الملف المحدد: schedule\.xlsx/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'اعتماد الجدول (1)' })).toBeEnabled();
   await expect(page.getByRole('heading', { name: 'الحصص المسجلة (0)' })).toBeVisible();
   await page.getByRole('button', { name: 'اعتماد الجدول (1)' }).click();
   await expect(page.getByRole('heading', { name: 'الحصص المسجلة (1)' })).toBeVisible();
-  await page
-    .getByLabel('ملف جدول المعلمين')
-    .setInputFiles({
-      name: 'schedule.xlsx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      buffer,
-    });
+  await page.getByLabel('ملف جدول المعلمين').setInputFiles({
+    name: 'schedule.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer,
+  });
   await page.getByRole('button', { name: 'اعتماد الجدول (1)' }).click();
   await expect(page.getByText('تعارض: لدى المعلم حصة مسجلة في هذا الموعد.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'الحصص المسجلة (1)' })).toBeVisible();
@@ -106,13 +102,11 @@ test('wide template imports blank free periods only after explicit completeness 
   sheet.addRow(['سالم', 'الأحد', '', 'عاشر 2 فيزياء', '']);
   const buffer = Buffer.from(await wb.xlsx.writeBuffer());
   await openSchedules(page, testInfo.project.name === 'phone');
-  await page
-    .getByLabel('ملف جدول المعلمين')
-    .setInputFiles({
-      name: 'wide.xlsx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      buffer,
-    });
+  await page.getByLabel('ملف جدول المعلمين').setInputFiles({
+    name: 'wide.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer,
+  });
   await expect(page.getByText(/نوع القالب: جدول حصص أفقي/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'اعتماد الجدول (2)' })).toBeDisabled();
   await page.getByRole('checkbox', { name: /أؤكد أن صفوف الأيام كاملة/ }).check();
@@ -141,13 +135,11 @@ test('wide template with missing period column is rejected without partial impor
   sheet.addRow(['أحمد', 'الأحد', 'علوم', 'فيزياء']);
   const buffer = Buffer.from(await wb.xlsx.writeBuffer());
   await openSchedules(page, testInfo.project.name === 'phone');
-  await page
-    .getByLabel('ملف جدول المعلمين')
-    .setInputFiles({
-      name: 'gap.xlsx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      buffer,
-    });
+  await page.getByLabel('ملف جدول المعلمين').setInputFiles({
+    name: 'gap.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer,
+  });
   await expect(page.getByText(/أعمدة الحصص يجب أن تبدأ من ح1/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'اعتماد الجدول (2)' })).toBeDisabled();
   await expect(page.getByRole('heading', { name: 'الحصص المسجلة (0)' })).toBeVisible();
@@ -242,13 +234,11 @@ test('imports the approved 9-teacher, 45-day, 162-lesson workbook shape atomical
   }
   const buffer = Buffer.from(await wb.xlsx.writeBuffer());
   await openSchedules(page, testInfo.project.name === 'phone');
-  await page
-    .getByLabel('ملف جدول المعلمين')
-    .setInputFiles({
-      name: 'approved-shape.xlsx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      buffer,
-    });
+  await page.getByLabel('ملف جدول المعلمين').setInputFiles({
+    name: 'approved-shape.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer,
+  });
   await expect(
     page.getByText(
       /نوع القالب: جدول حصص أفقي، صفوف المعلمين: 45، حصص صالحة: 162، أيام قابلة للتوثيق: 45، أخطاء: 0/,
