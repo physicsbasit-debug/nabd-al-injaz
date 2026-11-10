@@ -63,20 +63,26 @@
   grid-column: 1 / -1;
 }
 .schedule-week-titlebar {
-  margin: 0 0 18px;
-  padding: 4px 0 15px;
-  border-bottom: 2px solid #29342f;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  margin: 0 0 16px;
+  padding: 16px 18px;
+  border: 1px solid #d7e7df;
+  border-radius: 16px;
+  background: linear-gradient(115deg, #f1f8f4 0%, #fff 70%);
   text-align: center;
 }
 .schedule-week-titlebar > span {
-  color: #687770;
-  font-size: 12px;
+  display: block;
+  color: #557268;
+  font-size: 13px;
   font-weight: 700;
 }
 .schedule-week-titlebar h3 {
-  margin: 5px 0 0;
-  color: #172c25;
-  font-size: clamp(23px, 3vw, 30px);
+  margin: 3px 0 0;
+  color: #123f35;
+  font-size: clamp(22px, 3vw, 28px);
   font-weight: 800;
 }
 .schedule-lookup .schedule-query label {
@@ -219,9 +225,10 @@
   text-align: center;
 }
 .schedule-week-wrap {
-  border: 1px solid #47514d;
-  border-radius: 4px;
+  border: 1px solid #cbdcd4;
+  border-radius: 14px;
   background: #fff;
+  box-shadow: 0 8px 22px rgb(23 62 53 / 7%);
   overscroll-behavior-inline: contain;
   -webkit-overflow-scrolling: touch;
 }
@@ -229,35 +236,38 @@
   min-width: 900px;
   table-layout: fixed;
   direction: rtl;
-  border: 2px solid #252b28;
+  border: 2px solid #234b40;
 }
 .schedule-week-grid th,
 .schedule-week-grid td {
-  border: 1px solid #626a66;
+  border: 1px solid #c9d5cf;
   padding: 8px 7px;
   text-align: center;
 }
 .schedule-week-grid thead th {
-  height: 58px;
-  background: #fff;
-  color: #1e2925;
+  height: 64px;
+  background: #edf5f1;
+  color: #214c40;
   font-size: 16px;
   font-weight: 800;
 }
 .schedule-week-grid thead th small {
   display: block;
   margin-top: 3px;
-  color: #73837c;
+  color: #688076;
   font-size: 10px;
   font-weight: 600;
 }
 .schedule-week-grid .schedule-week-day-heading,
 .schedule-week-grid .schedule-week-day {
   width: 122px;
-  background: #fff;
-  color: #1e2925;
+  background: #174b3d;
+  color: #fff;
   font-size: 19px;
   font-weight: 800;
+}
+.schedule-week-grid .schedule-week-day-heading {
+  background: #123d33;
 }
 .schedule-week-grid .schedule-week-day {
   height: 104px;
@@ -267,13 +277,18 @@
   height: 104px;
 }
 .schedule-week-grid .schedule-week-empty {
-  background: #fff;
+  background: #fcfdfc;
 }
 .schedule-week-grid .schedule-week-lesson {
   position: relative;
-  border-left: 10px solid var(--lesson-accent);
-  background: #fff;
+  border-left: 8px solid var(--lesson-accent);
+  background: var(--lesson-tint);
   padding: 0;
+  transition: filter 140ms ease, box-shadow 140ms ease;
+}
+.schedule-week-grid .schedule-week-lesson:hover {
+  filter: saturate(1.1);
+  box-shadow: inset 0 0 0 2px rgb(23 62 53 / 12%);
 }
 .schedule-week-lesson-content {
   position: relative;
@@ -283,7 +298,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20px 8px 7px;
+  padding: 22px 8px 7px;
 }
 .schedule-week-grid .schedule-week-lesson .schedule-week-subject,
 .schedule-week-grid .schedule-week-lesson .schedule-week-class-code {
@@ -295,17 +310,17 @@
 }
 .schedule-week-grid .schedule-week-lesson .schedule-week-subject {
   inset-inline-start: 7px;
-  color: #52635c;
+  color: #4f6b60;
   text-align: right;
 }
 .schedule-week-grid .schedule-week-lesson .schedule-week-class-code {
   inset-inline-end: 7px;
-  color: #39433f;
+  color: #36574a;
   text-align: left;
 }
 .schedule-week-grid .schedule-week-lesson strong {
   display: block;
-  color: #162e28;
+  color: #173c32;
   font-size: clamp(17px, 1.9vw, 23px);
   font-weight: 700;
   line-height: 1.35;
@@ -313,21 +328,27 @@
 }
 .schedule-week-grid .schedule-tone-1 {
   --lesson-accent: #33c3eb;
+  --lesson-tint: #effaff;
 }
 .schedule-week-grid .schedule-tone-2 {
   --lesson-accent: #ed2833;
+  --lesson-tint: #fff2f1;
 }
 .schedule-week-grid .schedule-tone-3 {
   --lesson-accent: #aa007f;
+  --lesson-tint: #fff2fc;
 }
 .schedule-week-grid .schedule-tone-4 {
   --lesson-accent: #9c1a17;
+  --lesson-tint: #fff3f1;
 }
 .schedule-week-grid .schedule-tone-5 {
   --lesson-accent: #b9bec0;
+  --lesson-tint: #f5f7f6;
 }
 .schedule-week-grid .schedule-tone-6 {
   --lesson-accent: #ee89e2;
+  --lesson-tint: #fff4fd;
 }
 .schedule-settings {
   overflow: hidden;
