@@ -5,7 +5,7 @@ import {
   EVIDENCE_TYPES,
   type Evidence,
 } from './evidence-store';
-import { PLAN_STORAGE_KEY, type Plan } from './plan-model';
+import { PLAN_KINDS, PLAN_STORAGE_KEY, type Plan } from './plan-model';
 
 const FORMAT = 'nabd-al-injaz-plans-evidence';
 const VERSION = 1;
@@ -46,7 +46,7 @@ function validPlan(value: unknown): value is Plan {
     !!value.id &&
     typeof value.title === 'string' &&
     !!value.title.trim() &&
-    typeof value.kind === 'string' &&
+    PLAN_KINDS.includes(value.kind as Plan['kind']) &&
     typeof value.owner === 'string' &&
     typeof value.periodStart === 'string' &&
     typeof value.periodEnd === 'string' &&
