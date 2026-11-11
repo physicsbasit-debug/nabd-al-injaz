@@ -95,7 +95,7 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
       icon: CalendarDays,
       status: day ? `${lessonsToday} حصة مسجلة اليوم` : 'اليوم خارج أيام الدوام المسجلة',
       detail: dayCover.absent.length
-        ? `${dayCover.absent.length} غياب · ${coverSummary?.assigned ?? 0} مغطاة · ${coverSummary?.uncovered ?? 0} دون بديل${coverSummary?.processedAt ? ' · محفوظة' : ' · مسودة'}`
+        ? `${dayCover.absent.length} غياب مسجل · ${coverSummary?.assigned ?? 0} مغطاة · ${coverSummary?.uncovered ?? 0} دون بديل${coverSummary?.processedAt ? ' · محفوظة' : ' · مسودة'}`
         : schedule.teachers.length
           ? 'لم يُسجل غياب لهذا اليوم'
           : 'ارفع جدول المعلمين للبدء',
