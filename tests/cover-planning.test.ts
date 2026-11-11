@@ -84,7 +84,7 @@ describe('date-scoped cover planning', () => {
     let store = setCoverAbsences(EMPTY_COVER_STORE, date, ['أحمد'], schedule);
     const firstSlot = schedule.lessons.find((lesson) => lesson.teacher === 'أحمد' && lesson.period === 1)!;
     expect(draftCandidates(schedule, store, date, firstSlot.id).slice(0, 2)).toEqual(expect.arrayContaining(['نورة', 'سالم']));
-    expect(draftCandidates(schedule, store, date, firstSlot.id)).not.toContain('علي');
+    expect(draftCandidates(schedule, store, date, firstSlot.id).at(-1)).toBe('علي');
 
     const secondSlot = schedule.lessons.find((lesson) => lesson.teacher === 'أحمد' && lesson.period === 2)!;
     store = addCoverAssignment(schedule, store, date, secondSlot.id, 'سالم');
