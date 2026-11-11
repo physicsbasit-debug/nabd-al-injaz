@@ -16,6 +16,7 @@ import PlanOverview from './PlanOverview';
 import PlanLibrary from './PlanLibrary';
 import ScheduleManager from './ScheduleManager';
 import TechnicalFollowup from './TechnicalFollowup';
+import AppBackupTools from './AppBackupTools';
 import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
   ['الرئيسية', Activity],
@@ -112,6 +113,7 @@ export default function App() {
         </header>
         {tab === 'الرئيسية' ? (
           <>
+            <AppBackupTools plans={plans} setPlans={setPlans} setTasks={setTasks} />
             <DailySectionBoard
               tasks={tasks}
               plans={plans}

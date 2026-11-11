@@ -18,6 +18,7 @@ type Archive = {
   plans: Plan[];
   evidence: FileEntry[];
 };
+export type PlansBackupArchive = Archive;
 
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
@@ -69,7 +70,7 @@ function validPlan(value: unknown): value is Plan {
     )
   );
 }
-export async function exportPlansBackup(plans: Plan[]): Promise<void> {
+export async function createPlansBackupArchive(plans: Plan[]): Promise<PlansBackupArchive> {
   const records = await allEvidence();
   const linked = new Set(plans.flatMap((p) => p.activities.map((a) => p.id + ':' + a.id)));
   const evidence: FileEntry[] = [];
@@ -97,6 +98,10 @@ export async function exportPlansBackup(plans: Plan[]): Promise<void> {
     plans,
     evidence,
   };
+  return archive;
+}
+export async function exportPlansBackup(plans: Plan[]): Promise<void> {
+  const archive = await createPlansBackupArchive(plans);
   download(
     new Blob([JSON.stringify(archive)], { type: 'application/json' }),
     'nabd-plans-evidence-' + new Date().toISOString().slice(0, 10) + '.json',
