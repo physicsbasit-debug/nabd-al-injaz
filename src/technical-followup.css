@@ -1,0 +1,358 @@
+.technical-followup {
+  display: grid;
+  gap: 18px;
+  color: #193b33;
+}
+.technical-heading,
+.technical-list-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.technical-heading h2,
+.technical-list-heading h3 {
+  margin: 5px 0;
+  font-size: 25px;
+}
+.technical-heading p,
+.technical-list-heading p {
+  margin: 4px 0;
+  color: #526c63;
+}
+.technical-eyebrow {
+  color: #0d8172;
+  font-size: 13px;
+  font-weight: 700;
+}
+.technical-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.technical-summary article {
+  background: #fff;
+  border: 1px solid #e2ebe7;
+  border-radius: 15px;
+  padding: 16px 18px;
+  border-top: 3px solid #b8ded4;
+}
+.technical-summary article span {
+  display: block;
+  color: #526c63;
+  font-size: 14px;
+}
+.technical-summary article strong {
+  display: block;
+  margin-top: 7px;
+  font-size: 28px;
+}
+.technical-summary article.technical-late {
+  border-top-color: #d98984;
+}
+.technical-form,
+.technical-list-section {
+  background: #fff;
+  border: 1px solid #e2ebe7;
+  border-radius: 18px;
+  padding: 22px;
+}
+.technical-form {
+  display: grid;
+  grid-template-columns: 1.4fr 0.7fr 0.9fr 1.3fr;
+  gap: 13px;
+  align-items: end;
+}
+.technical-form-title {
+  grid-column: 1/-1;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.technical-form-title h3,
+.technical-list-heading h3 {
+  margin: 0;
+  font-size: 20px;
+}
+.technical-form-title small {
+  color: #647b73;
+}
+.technical-form > label {
+  display: grid;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.technical-form input,
+.technical-form select {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #cbded7;
+  border-radius: 10px;
+  padding: 9px 11px;
+  background: #fff;
+  color: #193b33;
+}
+.technical-topic-field {
+  grid-column: span 2;
+}
+.technical-form-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.technical-form-actions .primary-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+}
+.technical-cancel {
+  border: 1px solid #cbded7;
+  border-radius: 10px;
+  background: #fff;
+  color: #34594f;
+  padding: 10px 13px;
+  min-height: 44px;
+}
+.technical-message {
+  grid-column: 1/-1;
+  margin: 0;
+  color: #126f60;
+  font-weight: 700;
+}
+.technical-empty {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 34px 15px;
+  color: #42645a;
+}
+.technical-empty svg {
+  color: #16806e;
+}
+.technical-empty strong {
+  font-size: 17px;
+}
+.technical-empty p {
+  margin: 0;
+  color: #647b73;
+}
+.technical-topic-list {
+  display: grid;
+  gap: 11px;
+  margin-top: 16px;
+}
+.technical-topic-card {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #e2ebe7;
+  border-radius: 14px;
+  background: #fcfefd;
+}
+.technical-topic-card.status-overdue {
+  border-right: 4px solid #c2645f;
+}
+.technical-topic-card.status-today {
+  border-right: 4px solid #d89a37;
+}
+.technical-topic-card.status-complete {
+  border-right: 4px solid #32846e;
+}
+.technical-topic-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.technical-topic-title {
+  min-width: 0;
+}
+.technical-topic-title h4 {
+  margin: 7px 0 3px;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+.technical-topic-title p {
+  margin: 0;
+  color: #60766e;
+  font-size: 13px;
+}
+.technical-status {
+  font-size: 12px;
+  font-weight: 700;
+  color: #176b5e;
+}
+.status-overdue .technical-status {
+  color: #a33d37;
+}
+.status-today .technical-status {
+  color: #99620a;
+}
+.technical-topic-date {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  color: #526c63;
+  font-size: 13px;
+}
+.technical-progress > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+.technical-progress > div:first-child span {
+  color: #60766e;
+}
+.technical-progress-track {
+  height: 8px;
+  margin-top: 9px;
+  border-radius: 10px;
+  background: #e8f0ed;
+  overflow: hidden;
+}
+.technical-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #21816d;
+}
+.technical-topic-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.technical-counter,
+.technical-icon-action {
+  min-height: 39px;
+  border: 1px solid #cbded7;
+  border-radius: 9px;
+  background: #fff;
+  color: #176b5e;
+}
+.technical-counter {
+  padding: 7px 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.technical-counter:disabled {
+  color: #70827b;
+  background: #f1f5f3;
+}
+.technical-icon-action {
+  width: 39px;
+  display: grid;
+  place-items: center;
+}
+.technical-icon-action.is-delete {
+  color: #a33d37;
+  border-color: #e8c9c7;
+}
+.technical-storage-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #647b73;
+  font-size: 12px;
+  margin: 0;
+}
+.technical-storage-note svg {
+  flex: 0 0 auto;
+}
+@media (max-width: 1000px) {
+  .technical-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .technical-topic-field {
+    grid-column: auto;
+  }
+  .technical-form-title {
+    grid-column: 1/-1;
+  }
+  .technical-topic-card {
+    grid-template-columns: 1fr 1fr;
+  }
+  .technical-topic-main {
+    grid-column: 1/-1;
+  }
+  .technical-topic-actions {
+    justify-content: flex-end;
+  }
+}
+@media (max-width: 600px) {
+  .technical-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .technical-summary article {
+    padding: 12px;
+  }
+  .technical-summary article strong {
+    font-size: 24px;
+  }
+  .technical-form,
+  .technical-list-section {
+    padding: 16px;
+  }
+  .technical-form {
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+  }
+  .technical-form-title {
+    display: grid;
+    gap: 4px;
+  }
+  .technical-topic-field {
+    grid-column: 1/-1;
+  }
+  .technical-form-actions {
+    grid-column: 1/-1;
+  }
+  .technical-form-actions .primary-action {
+    flex: 1;
+  }
+  .technical-topic-card {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 13px;
+  }
+  .technical-topic-main {
+    grid-column: auto;
+    display: grid;
+    gap: 10px;
+  }
+  .technical-topic-date {
+    white-space: normal;
+  }
+  .technical-topic-actions {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 40px 40px;
+  }
+  .technical-counter {
+    width: 100%;
+  }
+  .technical-progress > div:first-child {
+    font-size: 12px;
+  }
+}
+@media (max-width: 380px) {
+  .technical-form {
+    grid-template-columns: 1fr;
+  }
+  .technical-form-title,
+  .technical-topic-field,
+  .technical-form-actions {
+    grid-column: 1;
+  }
+}

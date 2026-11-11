@@ -15,6 +15,7 @@ import DailySectionBoard from './DailySectionBoard';
 import PlanOverview from './PlanOverview';
 import PlanLibrary from './PlanLibrary';
 import ScheduleManager from './ScheduleManager';
+import TechnicalFollowup from './TechnicalFollowup';
 import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
   ['الرئيسية', Activity],
@@ -163,6 +164,8 @@ export default function App() {
           <TaskManager tasks={tasks} setTasks={setTasks} />
         ) : tab === 'الجداول والاحتياط' ? (
           <ScheduleManager />
+        ) : tab === 'المتابعة الفنية' ? (
+          <TechnicalFollowup />
         ) : (
           <section className="card">
             <h2>{tab}</h2>

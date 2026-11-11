@@ -14,6 +14,7 @@ import { tasksDueToday, localDateKey, isTaskOverdue } from './dashboard-metrics'
 import { validDate, type Plan } from './plan-model';
 import { readSchedule } from './schedule-model';
 import { draftSlots, getCoverDay, readCoverStore, weekdayForDate } from './cover-planning';
+import { readTechnicalTopicSummary, readTechnicalTopics } from './technical-followup-model';
 import './daily-section-board.css';
 
 const today = () => localDateKey(new Date());
@@ -73,6 +74,8 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
     (slot) => !dayCover.assignments.some((assignment) => assignment.lessonId === slot.id),
   ).length;
   const completedTodayCount = completedToday(plans, date);
+  const technical = readTechnicalTopicSummary(date);
+  const technicalCount = readTechnicalTopics().length;
 
   const cards: DailyCard[] = [
     {
@@ -103,9 +106,17 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
     {
       name: 'المتابعة الفنية',
       icon: Users,
-      status: 'القسم لم يُفعّل بعد',
-      detail: 'لم تُسجل بيانات متابعة فنية في المنظومة بعد',
-      pending: true,
+      status:
+        technicalCount === 0
+          ? 'لا توجد موضوعات مسجلة'
+          : technical.overdue
+            ? `${technical.overdue} موضوع متأخر`
+            : `${technical.complete} موضوع مكتمل`,
+      detail:
+        technicalCount === 0
+          ? 'أدخل موضوعات النشرة لمتابعتها'
+          : `${technical.today} موعده اليوم · ${technical.upcoming} قادم`,
+      alert: technical.overdue + technical.today > 0,
     },
     {
       name: 'الاختبارات والتحصيل',
