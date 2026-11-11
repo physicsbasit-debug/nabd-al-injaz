@@ -46,6 +46,9 @@ test('technical follow-up records bulletin entries and syncs the daily dashboard
   await expect(page.getByRole('heading', { name: 'الحركة والسرعة' })).toBeVisible();
   await page.getByRole('button', { name: 'تسجيل حصة منفذة' }).click();
   await expect(page.getByText('1 من 2 حصص')).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('nabd-al-injaz:technical-followup:v1')))
+    .toContain('"taughtLessons":1');
   const dimensions = await page
     .locator('html')
     .evaluate((el) => ({ scroll: el.scrollWidth, width: el.clientWidth }));
