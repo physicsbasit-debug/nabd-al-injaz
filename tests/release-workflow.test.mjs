@@ -52,6 +52,10 @@ test('only a verified main push or explicit main dispatch may initiate a Pages d
   assert.match(String(release.jobs.build.if), /github\.ref\s*==\s*['"]refs\/heads\/main['"]/);
 });
 
+test('a manual run from another branch cannot cancel the main release', () => {
+  assert.match(String(release.concurrency.group), /github\.ref/);
+});
+
 test('deploy refuses a stale commit if main advanced since verification', () => {
   const steps = release.jobs.deploy.steps;
   const checkIndex = steps.findIndex(
