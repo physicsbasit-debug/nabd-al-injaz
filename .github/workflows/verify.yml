@@ -19,7 +19,7 @@ jobs:
       - run: npm test
       - run: npm run test:unit
       - run: npm run build -- --base=/nabd-al-injaz/
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
       - name: UI Quality Gate (headings, accessibility, layout)
         run: npm run test:ui-guard
       - run: npm run test:e2e

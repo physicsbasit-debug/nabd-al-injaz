@@ -41,6 +41,7 @@ test('release must wait for the same full verification suite before build and de
     'npm test',
     'npm run test:unit',
     'npm run build -- --base=/nabd-al-injaz/',
+    'npx playwright install chromium',
     'npm run test:ui-guard',
     'npm run test:e2e',
     'npm run test:production',
