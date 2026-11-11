@@ -8,40 +8,31 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: github-pages-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  verify:
-    uses: ./.github/workflows/verify.yml
-
-  build:
-    needs: verify
-    if: github.ref == 'refs/heads/main'
+  preflight:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-      - name: Build for the repository Pages path
-        run: npm run build -- --base=/nabd-al-injaz/
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
+      - name: Require the exact main branch
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Release runs are permitted only from refs/heads/main."
+            exit 1
+          fi
+
+  verify:
+    needs: preflight
+    uses: ./.github/workflows/verify.yml
 
   deploy:
+    concurrency:
+      group: github-pages
+      queue: max
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: verify
     permissions:
       contents: read
       pages: write

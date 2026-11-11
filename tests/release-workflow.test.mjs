@@ -17,16 +17,17 @@ test('release must wait for the same full verification suite before build and de
   assert.ok(Object.hasOwn(verify.on, 'pull_request'), 'pull requests must still be verified');
   assert.equal(release.jobs.verify?.uses, './.github/workflows/verify.yml');
   assert.ok(
-    dependencies(release.jobs.build).includes('verify'),
-    'release build must need verification',
+    dependencies(release.jobs.verify).includes('preflight'),
+    'verification must need the exact-branch preflight',
   );
   assert.ok(
-    dependencies(release.jobs.deploy).includes('build'),
-    'deployment must need the verified build',
+    dependencies(release.jobs.deploy).includes('verify'),
+    'deployment must need the full verification job',
   );
-  for (const name of ['verify', 'build', 'deploy']) {
+  assert.ok(!release.jobs.build, 'release must use the artifact from verification');
+  for (const name of ['preflight', 'verify', 'deploy']) {
     assert.notEqual(release.jobs[name]?.['continue-on-error'], true);
-    assert.doesNotMatch(String(release.jobs[name]?.if ?? ''), /always\s*\(/);
+    assert.ok(!release.jobs[name]?.if, `${name} must retain the default success condition`);
   }
   const steps = verify.jobs.verify.steps;
   for (const command of [
@@ -34,7 +35,7 @@ test('release must wait for the same full verification suite before build and de
     'npm run format:check',
     'npm test',
     'npm run test:unit',
-    'npm run build',
+    'npm run build -- --base=/nabd-al-injaz/',
     'npm run test:ui-guard',
     'npm run test:e2e',
   ]) {
@@ -43,17 +44,30 @@ test('release must wait for the same full verification suite before build and de
     assert.notEqual(step['continue-on-error'], true);
     assert.ok(!step.if, `required check must not be skipped: ${command}`);
   }
+  const endToEndIndex = steps.findIndex((step) => step.run === 'npm run test:e2e');
+  const artifactIndex = steps.findIndex((step) =>
+    /^actions\/upload-pages-artifact@/.test(step.uses ?? ''),
+  );
+  assert.ok(artifactIndex > endToEndIndex, 'Pages artifact must be uploaded after verification');
+  assert.equal(steps[artifactIndex].with?.path, 'dist');
+  assert.ok(!steps[artifactIndex].if, 'Pages artifact must retain the default success condition');
 });
 
 test('only a verified main push or explicit main dispatch may initiate a Pages deployment', () => {
   assert.deepEqual(release.on.push.branches, ['main']);
   assert.ok(Object.hasOwn(release.on, 'workflow_dispatch'));
   assert.ok(!Object.hasOwn(release.on, 'pull_request'));
-  assert.match(String(release.jobs.build.if), /github\.ref\s*==\s*['"]refs\/heads\/main['"]/);
+  const guard = release.jobs.preflight.steps.find((step) => /GITHUB_REF/.test(step.run ?? ''));
+  assert.ok(guard, 'missing case-sensitive branch guard');
+  assert.match(guard.run, /\[\[\s*"\$GITHUB_REF"\s*!=\s*"refs\/heads\/main"\s*\]\]/);
+  assert.match(guard.run, /exit 1/);
 });
 
-test('a manual run from another branch cannot cancel the main release', () => {
-  assert.match(String(release.concurrency.group), /github\.ref/);
+test('verified deployments are queued without another run cancelling them', () => {
+  assert.ok(!release.concurrency, 'workflow-level cancellation must not affect main');
+  assert.equal(release.jobs.deploy.concurrency?.group, 'github-pages');
+  assert.equal(release.jobs.deploy.concurrency?.queue, 'max');
+  assert.notEqual(release.jobs.deploy.concurrency?.['cancel-in-progress'], true);
 });
 
 test('deploy refuses a stale commit if main advanced since verification', () => {
