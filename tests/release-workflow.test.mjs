@@ -29,6 +29,11 @@ test('release must wait for the same full verification suite before build and de
     assert.notEqual(release.jobs[name]?.['continue-on-error'], true);
     assert.ok(!release.jobs[name]?.if, `${name} must retain the default success condition`);
   }
+  assert.notEqual(verify.jobs.verify['continue-on-error'], true);
+  assert.ok(
+    !verify.jobs.verify.if,
+    'called verification must retain the default success condition',
+  );
   const steps = verify.jobs.verify.steps;
   for (const command of [
     'npm run lint',
@@ -38,6 +43,7 @@ test('release must wait for the same full verification suite before build and de
     'npm run build -- --base=/nabd-al-injaz/',
     'npm run test:ui-guard',
     'npm run test:e2e',
+    'npm run test:production',
   ]) {
     const step = steps.find((item) => item.run === command);
     assert.ok(step, `missing required check: ${command}`);
@@ -45,10 +51,12 @@ test('release must wait for the same full verification suite before build and de
     assert.ok(!step.if, `required check must not be skipped: ${command}`);
   }
   const endToEndIndex = steps.findIndex((step) => step.run === 'npm run test:e2e');
+  const productionIndex = steps.findIndex((step) => step.run === 'npm run test:production');
   const artifactIndex = steps.findIndex((step) =>
     /^actions\/upload-pages-artifact@/.test(step.uses ?? ''),
   );
   assert.ok(artifactIndex > endToEndIndex, 'Pages artifact must be uploaded after verification');
+  assert.ok(artifactIndex > productionIndex, 'Pages artifact must pass the built-site test');
   assert.equal(steps[artifactIndex].with?.path, 'dist');
   assert.ok(!steps[artifactIndex].if, 'Pages artifact must retain the default success condition');
 });

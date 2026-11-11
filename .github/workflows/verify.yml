@@ -23,6 +23,7 @@ jobs:
       - name: UI Quality Gate (headings, accessibility, layout)
         run: npm run test:ui-guard
       - run: npm run test:e2e
+      - run: npm run test:production
       - name: Upload verified Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -3,7 +3,7 @@ import ExcelJS from 'exceljs';
 import JSZip from 'jszip';
 
 async function openSchedules(page: import('@playwright/test').Page, mobile: boolean) {
-  await page.goto('/');
+  await page.goto('./');
   if (mobile) await page.getByRole('button', { name: /عرض الأقسام/ }).click();
   await page
     .getByRole('navigation', { name: mobile ? 'أقسام الهاتف' : 'الأقسام الرئيسية' })
