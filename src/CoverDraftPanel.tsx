@@ -67,13 +67,13 @@ export default function CoverDraftPanel({ schedule }: { schedule: Schedule }) {
       </div>}
       {processed && <p className="cover-processed" role="status">اليوم محفوظ كمعالَج محليًا · {new Intl.DateTimeFormat('ar-OM', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(record.processedAt!))}</p>}
       <h4>سياسة توزيع البدائل</h4>
-      <p>يُستثنى المعلم عند تفعيل الاستثناء. يتقدم صاحب الرصيد الأقل؛ وعند التعادل تُقدّم الأولوية الأقل رقمًا. الرصيد السابق يضاف إلى التكليفات الصالحة المسجلة في المسودات المحلية.</p>
+      <p>الترتيب المقترح: الأقل رصيدًا حتى هذا التاريخ، ثم معلم القسم نفسه بحسب المادة الظاهرة في الجدول، ثم الأقل تكليفًا اليوم. عند استمرار التعادل تُراعى الأولوية اليدوية ثم الاسم. راجع المقترحات قبل الحفظ.</p>
       {hasProcessedDays && <p className="cover-warning">خيارات الاستثناء والأولوية والرصيد مقفلة لوجود يوم محفوظ؛ افتح الأيام المحفوظة للتعديل أولًا حتى لا يتغير تقييم تكليفاتها السابقة.</p>}
       <div className="cover-policy-list" aria-label="سياسة تكليف البدائل">
         {schedule.teachers.map((name) => {
           const policy = getCoverTeacherPolicy(store, name);
           return <details key={name} className="cover-policy-item" data-teacher={name}>
-            <summary><strong>{name}</strong><span>الرصيد الحالي: {getCoverBalance(schedule, store, name)} · {policy.exempt ? 'مستثنى' : policy.priority ? 'أولوية ' + policy.priority : 'دون أولوية خاصة'}</span></summary>
+            <summary><strong>{name}</strong><span>الرصيد حتى التاريخ المحدد: {getCoverBalance(schedule, store, name, date)} · {policy.exempt ? 'مستثنى' : policy.priority ? 'أولوية ' + policy.priority : 'دون أولوية خاصة'}</span></summary>
             <div className="cover-policy-fields">
               <label><input type="checkbox" aria-label={'استثناء ' + name} checked={policy.exempt} disabled={hasProcessedDays} onChange={(e) => setStore((current) => setCoverTeacherPolicy(current, name, { exempt: e.target.checked }))} />استثناء من تكليف الاحتياط</label>
               <label>الرصيد السابق · {name}<input aria-label={'رصيد سابق ' + name} type="number" min="0" max="10000" step="1" value={policy.carryInBalance} disabled={hasProcessedDays} onChange={(e) => setStore((current) => setCoverTeacherPolicy(current, name, { carryInBalance: Number(e.target.value) }))} /></label>

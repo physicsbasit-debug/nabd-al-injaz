@@ -129,10 +129,30 @@ export function validateAssignment(schedule: Schedule, store: CoverStore, assign
   if (record.assignments.some((a) => a !== assignment && a.substitute === assignment.substitute && getLesson(schedule, assignment.date, a.lessonId)?.period === lesson.period)) return 'البديل مكلف مرتين في الحصة نفسها';
   return null;
 }
-export function getCoverBalance(schedule: Schedule, store: CoverStore, teacher: string): number {
-  const recorded = Object.values(store.days).flatMap((day) => day.assignments)
+export function getCoverBalance(schedule: Schedule, store: CoverStore, teacher: string, throughDate?: string): number {
+  const recorded = Object.entries(store.days).flatMap(([date, day]) =>
+    (!throughDate || date <= throughDate ? day.assignments : []))
     .filter((assignment) => assignment.substitute === teacher && validateAssignment(schedule, store, assignment) === null).length;
   return getCoverTeacherPolicy(store, teacher).carryInBalance + recorded;
+}
+function departmentForDescription(description: string): string | null {
+  const value = description.replace(/[\u064B-\u065F\u0670]/gu, '').replace(/أ|إ|آ/gu, 'ا');
+  const departments: Array<[RegExp, string]> = [
+    [/فيزياء|كيمياء|احياء|علوم/u, 'العلوم'],
+    [/رياضيات/u, 'الرياضيات'],
+    [/عربي/u, 'اللغة العربية'],
+    [/انجليزي/u, 'اللغة الإنجليزية'],
+    [/اجتماعيات|دراسات اجتماعية/u, 'الدراسات الاجتماعية'],
+    [/اسلامية|تربية اسلامية/u, 'التربية الإسلامية'],
+    [/رياضة|بدنية/u, 'الرياضة المدرسية'],
+    [/فنون|مهارات/u, 'الفنون والمهارات'],
+    [/تقنية معلومات|حاسوب/u, 'تقنية المعلومات'],
+  ];
+  return departments.find(([pattern]) => pattern.test(value))?.[1] ?? null;
+}
+function teacherDepartments(schedule: Schedule, teacher: string): Set<string> {
+  return new Set(schedule.lessons.filter((lesson) => lesson.teacher === teacher)
+    .map((lesson) => departmentForDescription(lesson.description)).filter((department): department is string => department !== null));
 }
 export function draftCandidates(schedule: Schedule, store: CoverStore, date: string, lessonId: string): string[] {
   const day = weekdayForDate(date);
@@ -145,9 +165,21 @@ export function draftCandidates(schedule: Schedule, store: CoverStore, date: str
     const rank = getCoverTeacherPolicy(store, name).priority;
     return rank > 0 ? rank : Number.MAX_SAFE_INTEGER;
   };
+  const requiredDepartment = departmentForDescription(lesson.description);
+  const departments = new Map(schedule.teachers.map((name) => [name, teacherDepartments(schedule, name)]));
+  const sameDepartment = (name: string) => requiredDepartment && departments.get(name)?.has(requiredDepartment) ? 0 : 1;
+  const assignmentsToday = new Map<string, number>();
+  for (const assignment of record.assignments) {
+    if (validateAssignment(schedule, store, assignment) === null)
+      assignmentsToday.set(assignment.substitute, (assignmentsToday.get(assignment.substitute) ?? 0) + 1);
+  }
   return verifiedFreeTeachers(schedule, day, lesson.period)
     .filter((name) => !record.absent.includes(name) && !occupied.has(name) && !getCoverTeacherPolicy(store, name).exempt)
-    .sort((a, b) => getCoverBalance(schedule, store, a) - getCoverBalance(schedule, store, b) || priority(a) - priority(b) || a.localeCompare(b, 'ar'));
+    .sort((a, b) => getCoverBalance(schedule, store, a, date) - getCoverBalance(schedule, store, b, date)
+      || sameDepartment(a) - sameDepartment(b)
+      || (assignmentsToday.get(a) ?? 0) - (assignmentsToday.get(b) ?? 0)
+      || priority(a) - priority(b)
+      || a.localeCompare(b, 'ar'));
 }
 export function addCoverAssignment(schedule: Schedule, store: CoverStore, date: string, lessonId: string, substitute: string): CoverStore {
   const day = weekdayForDate(date);
