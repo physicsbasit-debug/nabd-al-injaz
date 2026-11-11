@@ -228,15 +228,24 @@ test('date-scoped cover draft persists and invalidates stale assignments', async
   await panel.getByRole('button', { name: 'إضافة للمسودة' }).click();
   await expect(panel.getByText('تكليفات المسودة (1)')).toBeVisible();
   await expect(panel.getByText('صالح للمراجعة اليدوية')).toBeVisible();
+  await panel.getByRole('button', { name: 'حفظ معالجة اليوم' }).click();
+  await expect(panel.getByText(/اليوم محفوظ كمعالَج محليًا/)).toBeVisible();
   await page.reload();
   await openSchedules(page, testInfo.project.name === 'phone');
   const restored = page.getByRole('region', { name: 'مسودة توزيع الاحتياط' });
   await restored.getByLabel('تاريخ مسودة الاحتياط').fill('2026-11-10');
   await expect(restored.getByText('تكليفات المسودة (1)')).toBeVisible();
+  await expect(restored.getByText(/اليوم محفوظ كمعالَج محليًا/)).toBeVisible();
+  page.once('dialog', (dialog) => dialog.accept());
+  await restored.getByRole('button', { name: 'إعادة فتح اليوم للتعديل' }).click();
   await restored.getByRole('checkbox', { name: 'أحمد' }).uncheck();
   await expect(restored.getByRole('alert')).toContainText('تكليف غير صالح');
   await restored.getByRole('button', { name: 'إلغاء تكليف سالم عن أحمد' }).click();
   await expect(restored.getByText('تكليفات المسودة (0)')).toBeVisible();
+  await restored.getByRole('checkbox', { name: 'أحمد' }).check();
+  page.once('dialog', (dialog) => dialog.accept());
+  await restored.getByRole('button', { name: 'التراجع عن سجل اليوم' }).click();
+  await expect(restored.getByRole('checkbox', { name: 'أحمد' })).not.toBeChecked();
 });
 
 test('imports the approved 9-teacher, 45-day, 162-lesson workbook shape atomically', async ({

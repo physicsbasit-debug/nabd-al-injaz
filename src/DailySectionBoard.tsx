@@ -13,7 +13,7 @@ import type { Task } from './task-model';
 import { tasksDueToday, localDateKey, isTaskOverdue } from './dashboard-metrics';
 import { validDate, type Plan } from './plan-model';
 import { readSchedule } from './schedule-model';
-import { draftSlots, getCoverDay, readCoverStore, weekdayForDate } from './cover-planning';
+import { getCoverDailySummary, getCoverDay, readCoverStore, weekdayForDate } from './cover-planning';
 import { readTechnicalTopicSummary, readTechnicalTopics } from './technical-followup-model';
 import './daily-section-board.css';
 
@@ -68,11 +68,9 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
   const schedule = readSchedule();
   const day = weekdayForDate(date);
   const lessonsToday = day ? schedule.lessons.filter((lesson) => lesson.day === day).length : 0;
-  const dayCover = getCoverDay(readCoverStore(), date);
-  const coverSlots = day ? draftSlots(schedule, readCoverStore(), date) : [];
-  const unassignedCovers = coverSlots.filter(
-    (slot) => !dayCover.assignments.some((assignment) => assignment.lessonId === slot.id),
-  ).length;
+  const coverStore = readCoverStore();
+  const dayCover = getCoverDay(coverStore, date);
+  const coverSummary = day ? getCoverDailySummary(schedule, coverStore, date) : null;
   const completedTodayCount = completedToday(plans, date);
   const technical = readTechnicalTopicSummary(date);
   const technicalCount = readTechnicalTopics().length;
@@ -97,7 +95,7 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
       icon: CalendarDays,
       status: day ? `${lessonsToday} حصة مسجلة اليوم` : 'اليوم خارج أيام الدوام المسجلة',
       detail: dayCover.absent.length
-        ? `${dayCover.absent.length} غياب مسجل · ${unassignedCovers} حصة احتياط دون بديل في المسودة`
+        ? `${dayCover.absent.length} غياب · ${coverSummary?.assigned ?? 0} مغطاة · ${coverSummary?.uncovered ?? 0} دون بديل${coverSummary?.processedAt ? ' · محفوظة' : ' · مسودة'}`
         : schedule.teachers.length
           ? 'لم يُسجل غياب لهذا اليوم'
           : 'ارفع جدول المعلمين للبدء',
