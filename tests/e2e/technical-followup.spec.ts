@@ -64,7 +64,7 @@ test('technical follow-up records bulletin entries and syncs the daily dashboard
     .getByRole('navigation', { name: phone ? 'أقسام الهاتف' : 'الأقسام الرئيسية' })
     .getByRole('button', { name: 'الرئيسية' })
     .click();
-  await expect(page.getByRole('button', { name: /المتابعة الفنية/ })).toContainText(
-    '0 موعده اليوم · 1 قادم',
-  );
+  await expect(
+    page.getByRole('button', { name: /المتابعة الفنية/ }).filter({ hasText: 'قادم' }),
+  ).toContainText('0 موعده اليوم · 1 قادم');
 });
