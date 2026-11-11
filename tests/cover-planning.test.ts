@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { addLesson, setDayVerification, type Schedule } from '../src/schedule-model';
-import { addCoverAssignment, autoAssignCovers, draftCandidates, getCoverDay, getCoverBalance, readCoverStore, removeCoverAssignment, setCoverAbsences, setCoverTeacherPolicy, validateAssignment, weekdayForDate, EMPTY_COVER_STORE } from '../src/cover-planning';
+import { addCoverAssignment, autoAssignCovers, clearCoverDay, draftCandidates, getCoverDailySummary, getCoverDay, getCoverBalance, processCoverDay, readCoverStore, removeCoverAssignment, reopenCoverDay, setCoverAbsences, setCoverTeacherPolicy, validateAssignment, weekdayForDate, EMPTY_COVER_STORE } from '../src/cover-planning';
 
 function sample() {
   let schedule: Schedule = { teachers: ['أحمد', 'سالم', 'نورة', 'علي'], lessons: [], verifiedDays: [] };
@@ -98,6 +98,24 @@ describe('date-scoped cover planning', () => {
     expect(result.added[0].substitute).toBe('يوسف');
     expect(result.uncovered).toHaveLength(1);
     expect(getCoverDay(result.store, date).assignments.map((assignment) => assignment.substitute)).not.toContain('ناصر');
+  });
+  it('tracks a processed day, prevents accidental mutation, supports reopen and whole-day undo', () => {
+    const schedule = sample();
+    const absent = setCoverAbsences(EMPTY_COVER_STORE, date, ['أحمد'], schedule);
+    const withAssignment = addCoverAssignment(schedule, absent, date, schedule.lessons[0].id, 'سالم');
+    const processed = processCoverDay(schedule, withAssignment, date, '2026-11-10T07:00:00.000Z');
+    expect(getCoverDailySummary(schedule, processed, date)).toMatchObject({ absentCount: 1, required: 2, assigned: 1, uncovered: 1, invalid: 0, processedAt: '2026-11-10T07:00:00.000Z', bySubstitute: [['سالم', 1]] });
+    expect(() => setCoverAbsences(processed, date, [], schedule)).toThrow(/أعد فتحه/);
+    expect(autoAssignCovers(schedule, processed, date).blockedReason).toMatch(/أعد فتحه/);
+    const reopened = reopenCoverDay(processed, date);
+    expect(getCoverDay(reopened, date).processedAt).toBeUndefined();
+    expect(getCoverDay(reopened, date).assignments).toHaveLength(1);
+    expect(getCoverDay(clearCoverDay(processed, date), date)).toEqual({ absent: [], assignments: [] });
+  });
+  it('does not save daily processing while an absent teacher schedule is unverified', () => {
+    const schedule = setDayVerification(sample(), 'أحمد', 'الثلاثاء', false);
+    const store = setCoverAbsences(EMPTY_COVER_STORE, date, ['أحمد'], schedule);
+    expect(() => processCoverDay(schedule, store, date)).toThrow(/تأكيد اكتمال جداول/);
   });
 
 });

@@ -2,7 +2,7 @@ import { DAYS, absenceSlots, isDayVerified, verifiedFreeTeachers, type Day, type
 
 export const COVER_DRAFT_KEY = 'nabd-al-injaz:cover-drafts:v1';
 export type CoverAssignment = { id: string; date: string; lessonId: string; absentTeacher: string; substitute: string };
-export type CoverDay = { absent: string[]; assignments: CoverAssignment[] };
+export type CoverDay = { absent: string[]; assignments: CoverAssignment[]; processedAt?: string };
 export type CoverTeacherPolicy = { exempt: boolean; carryInBalance: number; priority: number };
 export type CoverStore = { version: 1; days: Record<string, CoverDay>; teacherPolicies?: Record<string, CoverTeacherPolicy> };
 export const EMPTY_COVER_STORE: CoverStore = { version: 1, days: {} };
@@ -38,7 +38,7 @@ export function readCoverStore(): CoverStore {
         if (typeof c.id === 'string' && typeof c.lessonId === 'string' && typeof c.absentTeacher === 'string' && typeof c.substitute === 'string' && c.date === date)
           assignments.push({ id: c.id, date, lessonId: c.lessonId, absentTeacher: c.absentTeacher, substitute: c.substitute });
       }
-      days[date] = { absent, assignments };
+      days[date] = { absent, assignments, ...(typeof r.processedAt === 'string' && !Number.isNaN(Date.parse(r.processedAt)) ? { processedAt: r.processedAt } : {}) };
     }
     const teacherPolicies: Record<string, CoverTeacherPolicy> = {};
     if (value.teacherPolicies && typeof value.teacherPolicies === 'object' && !Array.isArray(value.teacherPolicies)) {
@@ -56,6 +56,35 @@ export function readCoverStore(): CoverStore {
   } catch { return EMPTY_COVER_STORE; }
 }
 export const getCoverDay = (store: CoverStore, date: string): CoverDay => store.days[date] ?? { absent: [], assignments: [] };
+export function processCoverDay(schedule: Schedule, store: CoverStore, date: string, processedAt = new Date().toISOString()): CoverStore {
+  const record = getCoverDay(store, date);
+  if (!weekdayForDate(date)) throw new Error('التاريخ غير صالح.');
+  if (!record.absent.length) throw new Error('سجّل الغياب أولًا قبل حفظ معالجة اليوم.');
+  const day = weekdayForDate(date)!;
+  if (record.absent.some((teacher) => !isDayVerified(schedule, teacher, day))) throw new Error('لا يمكن حفظ المعالجة قبل تأكيد اكتمال جداول جميع المعلمين الغائبين.');
+  if (record.assignments.some((assignment) => validateAssignment(schedule, store, assignment) !== null)) throw new Error('توجد تكليفات غير صالحة؛ صححها قبل حفظ معالجة اليوم.');
+  if (record.processedAt) throw new Error('اليوم محفوظ كمعالَج بالفعل.');
+  return { ...store, days: { ...store.days, [date]: { ...record, processedAt } } };
+}
+export function reopenCoverDay(store: CoverStore, date: string): CoverStore {
+  const draft = { ...getCoverDay(store, date) };
+  delete draft.processedAt;
+  return { ...store, days: { ...store.days, [date]: draft } };
+}
+export function clearCoverDay(store: CoverStore, date: string): CoverStore {
+  const days = { ...store.days };
+  delete days[date];
+  return { ...store, days };
+}
+export function getCoverDailySummary(schedule: Schedule, store: CoverStore, date: string) {
+  const record = getCoverDay(store, date);
+  const slots = draftSlots(schedule, store, date);
+  const validAssignments = record.assignments.filter((assignment) => validateAssignment(schedule, store, assignment) === null);
+  const assignedIds = new Set(validAssignments.map((assignment) => assignment.lessonId));
+  const bySubstitute = new Map<string, number>();
+  for (const assignment of validAssignments) bySubstitute.set(assignment.substitute, (bySubstitute.get(assignment.substitute) ?? 0) + 1);
+  return { absentCount: record.absent.length, required: slots.length, assigned: assignedIds.size, uncovered: slots.filter((slot) => !assignedIds.has(slot.id)).length, invalid: record.assignments.length - validAssignments.length, bySubstitute: [...bySubstitute].sort((a, b) => a[0].localeCompare(b[0], 'ar')), processedAt: record.processedAt ?? null };
+}
 export function getCoverTeacherPolicy(store: CoverStore, teacher: string): CoverTeacherPolicy {
   const policy = store.teacherPolicies?.[teacher];
   return {
@@ -76,6 +105,7 @@ export function setCoverTeacherPolicy(store: CoverStore, teacher: string, patch:
 }
 export function setCoverAbsences(store: CoverStore, date: string, absent: string[], schedule: Schedule): CoverStore {
   if (!weekdayForDate(date)) throw new Error('اختر تاريخًا دراسيًا صالحًا من الأحد إلى الخميس.');
+  if (getCoverDay(store, date).processedAt) throw new Error('اليوم محفوظ كمعالَج؛ أعد فتحه قبل التعديل.');
   if (absent.some((name) => !schedule.teachers.includes(name))) throw new Error('أحد أسماء الغياب غير مسجل.');
   return { ...store, days: { ...store.days, [date]: { ...getCoverDay(store, date), absent: [...new Set(absent)] } } };
 }
@@ -125,6 +155,7 @@ export function addCoverAssignment(schedule: Schedule, store: CoverStore, date: 
   const lesson = getLesson(schedule, date, lessonId);
   if (!lesson) throw new Error('الحصة الأصلية غير موجودة.');
   const record = getCoverDay(store, date);
+  if (record.processedAt) throw new Error('اليوم محفوظ كمعالَج؛ أعد فتحه قبل التعديل.');
   if (record.assignments.some((a) => a.lessonId === lessonId)) throw new Error('الحصة مغطاة بالفعل.');
   if (!draftCandidates(schedule, store, date, lessonId).includes(substitute)) throw new Error('البديل غير مؤهل أو مستثنى أو مشغول أو جدول أحد المعلمين غير مكتمل.');
   const assignment: CoverAssignment = { id: crypto.randomUUID(), date, lessonId, absentTeacher: lesson.teacher, substitute };
@@ -135,6 +166,7 @@ export function addCoverAssignment(schedule: Schedule, store: CoverStore, date: 
 }
 export function removeCoverAssignment(store: CoverStore, date: string, id: string): CoverStore {
   const record = getCoverDay(store, date);
+  if (record.processedAt) throw new Error('اليوم محفوظ كمعالَج؛ أعد فتحه قبل التعديل.');
   return { ...store, days: { ...store.days, [date]: { ...record, assignments: record.assignments.filter((a) => a.id !== id) } } };
 }
 export function draftSlots(schedule: Schedule, store: CoverStore, date: string): Lesson[] {
@@ -147,6 +179,7 @@ export function autoAssignCovers(schedule: Schedule, store: CoverStore, date: st
   const day = weekdayForDate(date);
   if (!day) return { store, added: [], uncovered: [], blockedReason: 'التاريخ غير صالح.' };
   const record = getCoverDay(store, date);
+  if (record.processedAt) return { store, added: [], uncovered: [], blockedReason: 'اليوم محفوظ كمعالَج؛ أعد فتحه قبل إعادة التوزيع.' };
   const slots = draftSlots(schedule, store, date);
   if (!record.absent.length) return { store, added: [], uncovered: slots, blockedReason: 'سجّل الغائبين أولًا.' };
   if (record.absent.some((teacher) => !isDayVerified(schedule, teacher, day)))

@@ -50,7 +50,7 @@ test('manual schedules persist, reject conflicts and show free teachers', async 
   await page.getByLabel('تاريخ مسودة الاحتياط').fill(await dateForWeekday(page, 0));
   await page.locator('.schedule-absent').getByLabel('أحمد').check();
   await expect(
-    page.getByRole('heading', { name: 'معاينة الاحتياط للغياب' }).locator('..').locator('tbody'),
+    page.getByRole('region', { name: 'مسودة توزيع الاحتياط' }).locator('table').first(),
   ).toContainText('سالم');
   await page.getByRole('button', { name: 'حفظ الحصة' }).click();
   await expect(page.getByText('تعارض: لدى المعلم حصة مسجلة في هذا الموعد.')).toBeVisible();
@@ -119,7 +119,7 @@ test('wide template imports blank free periods only after explicit completeness 
   await page.getByLabel('تاريخ مسودة الاحتياط').fill(await dateForWeekday(page, 0));
   await page.locator('.schedule-absent').getByLabel('أحمد').check();
   await expect(
-    page.getByRole('heading', { name: 'معاينة الاحتياط للغياب' }).locator('..').locator('tbody'),
+    page.getByRole('region', { name: 'مسودة توزيع الاحتياط' }).locator('table').first(),
   ).toContainText('سالم');
   await page.reload();
   await openSchedules(page, testInfo.project.name === 'phone');
@@ -228,15 +228,24 @@ test('date-scoped cover draft persists and invalidates stale assignments', async
   await panel.getByRole('button', { name: 'إضافة للمسودة' }).click();
   await expect(panel.getByText('تكليفات المسودة (1)')).toBeVisible();
   await expect(panel.getByText('صالح للمراجعة اليدوية')).toBeVisible();
+  await panel.getByRole('button', { name: 'حفظ معالجة اليوم' }).click();
+  await expect(panel.getByText(/اليوم محفوظ كمعالَج محليًا/)).toBeVisible();
   await page.reload();
   await openSchedules(page, testInfo.project.name === 'phone');
   const restored = page.getByRole('region', { name: 'مسودة توزيع الاحتياط' });
   await restored.getByLabel('تاريخ مسودة الاحتياط').fill('2026-11-10');
   await expect(restored.getByText('تكليفات المسودة (1)')).toBeVisible();
+  await expect(restored.getByText(/اليوم محفوظ كمعالَج محليًا/)).toBeVisible();
+  page.once('dialog', (dialog) => dialog.accept());
+  await restored.getByRole('button', { name: 'إعادة فتح اليوم للتعديل' }).click();
   await restored.getByRole('checkbox', { name: 'أحمد' }).uncheck();
   await expect(restored.getByRole('alert')).toContainText('تكليف غير صالح');
   await restored.getByRole('button', { name: 'إلغاء تكليف سالم عن أحمد' }).click();
   await expect(restored.getByText('تكليفات المسودة (0)')).toBeVisible();
+  await restored.getByRole('checkbox', { name: 'أحمد' }).check();
+  page.once('dialog', (dialog) => dialog.accept());
+  await restored.getByRole('button', { name: 'التراجع عن سجل اليوم' }).click();
+  await expect(restored.getByRole('checkbox', { name: 'أحمد' })).not.toBeChecked();
 });
 
 test('imports the approved 9-teacher, 45-day, 162-lesson workbook shape atomically', async ({
@@ -340,8 +349,8 @@ test('automatic cover respects exemptions and leaves same-period overflow visibl
   await expect(panel.getByRole('status')).toContainText('أُضيف 1 تكليفًا');
   await expect(panel.getByText('تكليفات المسودة (1)')).toBeVisible();
   await expect(panel.locator('table').first()).toContainText('لا يوجد بديل مؤكد');
-  await expect(panel.locator('table').last()).toContainText('يوسف');
-  await expect(panel.locator('table').last()).not.toContainText('ناصر');
+  await expect(panel.locator('table').nth(1)).toContainText('يوسف');
+  await expect(panel.locator('table').nth(1)).not.toContainText('ناصر');
 });
 
 test('existing schedule can be safely cleared before importing a replacement', async ({
