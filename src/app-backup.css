@@ -1,0 +1,74 @@
+.app-backup-tools {
+  margin: 0 0 18px;
+  border: 1px solid #d9e5df;
+  border-radius: 12px;
+  background: #fbfdfb;
+  padding: 12px 15px;
+  color: #274a3e;
+}
+.app-backup-tools summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.app-backup-tools p {
+  margin: 9px 0;
+  color: #536c63;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.app-backup-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.app-backup-actions button,
+.app-backup-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid #aacdc0;
+  background: white;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #17594d;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+}
+.app-backup-actions button:disabled,
+.app-backup-upload:has(input:disabled) {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.app-backup-upload {
+  position: relative;
+}
+.app-backup-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.app-backup-upload:focus-within {
+  outline: 3px solid #367f71;
+  outline-offset: 3px;
+}
+.app-backup-tools small {
+  display: block;
+  color: #725b36;
+  font-size: 12px;
+  line-height: 1.6;
+}
+@media (max-width: 520px) {
+  .app-backup-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .app-backup-actions button,
+  .app-backup-upload {
+    width: 100%;
+    min-height: 42px;
+  }
+}

@@ -12,14 +12,15 @@
 
 - مكتمل: 2-C1 مكتبة الخطط، 2-C2 توثيق الشواهد، 2-C3 النسخ والاستعادة، 2-D1 الجداول الأساسية.
 - 2-D2: استيراد أفقي مع تحقق اكتمال اليوم ومعاينة الغياب (انظر SCHEDULE_PHASE_2D2.md).
-- 2-D3: تسجيل غياب يومي، اقتراح يدوي أو آلي للحصص، سجل للأيام، ملخص مغطى/غير مغطى ونصيب البدلاء، حفظ معالجة محلية قابلة لإعادة الفتح أو التراجع.
+- 2-D3: تسجيل غياب يومي، اقتراح بدائل، سجل للأيام، ملخص مغطى/غير مغطى ونصيب البدلاء، حفظ معالجة محلية قابلة لإعادة الفتح أو التراجع، ونسخة احتياطية كاملة قابلة للنقل يدويًا بين الأجهزة.
 - المتابعة الفنية: تسجيل يدوي للموضوعات والحصص المخططة ومواعيد الإنجاز من النشرة الفعلية؛ تحديث الحصص المنفذة ومؤشرات اليوم. لا توجد موضوعات أو مواعيد افتراضية. البيانات محلية على الجهاز.
-- التالي: تدقيق قواعد مسار الدقيقة إن توفر رابط فعّال أو توثيقها، ثم قبول سياسة التوزيع والاستثناءات قبل اعتماد الترتيب الإنتاجي النهائي. لا تُرسل المنظومة تكليفات أو إشعارات.
+- الترتيب الحالي مستند إلى مرجع مسار المحفوظ: الأقل رصيدًا، ثم القسم المطابق للمادة الصريحة في الجدول، ثم الأقل تكليفًا في اليوم، مع أولوية يدوية أخيرة. لم يتسن التحقق من كود مسار الحي أو قواعد المدرسة التفصيلية؛ لذلك تبقى الاقتراحات للمراجعة ولا تُرسل المنظومة تكليفات أو إشعارات.
+- التالي: التحقق من اقتراحات البدائل على جدول المدرسة المعتمد، ثم اعتماد سياسة الاستثناءات والرصيد. لا يبدأ إنشاء قاعدة البيانات أو استيراد بيانات المعلمين قبل اعتماد نموذج البيانات وقواعد الصلاحيات.
 - لاحقًا: الاختبارات والتحصيل، الإنماء المهني، الإنجازات والتقارير، ثم الربط الآمن والقبول النهائي.
 
 ### Phase 2-D3: local daily cover tracking
 
 - Absence and cover assignments are stored per school date in this browser. The daily summary shows absent teachers, required lessons, assigned lessons, uncovered lessons, and each substitute's assigned count.
 - The user can save a day's local processing state, reopen it with confirmation, or undo the whole day's record with confirmation. Saved processing is not an official approval and does not send assignments or messages.
-- Allocation still requires verified teacher schedules, excludes absent, busy, and exempt teachers, and ranks available substitutes by recorded balance then explicit priority. The exact live Masar scoring and approval workflow could not be verified from the historical URL, so no claim of an exact algorithm match is made.
-- Daily history and allocation data remain browser-local; they are not shared across devices. Final production acceptance depends on confirmation of the school's rules for exemptions, balances, and any department/specialty matching.
+- Candidate ranking follows the documented reference: least balance through the selected date, matching department when the lesson text identifies one, then least assignments that day; manual priority and name break a final tie. Live Masar code and school-specific rules remain unverified, so this is an advisory policy, not a claim of exact behavioral parity.
+- A full local backup can transfer tasks, plans and evidence, schedules, cover history, and technical follow-up manually. Data is not synchronized automatically. Final production acceptance still depends on checking a real schedule and confirming exemption and balance rules.
