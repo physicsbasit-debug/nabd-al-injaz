@@ -11,14 +11,13 @@ async function dateOffset(page: Page, days: number) {
 
 async function openTechnicalFollowup(page: Page, phone: boolean) {
   await page.addInitScript(
-    ({ key, storageKey }) => {
+    ({ storageKey }) => {
       localStorage.setItem(
         storageKey,
         JSON.stringify({ teachers: ['وليد الهنائي'], lessons: [], verifiedDays: [] }),
       );
-      localStorage.removeItem(key);
     },
-    { key: 'nabd-al-injaz:technical-followup:v1', storageKey: SCHEDULE_STORAGE_KEY },
+    { storageKey: SCHEDULE_STORAGE_KEY },
   );
   await page.goto('/');
   if (phone) await page.getByRole('button', { name: /عرض الأقسام/ }).click();
