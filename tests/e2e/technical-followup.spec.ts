@@ -33,7 +33,9 @@ test('technical follow-up records bulletin entries and syncs the daily dashboard
 }, testInfo) => {
   const phone = testInfo.project.name === 'phone';
   await openTechnicalFollowup(page, phone);
-  await expect(page.getByText('وليد الهنائي', { exact: true })).toBeVisible();
+  await expect(
+    page.getByLabel('المعلم').locator('option', { hasText: 'وليد الهنائي' }),
+  ).toHaveCount(1);
   await page.getByLabel('المعلم').selectOption('وليد الهنائي');
   await page.getByLabel('الصف').selectOption('9');
   await page.getByLabel('المادة').selectOption('فيزياء');
@@ -55,5 +57,7 @@ test('technical follow-up records bulletin entries and syncs the daily dashboard
     .getByRole('navigation', { name: phone ? 'أقسام الهاتف' : 'الأقسام الرئيسية' })
     .getByRole('button', { name: 'الرئيسية' })
     .click();
-  await expect(page.getByRole('button', { name: /المتابعة الفنية/ })).toContainText('1 قادم');
+  await expect(page.getByRole('button', { name: /المتابعة الفنية/ })).toContainText(
+    '0 موعده اليوم · 1 قادم',
+  );
 });
