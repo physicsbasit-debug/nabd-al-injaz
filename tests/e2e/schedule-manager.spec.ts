@@ -393,6 +393,18 @@ test('previous balances and teacher exemptions control candidate choices and per
   await expect(replacement.locator('option')).toHaveText(['اختر البديل', 'سالم']);
   await expect(aliPolicy.locator('summary')).toContainText('مستثنى');
   await page.screenshot({ path: testInfo.outputPath('cover-policy.png'), fullPage: true });
+  if (testInfo.project.name === 'phone') {
+    const controlsVisible = await panel.locator('.cover-choice').first().evaluate((choice) => {
+      const wrapper = choice.closest('.schedule-table-wrap');
+      if (!wrapper) return [];
+      const bounds = wrapper.getBoundingClientRect();
+      return Array.from(choice.querySelectorAll('select, button')).map((control) => {
+        const box = control.getBoundingClientRect();
+        return box.left >= bounds.left - 1 && box.right <= bounds.right + 1;
+      });
+    });
+    expect(controlsVisible).toEqual([true, true]);
+  }
 
   await page.reload();
   await openSchedules(page, testInfo.project.name === 'phone');
