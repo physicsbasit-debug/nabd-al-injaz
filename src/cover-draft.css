@@ -1,1 +1,26 @@
 .cover-draft{display:grid;gap:12px}.cover-draft h3,.cover-draft h4{margin:0}.cover-draft>p{line-height:1.7}.cover-draft .cover-absences{display:flex;flex-wrap:wrap;gap:10px 20px}.cover-draft .cover-absences label{display:flex;align-items:center;gap:8px;min-width:0;flex:none;font-weight:500}.cover-draft input[type=checkbox]{width:18px;height:18px;min-width:18px;margin:0;accent-color:#24765e}.cover-draft .cover-choice{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.cover-draft .cover-choice select{width:auto;min-width:150px;flex:1}.cover-draft .cover-warning{color:#933b24;background:#fff2eb;padding:10px;border-radius:8px}.cover-draft button{white-space:nowrap}.cover-policy-list{display:grid;gap:8px}.cover-policy-item{border:1px solid #d8e2dc;border-radius:10px;background:#fbfdfb;padding:10px 12px}.cover-policy-item summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}.cover-policy-item summary span{color:#53645d;font-size:.92rem}.cover-policy-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;padding-top:12px}.cover-policy-fields label{display:grid;gap:5px}.cover-policy-fields label:has(input[type=checkbox]){display:flex;align-items:center}.cover-policy-fields small{color:#5c6c65}.cover-auto-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.cover-auto-actions p{margin:0;line-height:1.6}.cover-auto-actions button{background:#17634e;color:white;border:0;border-radius:8px;padding:9px 14px}@media(max-width:650px){.cover-draft .cover-choice{flex-direction:column;align-items:stretch}.cover-draft .cover-choice select{width:100%}.cover-policy-item summary{align-items:flex-start;flex-direction:column}.cover-auto-actions{align-items:stretch;flex-direction:column}.cover-auto-actions button{width:100%}}.cover-daily-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.cover-daily-summary>div{display:grid;gap:3px;padding:12px;border:1px solid #d8e2dc;border-radius:10px;background:#f8fbf9;text-align:center}.cover-daily-summary strong{font-size:1.35rem;color:#174c3e}.cover-daily-summary span{font-size:.85rem;color:#53645d}.cover-daily-summary .needs-attention{border-color:#dfa58f;background:#fff5f0}.cover-daily-summary .needs-attention strong{color:#933b24}.cover-processed{padding:10px 12px;border-radius:8px;background:#eaf6f0;color:#155b43}.cover-day-actions{display:flex;gap:8px;flex-wrap:wrap}.cover-day-actions button{border:0;border-radius:8px;padding:10px 14px;background:#17634e;color:white}.cover-day-actions .cover-undo{background:#fff1ec;color:#8b3926;border:1px solid #e7b8a8}.cover-loads ul{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:7px}.cover-loads li{display:flex;justify-content:space-between;gap:8px;padding:9px 11px;border-radius:8px;background:#f4f7f5}.cover-history summary{cursor:pointer;font-weight:700;padding:10px 0}@media(max-width:560px){.cover-daily-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.cover-day-actions{display:grid}.cover-day-actions button{width:100%}}
+
+/* Present each cover slot as a readable card when the table cannot fit. */
+@media (max-width: 650px) {
+  .cover-draft .cover-slots-table { display: block; min-width: 0; width: 100%; }
+  .cover-draft .cover-slots-table thead {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+  .cover-draft .cover-slots-table tbody { display: grid; gap: 12px; }
+  .cover-draft .cover-slots-table tbody tr {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+    padding: 12px; border: 1px solid #d8e2dc; border-radius: 10px; background: #fbfdfb;
+  }
+  .cover-draft .cover-slots-table td {
+    display: grid; min-width: 0; gap: 4px; padding: 0; border: 0; overflow-wrap: anywhere;
+  }
+  .cover-draft .cover-slots-table td::before {
+    content: attr(data-label); color: #53645d; font-size: .85rem; font-weight: 700;
+  }
+  .cover-draft .cover-slots-table td:nth-child(3),
+  .cover-draft .cover-slots-table td:nth-child(4) { grid-column: 1 / -1; }
+  .cover-draft .cover-slots-table .cover-choice { width: 100%; min-width: 0; }
+  .cover-draft .cover-slots-table .cover-choice select { width: 100%; min-width: 0; }
+  .cover-draft .cover-slots-table .cover-choice button { width: 100%; white-space: normal; }
+}

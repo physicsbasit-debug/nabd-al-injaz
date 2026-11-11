@@ -394,16 +394,24 @@ test('previous balances and teacher exemptions control candidate choices and per
   await expect(aliPolicy.locator('summary')).toContainText('مستثنى');
   await page.screenshot({ path: testInfo.outputPath('cover-policy.png'), fullPage: true });
   if (testInfo.project.name === 'phone') {
-    const controlsVisible = await panel.locator('.cover-choice').first().evaluate((choice) => {
-      const wrapper = choice.closest('.schedule-table-wrap');
-      if (!wrapper) return [];
-      const bounds = wrapper.getBoundingClientRect();
-      return Array.from(choice.querySelectorAll('select, button')).map((control) => {
-        const box = control.getBoundingClientRect();
-        return box.left >= bounds.left - 1 && box.right <= bounds.right + 1;
+    const initialViewport = page.viewportSize();
+    for (const width of [320, 375, 390]) {
+      await page.setViewportSize({ width, height: initialViewport?.height ?? 844 });
+      const controlsVisible = await panel.locator('.cover-choice').first().evaluate((choice) => {
+        const wrapper = choice.closest('.schedule-table-wrap');
+        if (!wrapper) return [];
+        const bounds = wrapper.getBoundingClientRect();
+        return Array.from(choice.querySelectorAll('select, button')).map((control) => {
+          const box = control.getBoundingClientRect();
+          return (
+            box.left >= Math.max(0, bounds.left) - 1 &&
+            box.right <= Math.min(window.innerWidth, bounds.right) + 1
+          );
+        });
       });
-    });
-    expect(controlsVisible).toEqual([true, true]);
+      expect(controlsVisible, `controls fit at ${width}px`).toEqual([true, true]);
+    }
+    if (initialViewport) await page.setViewportSize(initialViewport);
   }
 
   await page.reload();
@@ -423,6 +431,9 @@ test('previous balances and teacher exemptions control candidate choices and per
   await expect(restoredReplacement.locator('option')).toHaveText(['اختر البديل', 'علي', 'سالم']);
   await restoredPanel.getByLabel('رصيد سابق سالم').fill('0');
   await expect(restoredReplacement.locator('option')).toHaveText(['اختر البديل', 'سالم', 'علي']);
+  await restoredReplacement.selectOption('علي');
+  await restoredPanel.getByRole('button', { name: 'إضافة للمسودة' }).click();
+  await expect(restoredPanel.getByText('مسجل في المسودة: علي')).toBeVisible();
 });
 
 test('existing schedule can be safely cleared before importing a replacement', async ({
