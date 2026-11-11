@@ -53,6 +53,11 @@ test('technical follow-up records bulletin entries and syncs the daily dashboard
     .evaluate((el) => ({ scroll: el.scrollWidth, width: el.clientWidth }));
   expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.width + 1);
   await page.reload();
+  if (phone) await page.getByRole('button', { name: /عرض الأقسام/ }).click();
+  await page
+    .getByRole('navigation', { name: phone ? 'أقسام الهاتف' : 'الأقسام الرئيسية' })
+    .getByRole('button', { name: 'المتابعة الفنية' })
+    .click();
   await expect(page.getByRole('heading', { name: 'الحركة والسرعة' })).toBeVisible();
   if (phone) await page.getByRole('button', { name: /عرض الأقسام/ }).click();
   await page
