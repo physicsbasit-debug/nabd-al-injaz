@@ -13,7 +13,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  verify:
+    uses: ./.github/workflows/verify.yml
+
   build:
+    needs: verify
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -38,9 +43,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     permissions:
+      contents: read
       pages: write
       id-token: write
     steps:
+      - name: Checkout the verified commit
+        uses: actions/checkout@v4
+      - name: Confirm main still points to the verified commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          current_main="$(git ls-remote --exit-code origin refs/heads/main | awk '{print $1}')"
+          if [[ "$current_main" != "$GITHUB_SHA" ]]; then
+            echo "::error::The main branch advanced after this run began; refusing to deploy an older commit."
+            exit 1
+          fi
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

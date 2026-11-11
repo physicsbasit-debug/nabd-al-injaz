@@ -353,6 +353,66 @@ test('automatic cover respects exemptions and leaves same-period overflow visibl
   await expect(panel.locator('table').nth(1)).not.toContainText('ناصر');
 });
 
+test('previous balances and teacher exemptions control candidate choices and persist', async ({
+  page,
+}, testInfo) => {
+  await openSchedules(page, testInfo.project.name === 'phone');
+  for (const name of ['أحمد', 'سالم', 'علي']) {
+    await page.getByRole('textbox', { name: 'اسم المعلم' }).fill(name);
+    await page.getByRole('button', { name: 'إضافة معلم' }).click();
+  }
+
+  await page.getByLabel('معلم الحصة').selectOption('أحمد');
+  await page.getByLabel('يوم الحصة').selectOption('الثلاثاء');
+  await page.getByLabel('رقم الحصة').fill('1');
+  await page.getByRole('button', { name: 'حفظ الحصة' }).click();
+
+  await page.getByLabel('يوم التحقق').selectOption('الثلاثاء');
+  for (const name of ['أحمد', 'سالم', 'علي']) {
+    await page.getByLabel('معلم التحقق').selectOption(name);
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'تأكيد اكتمال اليوم' }).click();
+  }
+
+  const panel = page.getByRole('region', { name: 'مسودة توزيع الاحتياط' });
+  await panel.getByLabel('تاريخ مسودة الاحتياط').fill(await dateForWeekday(page, 2));
+  await panel.getByRole('checkbox', { name: 'أحمد' }).check();
+
+  const salemPolicy = panel.locator('[data-teacher="سالم"]');
+  await salemPolicy.locator('summary').click();
+  await panel.getByLabel('رصيد سابق سالم').fill('3');
+  const aliPolicy = panel.locator('[data-teacher="علي"]');
+  await aliPolicy.locator('summary').click();
+  await panel.getByLabel('رصيد سابق علي').fill('1');
+
+  const replacement = panel.getByLabel('بديل أحمد الحصة 1');
+  await expect(replacement.locator('option').nth(1)).toHaveText('علي');
+  await expect(replacement.locator('option').nth(2)).toHaveText('سالم');
+
+  await panel.getByLabel('استثناء علي').check();
+  await expect(replacement.locator('option')).toHaveText(['اختر البديل', 'سالم']);
+  await expect(aliPolicy.locator('summary')).toContainText('مستثنى');
+  await page.screenshot({ path: testInfo.outputPath('cover-policy.png'), fullPage: true });
+
+  await page.reload();
+  await openSchedules(page, testInfo.project.name === 'phone');
+  const restoredPanel = page.getByRole('region', { name: 'مسودة توزيع الاحتياط' });
+  await restoredPanel.getByLabel('تاريخ مسودة الاحتياط').fill(await dateForWeekday(page, 2));
+  const restoredSalemPolicy = restoredPanel.locator('[data-teacher="سالم"]');
+  await restoredSalemPolicy.locator('summary').click();
+  await expect(restoredPanel.getByLabel('رصيد سابق سالم')).toHaveValue('3');
+  const restoredAliPolicy = restoredPanel.locator('[data-teacher="علي"]');
+  await restoredAliPolicy.locator('summary').click();
+  await expect(restoredPanel.getByLabel('رصيد سابق علي')).toHaveValue('1');
+  await expect(restoredPanel.getByLabel('استثناء علي')).toBeChecked();
+  const restoredReplacement = restoredPanel.getByLabel('بديل أحمد الحصة 1');
+  await expect(restoredReplacement.locator('option')).toHaveText(['اختر البديل', 'سالم']);
+  await restoredPanel.getByLabel('استثناء علي').uncheck();
+  await expect(restoredReplacement.locator('option')).toHaveText(['اختر البديل', 'علي', 'سالم']);
+  await restoredPanel.getByLabel('رصيد سابق سالم').fill('0');
+  await expect(restoredReplacement.locator('option')).toHaveText(['اختر البديل', 'سالم', 'علي']);
+});
+
 test('existing schedule can be safely cleared before importing a replacement', async ({
   page,
 }, testInfo) => {
