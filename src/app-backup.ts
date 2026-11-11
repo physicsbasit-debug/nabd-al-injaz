@@ -47,8 +47,9 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
     Object.values(value).some((entry) => typeof entry !== 'string')
   )
     throw new Error('ملف النسخة يحتوي بيانات أقسام غير معروفة. لم تُستبدل بياناتك.');
-  if (value[STORAGE_KEY] !== undefined) {
-    const tasks = parseJson(value[STORAGE_KEY], 'المهام');
+  const data = value as Record<string, string>;
+  if (data[STORAGE_KEY] !== undefined) {
+    const tasks = parseJson(data[STORAGE_KEY], 'المهام');
     if (
       !Array.isArray(tasks) ||
       tasks.some(
@@ -64,40 +65,49 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
     )
       throw new Error('بيانات المهام في ملف النسخة غير صالحة.');
   }
-  if (value[SCHEDULE_STORAGE_KEY] !== undefined) {
-    const schedule = parseJson(value[SCHEDULE_STORAGE_KEY], 'الجداول');
+  if (data[SCHEDULE_STORAGE_KEY] !== undefined) {
+    const schedule = parseJson(data[SCHEDULE_STORAGE_KEY], 'الجداول');
     if (
       !isRecord(schedule) ||
       !Array.isArray(schedule.teachers) ||
-      schedule.teachers.some((teacher) => typeof teacher !== 'string') ||
-      !Array.isArray(schedule.lessons) ||
-      schedule.lessons.some(
+      !Array.isArray(schedule.lessons)
+    )
+      throw new Error('بيانات جدول المعلمين في ملف النسخة غير صالحة.');
+    const teachers = schedule.teachers;
+    const teacherNames = new Set(
+      teachers.filter((teacher): teacher is string => typeof teacher === 'string'),
+    );
+    const lessons = schedule.lessons;
+    const verifiedDays = schedule.verifiedDays;
+    if (
+      teacherNames.size !== teachers.length ||
+      lessons.some(
         (lesson) =>
           !isRecord(lesson) ||
           typeof lesson.id !== 'string' ||
           typeof lesson.teacher !== 'string' ||
-          !schedule.teachers.includes(lesson.teacher) ||
+          !teacherNames.has(lesson.teacher) ||
           typeof lesson.day !== 'string' ||
           !validDay(lesson.day) ||
           typeof lesson.period !== 'number' ||
           !validPeriod(lesson.period) ||
           typeof lesson.description !== 'string',
       ) ||
-      (schedule.verifiedDays !== undefined &&
-        (!Array.isArray(schedule.verifiedDays) ||
-          schedule.verifiedDays.some(
+      (verifiedDays !== undefined &&
+        (!Array.isArray(verifiedDays) ||
+          verifiedDays.some(
             (coverage) =>
               !isRecord(coverage) ||
               typeof coverage.teacher !== 'string' ||
-              !schedule.teachers.includes(coverage.teacher) ||
+              !teacherNames.has(coverage.teacher) ||
               typeof coverage.day !== 'string' ||
               !validDay(coverage.day),
           )))
     )
       throw new Error('بيانات جدول المعلمين في ملف النسخة غير صالحة.');
   }
-  if (value[COVER_DRAFT_KEY] !== undefined) {
-    const cover = parseJson(value[COVER_DRAFT_KEY], 'الاحتياط');
+  if (data[COVER_DRAFT_KEY] !== undefined) {
+    const cover = parseJson(data[COVER_DRAFT_KEY], 'الاحتياط');
     if (
       !isRecord(cover) ||
       cover.version !== 1 ||
@@ -135,8 +145,8 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
     )
       throw new Error('سجل الاحتياط في ملف النسخة غير صالح.');
   }
-  if (value[TECHNICAL_FOLLOWUP_STORAGE_KEY] !== undefined) {
-    const topics = parseJson(value[TECHNICAL_FOLLOWUP_STORAGE_KEY], 'المتابعة الفنية');
+  if (data[TECHNICAL_FOLLOWUP_STORAGE_KEY] !== undefined) {
+    const topics = parseJson(data[TECHNICAL_FOLLOWUP_STORAGE_KEY], 'المتابعة الفنية');
     if (
       !Array.isArray(topics) ||
       topics.some(
