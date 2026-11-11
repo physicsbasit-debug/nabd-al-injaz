@@ -52,22 +52,11 @@ function lessonDisplay(description: string): {
   );
   const cleaned = (subjectMatch ? description.replace(subjectMatch[0], '') : description)
     .replace(/^[\s\-–—|:،/]+|[\s\-–—|:،/]+$/g, '')
-    .replace(/\s+/g, ' ')
-    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
-  const gradeMatch = cleaned.match(
-    /(الثامن|التاسع|العاشر|10|9|8)\s*(?:أساسي)?\s*[/ -]\s*([0-9٠-٩]+)|([0-9٠-٩]+)\s*\/\s*(10|9|8)/u,
-  );
+    .replace(/\s+/g, ' ');
+  const namedGradeMatch = cleaned.match(/(الثامن|التاسع|العاشر)\s*(?:أساسي)?\s*[/ -]\s*([0-9٠-٩]+)/u);
   const grades: Record<string, string> = { الثامن: '8', التاسع: '9', العاشر: '10' };
-  const gradeCode = gradeMatch
-    ? grades[gradeMatch[1]] ?? gradeMatch[1] ?? gradeMatch[4]
-    : '';
-  const sectionCode = gradeMatch
-    ? gradeMatch[2]
-      ? gradeMatch[2]
-      : gradeMatch[3]
-    : '';
-  const className = gradeMatch
-    ? cleaned.replace(gradeMatch[0], `${gradeCode}/${sectionCode}`)
+  const className = namedGradeMatch
+    ? cleaned.replace(namedGradeMatch[0], `${namedGradeMatch[2]}/${grades[namedGradeMatch[1]]}`)
     : cleaned || 'غير محدد';
   return {
     subject: subjectMatch?.[0] ?? '',
@@ -289,7 +278,7 @@ export default function ScheduleManager() {
                               </td>
                             );
                           }
-              const display = lessonDisplay(lesson.description || 'غير محدد');
+                          const display = lessonDisplay(lesson.description || 'غير محدد');
                           return (
                             <td
                               key={period}

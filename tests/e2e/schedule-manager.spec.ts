@@ -161,14 +161,14 @@ test('teacher lookup and period availability use the same verified schedule data
             teacher: 'وليد',
             day: 'الأحد',
             period: 1,
-            description: 'الفيزياء - 1/10',
+            description: 'الفيزياء - 6/10',
           },
           {
             id: 'lesson-2',
             teacher: 'وليد',
             day: 'الثلاثاء',
             period: 3,
-            description: 'الأحياء - 4/9',
+            description: 'الأحياء - التاسع أساسي/4',
           },
           { id: 'lesson-3', teacher: 'أحمد', day: 'الأحد', period: 2, description: '9/2 فيزياء' },
         ],
@@ -186,10 +186,10 @@ test('teacher lookup and period availability use the same verified schedule data
   await expect(teacherGrid.locator('thead th')).toHaveCount(8);
   await expect(teacherGrid.locator('tbody tr')).toHaveCount(5);
   const sunday = teacherGrid.locator('tbody tr').nth(0);
-  await expect(sunday).toContainText('10/1');
+  await expect(sunday).toContainText('6/10');
   await expect(sunday).toContainText('الفيزياء');
   const tuesday = teacherGrid.locator('tbody tr').nth(2);
-  await expect(tuesday.locator('td').nth(2)).toContainText('9/4');
+  await expect(tuesday.locator('td').nth(2)).toContainText('4/9');
   await expect(tuesday.locator('td').nth(2)).toContainText('أحياء');
   await expect(tuesday.locator('td').nth(0)).toHaveAttribute(
     'aria-label',
