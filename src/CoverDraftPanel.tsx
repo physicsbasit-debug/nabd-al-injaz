@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Schedule } from './schedule-model';
 import { COVER_DRAFT_KEY, addCoverAssignment, autoAssignCovers, clearCoverDay, draftCandidates, draftSlots, getCoverBalance, getCoverDailySummary, getCoverDay, getCoverTeacherPolicy, processCoverDay, readCoverStore, removeCoverAssignment, reopenCoverDay, setCoverAbsences, setCoverTeacherPolicy, validateAssignment, weekdayForDate } from './cover-planning';
 import './cover-draft.css';
-import { downloadCoverImage } from './cover-image';
+import { generateCoverImage } from './cover-image';
 
 function todayLocal(): string {
   const date = new Date();
@@ -14,6 +14,8 @@ export default function CoverDraftPanel({ schedule }: { schedule: Schedule }) {
   const [date, setDate] = useState(todayLocal);
   const [choices, setChoices] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
+  const [coverImage, setCoverImage] = useState('');
+  useEffect(() => { setCoverImage(''); }, [store, date, schedule]);
   useEffect(() => {
     try { localStorage.setItem(COVER_DRAFT_KEY, JSON.stringify(store)); }
     catch { setMessage('تعذّر حفظ المسودة في هذا المتصفح؛ تحقق من مساحة التخزين.'); }
@@ -93,10 +95,24 @@ export default function CoverDraftPanel({ schedule }: { schedule: Schedule }) {
           <h4>الحصص المطلوب تغطيتها ({slots.length})</h4>
           {slots.length > 0 && <button type="button" onClick={() => {
             try {
-              downloadCoverImage(date, day, record.absent, slots, record.assignments, new Set(record.assignments.filter((a) => validateAssignment(schedule, store, a)).map((a) => a.id)), processed);
-              setMessage('تم تجهيز صورة جدول الاحتياط للتنزيل.');
+              setCoverImage(generateCoverImage(date, day, record.absent, slots, record.assignments, new Set(record.assignments.filter((a) => validateAssignment(schedule, store, a)).map((a) => a.id)), processed));
+              setMessage('تم توليد الصورة. يمكنك نسخها أو حفظها.');
             } catch (error) { setMessage(error instanceof Error ? error.message : 'تعذر إنشاء صورة الاحتياط.'); }
-          }}>تنزيل صورة جدول الاحتياط</button>}
+          }}>توليد صورة جدول الاحتياط</button>}
+          {coverImage && <div className="cover-image-preview">
+            <img src={coverImage} alt="صورة جدول الاحتياط المولدة" />
+            <div className="cover-image-actions">
+              <button type="button" onClick={async () => {
+                try {
+                  if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') throw new Error('نسخ الصور غير مدعوم في هذا المتصفح. يمكنك حفظ الصورة أو الضغط المطول عليها لنسخها.');
+                  const blob = fetch(coverImage).then((response) => response.blob());
+                  await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                  setMessage('نُسخت صورة جدول الاحتياط.');
+                } catch (error) { setMessage(error instanceof Error ? error.message : 'تعذر نسخ الصورة؛ يمكنك حفظها.'); }
+              }}>نسخ الصورة</button>
+              <a href={coverImage} download={'احتياط-' + date + '.png'}>حفظ الصورة</a>
+            </div>
+          </div>}
           {record.absent.some((name) => !schedule.verifiedDays?.some((c) => c.teacher === name && c.day === day)) && <p className="cover-warning">بعض جداول الغائبين غير مؤكدة الاكتمال. قد توجد حصص غير مسجلة؛ لن يُسمح بتكليف البدائل لهذه الحصص حتى التحقق.</p>}
           {!slots.length ? <p>لا توجد حصص مسجلة لهؤلاء الغائبين؛ لا يمكن الجزم بعدم وجود احتياط.</p> :
             <div className="schedule-table-wrap"><table className="cover-slots-table" role="table" aria-label="الحصص المطلوب تغطيتها"><thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">الغائب</th><th role="columnheader" scope="col">الحصة</th><th role="columnheader" scope="col">المادة أو الصف</th><th role="columnheader" scope="col">البديل المقترح</th></tr></thead><tbody role="rowgroup">{slots.map((slot) => {

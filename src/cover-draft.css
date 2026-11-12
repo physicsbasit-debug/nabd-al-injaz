@@ -24,3 +24,9 @@
   .cover-draft .cover-slots-table .cover-choice select { width: 100%; min-width: 0; }
   .cover-draft .cover-slots-table .cover-choice button { width: 100%; white-space: normal; }
 }
+
+.cover-image-preview { display: grid; gap: 12px; min-width: 0; }
+.cover-image-preview img { display: block; width: 100%; height: auto; border: 1px solid #d8e2dc; border-radius: 8px; }
+.cover-image-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.cover-image-actions button, .cover-image-actions a { padding: 10px 16px; border: 1px solid #17634e; border-radius: 8px; background: #17634e; color: #fff; text-decoration: none; font: inherit; cursor: pointer; }
+.cover-image-actions a { background: #fff; color: #17634e; }

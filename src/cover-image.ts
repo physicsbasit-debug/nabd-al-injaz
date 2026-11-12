@@ -2,7 +2,7 @@ import type { Lesson } from './schedule-model';
 import type { CoverAssignment } from './cover-planning';
 
 /** Render only the saved local draft; uncovered or invalid slots remain explicit. */
-export function downloadCoverImage(date: string, day: string, absent: string[], slots: Lesson[], assignments: CoverAssignment[], invalidIds: Set<string>, processed: boolean): void {
+export function generateCoverImage(date: string, day: string, absent: string[], slots: Lesson[], assignments: CoverAssignment[], invalidIds: Set<string>, processed: boolean): string {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('تعذر إنشاء الصورة في هذا المتصفح.');
@@ -59,8 +59,5 @@ export function downloadCoverImage(date: string, day: string, absent: string[], 
   });
   ctx.fillStyle = '#53645d'; ctx.font = '24px sans-serif';
   ctx.fillText('الحصص دون بديل أو التكليفات غير الصالحة مميزة باللون الوردي.', width - margin, y + 30);
-  const link = document.createElement('a');
-  link.download = 'احتياط-' + date + '.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  return canvas.toDataURL('image/png');
 }

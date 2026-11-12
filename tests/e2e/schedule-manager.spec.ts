@@ -434,14 +434,19 @@ test('previous balances and teacher exemptions control candidate choices and per
   await restoredReplacement.selectOption('علي');
   await restoredPanel.getByRole('button', { name: 'إضافة للمسودة' }).click();
   await expect(restoredPanel.getByText('مسجل في المسودة: علي')).toBeVisible();
+  await restoredPanel.getByRole('button', { name: 'توليد صورة جدول الاحتياط' }).click();
+  await expect(restoredPanel.getByRole('img', { name: 'صورة جدول الاحتياط المولدة' })).toBeVisible();
+  await expect(restoredPanel.getByRole('button', { name: 'نسخ الصورة' })).toBeVisible();
   const downloadPromise = page.waitForEvent('download');
-  await restoredPanel.getByRole('button', { name: 'تنزيل صورة جدول الاحتياط' }).click();
+  await restoredPanel.getByRole('link', { name: 'حفظ الصورة' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/^احتياط-\d{4}-\d{2}-\d{2}\.png$/);
   expect(await download.failure()).toBeNull();
   const imagePath = await download.path();
   expect(imagePath).not.toBeNull();
   await testInfo.attach('cover-export.png', { path: imagePath!, contentType: 'image/png' });
+  await restoredPanel.getByLabel('رصيد سابق سالم').fill('2');
+  await expect(restoredPanel.getByRole('img', { name: 'صورة جدول الاحتياط المولدة' })).toHaveCount(0);
 });
 
 test('existing schedule can be safely cleared before importing a replacement', async ({
