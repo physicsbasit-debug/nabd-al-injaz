@@ -36,7 +36,7 @@ export function generateCoverImage(date: string, day: string, absent: string[], 
   });
   const headerHeight = 170 + names.length * 42;
   const heights = rows.map((row) => Math.max(72, Math.max(...row.cells.map((c) => c.length)) * 40 + 26));
-  canvas.height = margin * 2 + headerHeight + 30 + 72 + heights.reduce((a, b) => a + b, 0) + 55;
+  canvas.height = margin * 2 + headerHeight + 30 + 72 + heights.reduce((a, b) => a + b, 0);
   ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, canvas.height);
   ctx.direction = 'rtl'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
   ctx.fillStyle = '#005448'; ctx.fillRect(margin, margin, content, headerHeight);
@@ -57,7 +57,5 @@ export function generateCoverImage(date: string, day: string, absent: string[], 
     row.cells.forEach((lines, i) => { lines.forEach((line, n) => ctx.fillText(line, x - 12, y + 34 + n * 40)); x -= cols[i]; });
     ctx.strokeStyle = '#cdd7d2'; ctx.strokeRect(margin, y, content, h); y += h;
   });
-  ctx.fillStyle = '#53645d'; ctx.font = '24px sans-serif';
-  ctx.fillText('الحصص دون بديل أو التكليفات غير الصالحة مميزة باللون الوردي.', width - margin, y + 30);
   return canvas.toDataURL('image/png');
 }
