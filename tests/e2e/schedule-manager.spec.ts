@@ -437,6 +437,11 @@ test('previous balances and teacher exemptions control candidate choices and per
   await restoredPanel.getByRole('button', { name: 'توليد صورة جدول الاحتياط' }).click();
   await expect(restoredPanel.getByRole('img', { name: 'صورة جدول الاحتياط المولدة' })).toBeVisible();
   await expect(restoredPanel.getByRole('button', { name: 'نسخ الصورة' })).toBeVisible();
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await restoredPanel.getByRole('button', { name: 'نسخ الصورة' }).click();
+  await expect(restoredPanel.locator('.schedule-message')).toHaveText('نُسخت صورة جدول الاحتياط.');
+  const clipboardTypes = await page.evaluate(async () => (await navigator.clipboard.read()).flatMap((item) => item.types));
+  expect(clipboardTypes).toContain('image/png');
   const downloadPromise = page.waitForEvent('download');
   await restoredPanel.getByRole('link', { name: 'حفظ الصورة' }).click();
   const download = await downloadPromise;
