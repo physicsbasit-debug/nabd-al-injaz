@@ -127,7 +127,8 @@ test('home shows a truthful daily summary for every section', async ({ page }) =
   await expect(
     board.getByRole('button', { name: /المتابعة الفنية.*لا توجد موضوعات مسجلة/ }),
   ).toContainText('أدخل موضوعات النشرة لمتابعتها');
-  for (const name of ['الاختبارات والتحصيل', 'الإنماء المهني', 'التقارير']) {
+  await expect(board.getByRole('button', { name: /الاختبارات والتحصيل.*لا توجد اختبارات مسجلة/ })).toBeVisible();
+  for (const name of ['الإنماء المهني', 'التقارير']) {
     await expect(
       board.getByRole('button', { name: new RegExp(name + '.*القسم لم يُفعّل بعد') }),
     ).toBeVisible();
