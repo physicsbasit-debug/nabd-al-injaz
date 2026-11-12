@@ -15,6 +15,7 @@ import { validDate, type Plan } from './plan-model';
 import { readSchedule } from './schedule-model';
 import { getCoverDailySummary, getCoverDay, readCoverStore, weekdayForDate } from './cover-planning';
 import { readTechnicalTopicSummary, readTechnicalTopics } from './technical-followup-model';
+import { readShortTests } from './short-test-model';
 import './daily-section-board.css';
 
 const today = () => localDateKey(new Date());
@@ -74,6 +75,8 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
   const completedTodayCount = completedToday(plans, date);
   const technical = readTechnicalTopicSummary(date);
   const technicalCount = readTechnicalTopics().length;
+  const shortTests = readShortTests();
+  const testsPending = shortTests.filter((test) => test.status !== 'تمت المراجعة').length;
 
   const cards: DailyCard[] = [
     {
@@ -119,9 +122,9 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
     {
       name: 'الاختبارات والتحصيل',
       icon: FileText,
-      status: 'القسم لم يُفعّل بعد',
-      detail: 'لم تُسجل بيانات اختبارات أو تحصيل في المنظومة بعد',
-      pending: true,
+      status: shortTests.length ? `${shortTests.length} اختبار مسجل` : 'لا توجد اختبارات مسجلة',
+      detail: `${testsPending} بانتظار المراجعة أو تحتاج تعديلًا`,
+      alert: testsPending > 0,
     },
     {
       name: 'الإنماء المهني',

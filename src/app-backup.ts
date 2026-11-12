@@ -11,6 +11,7 @@ import { readTasks, STORAGE_KEY, type Task } from './task-model';
 import { validDate } from './plan-model';
 import { TECHNICAL_FOLLOWUP_STORAGE_KEY } from './technical-followup-model';
 import { weekdayForDate } from './cover-planning';
+import { SHORT_TEST_KEY, isReviewRecord } from './short-test-model';
 
 const FORMAT = 'nabd-al-injaz-full-backup';
 const VERSION = 1;
@@ -21,6 +22,7 @@ const APP_STORAGE_KEYS = [
   SCHEDULE_STORAGE_KEY,
   COVER_DRAFT_KEY,
   TECHNICAL_FOLLOWUP_STORAGE_KEY,
+  SHORT_TEST_KEY,
 ];
 type AppBackup = {
   format: string;
@@ -144,6 +146,10 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
           )))
     )
       throw new Error('سجل الاحتياط في ملف النسخة غير صالح.');
+  }
+  if (data[SHORT_TEST_KEY] !== undefined) {
+    const reviews = parseJson(data[SHORT_TEST_KEY], 'مراجعة الاختبارات');
+    if (!Array.isArray(reviews) || !reviews.every(isReviewRecord)) throw new Error('بيانات مراجعة الاختبارات في ملف النسخة غير صالحة.');
   }
   if (data[TECHNICAL_FOLLOWUP_STORAGE_KEY] !== undefined) {
     const topics = parseJson(data[TECHNICAL_FOLLOWUP_STORAGE_KEY], 'المتابعة الفنية');

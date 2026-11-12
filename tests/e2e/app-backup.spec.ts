@@ -67,6 +67,7 @@ test('full backup transfers school schedules and daily records between browser p
         },
       }),
     );
+    localStorage.setItem('nabd-al-injaz:short-tests:v1', JSON.stringify([{id:'test-1', teacher:'أحمد', subject:'فيزياء', title:'اختبار تجريبي', grade:'9', status:'بانتظار المراجعة', notes:'', lessons:2, items:9, total:15, knowledge:6, application:6, reasoning:3, multipleChoice:3, longAnswer:1}]));
     localStorage.setItem(
       'nabd-al-injaz:technical-followup:v1',
       JSON.stringify([
@@ -99,6 +100,7 @@ test('full backup transfers school schedules and daily records between browser p
   expect(archive.localData['nabd-al-injaz:schedules:v1']).toContain('أحمد');
   expect(archive.localData['nabd-al-injaz:cover-drafts:v1']).toContain('2026-11-11');
   expect(archive.localData['nabd-al-injaz:technical-followup:v1']).toContain('السرعة');
+  expect(archive.localData['nabd-al-injaz:short-tests:v1']).toContain('اختبار تجريبي');
   expect(archive.plansAndEvidence.plans[0].id).toBe('plan-1');
 
   await page.evaluate(() => {
@@ -119,12 +121,14 @@ test('full backup transfers school schedules and daily records between browser p
     schedule: JSON.parse(localStorage.getItem('nabd-al-injaz:schedules:v1') || 'null'),
     cover: JSON.parse(localStorage.getItem('nabd-al-injaz:cover-drafts:v1') || 'null'),
     technical: JSON.parse(localStorage.getItem('nabd-al-injaz:technical-followup:v1') || '[]'),
+    reviews: JSON.parse(localStorage.getItem('nabd-al-injaz:short-tests:v1') || '[]'),
   }));
   expect(restored.tasks[0].id).toBe('task-1');
   expect(restored.plans[0].id).toBe('plan-1');
   expect(restored.schedule.teachers).toEqual(['أحمد', 'سالم']);
   expect(restored.cover.days['2026-11-11'].absent).toEqual(['أحمد']);
   expect(restored.technical[0].id).toBe('topic-1');
+  expect(restored.reviews[0].id).toBe('test-1');
 });
 
 test('invalid full backup is rejected without replacing current data', async ({ page }) => {

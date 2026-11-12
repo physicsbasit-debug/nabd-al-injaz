@@ -16,6 +16,7 @@ import PlanOverview from './PlanOverview';
 import PlanLibrary from './PlanLibrary';
 import ScheduleManager from './ScheduleManager';
 import TechnicalFollowup from './TechnicalFollowup';
+import ShortTestReview from './ShortTestReview';
 import AppBackupTools from './AppBackupTools';
 import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
@@ -168,6 +169,8 @@ export default function App() {
           <ScheduleManager />
         ) : tab === 'المتابعة الفنية' ? (
           <TechnicalFollowup />
+        ) : tab === 'الاختبارات والتحصيل' ? (
+          <ShortTestReview />
         ) : (
           <section className="card">
             <h2>{tab}</h2>

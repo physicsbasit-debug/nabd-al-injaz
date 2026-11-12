@@ -1,0 +1,11 @@
+.short-test-review { display: grid; gap: 14px; }
+.short-test-review h2, .short-test-review h3, .short-test-review h4, .short-test-review p { margin: 0; }
+.short-test-review p { line-height: 1.8; }
+.short-test-source { color: #53645d; font-size: .9rem; }
+.short-test-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+.short-test-fields label { display: grid; gap: 5px; min-width: 0; }
+.short-test-fields input, .short-test-fields select, .short-test-fields textarea { width: 100%; min-width: 0; }
+.short-test-notes { grid-column: 1 / -1; }
+.short-test-item { padding: 12px; border: 1px solid #d8e2dc; border-radius: 10px; }
+.short-test-item summary { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; cursor: pointer; }
+.short-test-item p, .short-test-item h4, .short-test-item ul { margin-top: 10px; }
