@@ -439,6 +439,9 @@ test('previous balances and teacher exemptions control candidate choices and per
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/^احتياط-\d{4}-\d{2}-\d{2}\.png$/);
   expect(await download.failure()).toBeNull();
+  const imagePath = await download.path();
+  expect(imagePath).not.toBeNull();
+  await testInfo.attach('cover-export.png', { path: imagePath!, contentType: 'image/png' });
 });
 
 test('existing schedule can be safely cleared before importing a replacement', async ({
