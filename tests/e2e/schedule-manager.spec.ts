@@ -434,6 +434,11 @@ test('previous balances and teacher exemptions control candidate choices and per
   await restoredReplacement.selectOption('علي');
   await restoredPanel.getByRole('button', { name: 'إضافة للمسودة' }).click();
   await expect(restoredPanel.getByText('مسجل في المسودة: علي')).toBeVisible();
+  const downloadPromise = page.waitForEvent('download');
+  await restoredPanel.getByRole('button', { name: 'تنزيل صورة جدول الاحتياط' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^احتياط-\d{4}-\d{2}-\d{2}\.png$/);
+  expect(await download.failure()).toBeNull();
 });
 
 test('existing schedule can be safely cleared before importing a replacement', async ({
