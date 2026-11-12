@@ -36,7 +36,7 @@ export default function ShortTestReview() {
       <label>المادة<input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} /></label>
       <label>الصف<select aria-label="الصف" value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value as Grade })}><option value="8">الثامن</option><option value="9">التاسع</option><option value="10">العاشر</option></select></label>
       {fields.map(([key, label]) => <label key={key}>{label}<input type="number" min="0" max="1000" step="1" value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} /></label>)}
-      <label>حالة المراجعة<select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as ReviewRecord['status'] })}><option>بانتظار المراجعة</option><option>يحتاج تعديلًا</option><option>تمت المراجعة</option></select></label>
+      <label className="short-test-status">حالة المراجعة<select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as ReviewRecord['status'] })}><option>بانتظار المراجعة</option><option>يحتاج تعديلًا</option><option>تمت المراجعة</option></select></label>
       <label className="short-test-notes">ملاحظات المراجع<textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
     </div>
     <div><button type="button" onClick={save}>{editing ? 'حفظ التعديل' : 'حفظ سجل الاختبار'}</button>{editing && <button type="button" onClick={() => { setEditing(null); setForm(empty); }}>إلغاء التعديل</button>}</div>

@@ -31,3 +31,6 @@
   .short-test-fields label:nth-child(-n+4) { grid-column: 1 / -1; }
   .short-test-item summary { flex-direction: column; }
 }
+@media (max-width: 650px) {
+  .short-test-fields .short-test-status { grid-column: 1 / -1; }
+}
