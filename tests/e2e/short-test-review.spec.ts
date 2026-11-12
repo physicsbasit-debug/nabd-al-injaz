@@ -23,4 +23,12 @@ test('short test records show numeric issues, persist, and allow manual revision
   await page.getByRole('button', { name: 'الاختبارات والتحصيل', exact: true }).click();
   await expect(page.getByText('اختبار تجريبي', { exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('short-test-review.png'), fullPage: true });
+  await page.getByText('اختبار تجريبي', { exact: true }).click();
+  page.once('dialog', (dialog) => dialog.dismiss());
+  await page.getByRole('button', { name: 'حذف سجل الاختبار' }).click();
+  await expect(page.getByText('اختبار تجريبي', { exact: true })).toBeVisible();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'حذف سجل الاختبار' }).click();
+  await expect(page.getByText('اختبار تجريبي', { exact: true })).toHaveCount(0);
+
 });

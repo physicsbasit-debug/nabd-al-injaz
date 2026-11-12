@@ -22,6 +22,14 @@ export default function ShortTestReview() {
     try { localStorage.setItem(SHORT_TEST_KEY, JSON.stringify(next)); } catch { setMessage('تعذر الحفظ على الجهاز.'); return; }
     setRecords(next); setForm(empty); setEditing(null); setMessage('حُفظ سجل المراجعة محليًا.');
   }
+  function remove(record: ReviewRecord) {
+    if (!window.confirm('سيُحذف سجل مراجعة الاختبار فقط. هل تريد المتابعة؟')) return;
+    const next = records.filter((item) => item.id !== record.id);
+    try { localStorage.setItem(SHORT_TEST_KEY, JSON.stringify(next)); } catch { setMessage('تعذر حذف السجل من الجهاز.'); return; }
+    setRecords(next);
+    if (editing === record.id) { setEditing(null); setForm(empty); }
+    setMessage('حُذف سجل مراجعة الاختبار.');
+  }
   function edit(record: ReviewRecord) {
     setForm({ grade: record.grade, teacher: record.teacher, subject: record.subject, title: record.title, notes: record.notes, status: record.status, ...Object.fromEntries(fields.map(([key]) => [key, String(record[key])])) } as typeof empty);
     setEditing(record.id); setMessage('يمكنك تعديل السجل ثم حفظه.');
@@ -51,6 +59,7 @@ export default function ShortTestReview() {
       <p>تحقق يدويًا من مراجعة الاختبار ونموذج الإجابة قبل التطبيق، وتنوع أهداف التعلم، ومناسبة الأسئلة والزمن، وتغطية الاختيار من متعدد لأهداف التقويم حيث ينطبق.</p>
       {record.notes && <p>ملاحظات المراجع: {record.notes}</p>}
       <button type="button" onClick={() => edit(record)}>تعديل سجل الاختبار</button>
+      <button type="button" onClick={() => remove(record)}>حذف سجل الاختبار</button>
     </details>; })}
   </section>;
 }
