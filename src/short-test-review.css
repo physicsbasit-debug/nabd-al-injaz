@@ -9,3 +9,25 @@
 .short-test-item { padding: 12px; border: 1px solid #d8e2dc; border-radius: 10px; }
 .short-test-item summary { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; cursor: pointer; }
 .short-test-item p, .short-test-item h4, .short-test-item ul { margin-top: 10px; }
+.short-test-review { padding: clamp(18px, 3vw, 28px); }
+.short-test-review h2 { color: #143f35; font-size: 1.35rem; }
+.short-test-review > p { color: #526b62; }
+.short-test-review .short-test-source { padding: 10px 14px; background: #eff6f2; border-right: 3px solid #318269; border-radius: 7px; }
+.short-test-fields { padding: 18px; background: #f7faf8; border: 1px solid #dbe8e1; border-radius: 12px; }
+.short-test-fields label { color: #234f43; font-weight: 600; font-size: .92rem; }
+.short-test-fields input, .short-test-fields select, .short-test-fields textarea {
+  box-sizing: border-box; min-height: 44px; padding: 9px 11px; border: 1px solid #abc6b9;
+  border-radius: 8px; background: white; color: #173f35; font: inherit;
+}
+.short-test-fields textarea { min-height: 86px; resize: vertical; }
+.short-test-fields input:focus-visible, .short-test-fields select:focus-visible, .short-test-fields textarea:focus-visible, .short-test-review button:focus-visible, .short-test-item summary:focus-visible { outline: 3px solid #a8d7c0; outline-offset: 2px; }
+.short-test-review button { padding: 10px 16px; border: 1px solid #17634e; border-radius: 8px; color: white; background: #17634e; font: inherit; cursor: pointer; }
+.short-test-review button + button { margin-inline-start: 8px; background: white; color: #17634e; }
+.short-test-item { background: #fbfdfc; }
+.short-test-item summary span { color: #536b62; font-size: .9rem; }
+.short-test-item ul { padding-inline-start: 22px; color: #8d4028; line-height: 1.8; }
+@media (max-width: 650px) {
+  .short-test-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; }
+  .short-test-fields label:nth-child(-n+4) { grid-column: 1 / -1; }
+  .short-test-item summary { flex-direction: column; }
+}
