@@ -16,12 +16,15 @@ export default function ShortTestReview() {
   const [editing, setEditing] = useState<string | null>(null);
   const editSnapshot = useRef<ReviewRecord | null>(null);
   const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
   async function save() {
     if (loaded.error) return;
     if (!form.teacher.trim() || !form.subject.trim() || !form.title.trim() || fields.some(([key]) => form[key].trim() === '')) { setMessage('أكمل بيانات الاختبار والأعداد قبل الحفظ؛ أدخل صفرًا إذا لم يوجد نوع من المفردات.'); return; }
     const numeric = Object.fromEntries(fields.map(([key]) => [key, Number(form[key])])) as Omit<ShortTestNumbers, 'grade'>;
     const record: ReviewRecord = { ...numeric, id: editing ?? crypto.randomUUID(), grade: form.grade, teacher: form.teacher.trim(), subject: form.subject.trim(), title: form.title.trim(), notes: form.notes.trim(), status: form.status };
     if (!isReviewRecord(record)) { setMessage('أدخل أعدادًا صحيحة غير سالبة.'); return; }
+    if (saving) return;
+    setSaving(true);
     try {
       const next = await withAssessmentLock(async () => {
         const current = readShortTests();
@@ -32,6 +35,7 @@ export default function ShortTestReview() {
       });
       setRecords(next); setForm(empty); setEditing(null); editSnapshot.current = null; setMessage('حُفظ سجل المراجعة محليًا.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'تعذر الحفظ على الجهاز.'); }
+    finally { setSaving(false); }
   }
   async function remove(record: ReviewRecord) {
     if (loaded.error) return;
@@ -59,7 +63,7 @@ export default function ShortTestReview() {
     <p className="short-test-source">هذه مراجعة اختيارية بسجل مستقل عن سجل المتابعة أعلاه، وتُستخدم لفحص المواصفات العددية.</p>
     <p>سجّل بيانات الاختبار لمقارنة الأعداد بالوثيقة. فحص الأعداد لا يغني عن مراجعة الأسئلة ونموذج الإجابة ومحتواهما؛ قرار المراجعة يحدده المعلم الأول.</p>
     <p className="short-test-source">المرجع: وثيقة تقويم تعلم الطلبة في مواد العلوم (5–10)، إصدار 2026–2027، الصفحتان 20 و21.</p>
-    <div className="short-test-fields">
+    <fieldset className="short-test-fields" disabled={saving}>
       <label>عنوان الاختبار<input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
       <label>المعلم<input value={form.teacher} onChange={(e) => setForm({ ...form, teacher: e.target.value })} /></label>
       <label>المادة<input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} /></label>
@@ -67,8 +71,8 @@ export default function ShortTestReview() {
       {fields.map(([key, label]) => <label key={key}>{label}<input type="number" min="0" max="1000" step="1" value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} /></label>)}
       <label className="short-test-status">حالة المراجعة<select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as ReviewRecord['status'] })}><option>بانتظار المراجعة</option><option>يحتاج تعديلًا</option><option>تمت المراجعة</option></select></label>
       <label className="short-test-notes">ملاحظات المراجع<textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
-    </div>
-    <div><button type="button" disabled={loaded.error} onClick={save}>{editing ? 'حفظ التعديل' : 'حفظ سجل الاختبار'}</button>{editing && <button type="button" onClick={() => { setEditing(null); setForm(empty); }}>إلغاء التعديل</button>}</div>
+    </fieldset>
+    <div><button type="button" disabled={loaded.error || saving} onClick={save}>{editing ? 'حفظ التعديل' : 'حفظ سجل الاختبار'}</button>{editing && <button type="button" disabled={saving} onClick={() => { setEditing(null); setForm(empty); }}>إلغاء التعديل</button>}</div>
     {message && <p role="status">{message}</p>}
     <h3>السجلات ({records.length})</h3>
     {!loaded.error && records.length === 0 && <p>لا توجد اختبارات مسجلة بعد.</p>}

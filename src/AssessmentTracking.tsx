@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ASSESSMENT_KEY, SUBJECTS, isAssessmentRecord, readAssessments, summarizeAssessments, type AssessmentRecord } from './assessment-tracking';
 import { ASSESSMENT_MAX_BYTES, ASSESSMENT_MIMES, listAssessmentFiles, saveAssessmentFile, deleteAssessmentFile, type AssessmentFile } from './assessment-files';
 import { readSchedule } from './schedule-model';
-import { withAssessmentLock } from './assessment-lock';
+import { onAssessmentChange, withAssessmentLock } from './assessment-lock';
 import './short-test-review.css';
 
 const blank = { teacher:'', subject:'فيزياء', title:'', grade:'9', submitted:false, analyzed:false, notes:'' };
@@ -16,22 +16,30 @@ export default function AssessmentTracking() {
   const editSnapshot = useRef<AssessmentRecord | null>(null);
   const [message, setMessage] = useState('');
   const [ready, setReady] = useState(false);
+  const [saving, setSaving] = useState(false);
   const pendingFiles = useRef(new Set<string>());
   const [pendingRecords, setPendingRecords] = useState<string[]>([]);
   const teachers = readSchedule().teachers;
   useEffect(() => {
     let active = true;
-    Promise.resolve().then(() => readAssessments()).then(async (items) => {
-      const saved = await listAssessmentFiles();
-      if (active) {setRecords(items); setFiles(saved); setReady(true);}
-    }).catch(() => { if (active) setMessage('تعذر قراءة سجلات الاختبارات أو ملفاتها؛ لم تُغيّر بياناتك.'); });
-    return () => {active = false;};
+    const refresh = () => {
+      void withAssessmentLock(async () => ({items:readAssessments(), saved:await listAssessmentFiles()}), false)
+        .then(({items, saved}) => {if (active) {setRecords(items); setFiles(saved); setReady(true);}})
+        .catch((error: unknown) => {if (active) {setReady(false); setMessage(error instanceof Error ? error.message : 'تعذر قراءة سجلات الاختبارات أو ملفاتها؛ لم تُغيّر بياناتك.');}});
+    };
+    refresh();
+    const unsubscribe = onAssessmentChange(refresh);
+    const onStorage = (event: StorageEvent) => { if (event.key === ASSESSMENT_KEY) refresh(); };
+    window.addEventListener('storage', onStorage);
+    return () => {active = false; unsubscribe(); window.removeEventListener('storage', onStorage);};
   }, []);
   const visible = filter === 'الكل' ? records : records.filter(r => r.subject === filter);
   const summary = summarizeAssessments(visible);
   async function save() {
     const record = {...form, id:editing ?? crypto.randomUUID(), teacher:form.teacher.trim(), title:form.title.trim(), notes:form.notes.trim()};
     if (!isAssessmentRecord(record)) {setMessage('أدخل عنوان الاختبار واسم المعلم واختر التخصص والصف.'); return;}
+    if (saving) return;
+    setSaving(true);
     try {
       const next = await withAssessmentLock(async () => {
         const current = readAssessments();
@@ -42,6 +50,7 @@ export default function AssessmentTracking() {
       });
       setRecords(next); setForm(blank); setEditing(null); editSnapshot.current = null; setMessage('حُفظ سجل المتابعة على هذا الجهاز.');
     } catch (error) {setMessage(error instanceof Error ? error.message : 'تعذر حفظ السجل.');}
+    finally {setSaving(false);}
   }
   async function addFile(record: AssessmentRecord, kind: 'اختبار' | 'تحليل', file?: File) {
     if (!file) return;
@@ -94,7 +103,7 @@ export default function AssessmentTracking() {
       <div className="assessment-counts" aria-label="ملخص المتابعة"><span>السجلات <strong>{summary.total}</strong></span><span>لم يُسلّم <strong>{summary.pendingSubmission}</strong></span><span>لم يُحلّل <strong>{summary.pendingAnalysis}</strong></span></div>
     </div>
     <h3>{editing ? 'تعديل سجل المتابعة' : 'إضافة سجل متابعة'}</h3>
-    <div className="short-test-fields">
+    <fieldset className="short-test-fields" disabled={saving}>
       <label>عنوان الاختبار<input value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></label>
       <label>المعلم<input list="assessment-teachers" value={form.teacher} onChange={e=>setForm({...form,teacher:e.target.value})}/><datalist id="assessment-teachers">{teachers.map(t=><option value={t} key={t}/>)}</datalist></label>
       <label>التخصص<select aria-label="التخصص" value={form.subject} onChange={e=>setForm({...form,subject:e.target.value})}>{SUBJECTS.map(s=><option key={s}>{s}</option>)}</select></label>
@@ -102,8 +111,8 @@ export default function AssessmentTracking() {
       <label><input type="checkbox" checked={form.submitted} onChange={e=>setForm({...form,submitted:e.target.checked})}/> تم تسليم الاختبار</label>
       <label><input type="checkbox" checked={form.analyzed} onChange={e=>setForm({...form,analyzed:e.target.checked})}/> تم تحليل النتائج</label>
       <label className="short-test-notes">ملاحظات<textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
-    </div>
-    <div><button type="button" disabled={!ready} onClick={save}>{editing ? 'حفظ تعديل المتابعة' : 'حفظ سجل المتابعة'}</button>{editing && <button type="button" onClick={()=>{setEditing(null);setForm(blank);}}>إلغاء تعديل المتابعة</button>}</div>
+    </fieldset>
+    <div><button type="button" disabled={!ready || saving} onClick={save}>{editing ? 'حفظ تعديل المتابعة' : 'حفظ سجل المتابعة'}</button>{editing && <button type="button" disabled={saving} onClick={()=>{setEditing(null);setForm(blank);}}>إلغاء تعديل المتابعة</button>}</div>
     {message && <p role="status">{message}</p>}
     <h3>سجلات المتابعة ({visible.length})</h3>
     {visible.length===0 && <p>لا توجد سجلات في هذا التخصص.</p>}
