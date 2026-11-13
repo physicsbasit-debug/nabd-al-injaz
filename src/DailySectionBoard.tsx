@@ -16,6 +16,7 @@ import { readSchedule } from './schedule-model';
 import { getCoverDailySummary, getCoverDay, readCoverStore, weekdayForDate } from './cover-planning';
 import { readTechnicalTopicSummary, readTechnicalTopics } from './technical-followup-model';
 import { readShortTests } from './short-test-model';
+import { readAssessments, summarizeAssessments } from './assessment-tracking';
 import './daily-section-board.css';
 
 const today = () => localDateKey(new Date());
@@ -77,6 +78,8 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
   const technicalCount = readTechnicalTopics().length;
   const shortTests = readShortTests();
   const testsPending = shortTests.filter((test) => test.status !== 'تمت المراجعة').length;
+  let assessmentSummary: ReturnType<typeof summarizeAssessments> | null = null;
+  try { assessmentSummary = summarizeAssessments(readAssessments()); } catch { /* Show an explicit warning below. */ }
 
   const cards: DailyCard[] = [
     {
@@ -122,9 +125,9 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
     {
       name: 'الاختبارات والتحصيل',
       icon: FileText,
-      status: shortTests.length ? `${shortTests.length} اختبار مسجل` : 'لا توجد اختبارات مسجلة',
-      detail: `${testsPending} بانتظار المراجعة أو تحتاج تعديلًا`,
-      alert: testsPending > 0,
+      status: assessmentSummary === null ? 'تعذر قراءة متابعة الاختبارات' : assessmentSummary.total ? `${assessmentSummary.total} سجل متابعة` : shortTests.length ? `${shortTests.length} اختبار مسجل` : 'لا توجد اختبارات مسجلة',
+      detail: assessmentSummary?.total ? `${assessmentSummary.pendingSubmission} بانتظار التسليم · ${assessmentSummary.pendingAnalysis} بانتظار التحليل · ${testsPending} للمراجعة` : `${testsPending} بانتظار المراجعة أو تحتاج تعديلًا`,
+      alert: assessmentSummary === null || testsPending > 0 || !!assessmentSummary && assessmentSummary.pendingSubmission + assessmentSummary.pendingAnalysis > 0,
     },
     {
       name: 'الإنماء المهني',

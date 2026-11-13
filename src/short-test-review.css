@@ -34,3 +34,8 @@
 @media (max-width: 650px) {
   .short-test-fields .short-test-status { grid-column: 1 / -1; }
 }
+
+.short-test-fields label:has(input[type=checkbox]) { display: flex; align-items: center; gap: 8px; }
+.short-test-fields input[type=checkbox] { width: 20px; min-height: 20px; height: 20px; accent-color: #17634e; }
+.short-test-item input[type=file] { max-width: 100%; }
+.short-test-review + .short-test-review { margin-top: 20px; }
