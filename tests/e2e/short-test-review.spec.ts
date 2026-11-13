@@ -13,7 +13,9 @@ test('review status is part of the existing record and older data remains intact
   const section = page.getByRole('region', {name:'متابعة الاختبارات والتحليل'});
   await expect(page.getByRole('region', {name:'مراجعة الاختبارات القصيرة'})).toHaveCount(0);
   await section.getByText('اختبار قديم · معلم تجريبي').click();
-  await expect(section.getByText('مراجعة الاختبار: لم تتم المراجعة')).toBeVisible();
+  await expect(section.getByText('مراجعة الاختبار: لم تُسجّل حالة المراجعة')).toBeVisible();
+  await section.getByText('سجلات المراجعة السابقة (1)').click();
+  await expect(section.getByText('ملاحظات: محتوى محفوظ')).toBeVisible();
   await section.getByRole('button', {name:'تعديل المتابعة'}).click();
   await expect(section.getByLabel('تمت مراجعة الاختبار')).not.toBeChecked();
   await section.getByLabel('تمت مراجعة الاختبار').check();

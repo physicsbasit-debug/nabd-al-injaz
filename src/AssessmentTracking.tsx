@@ -3,9 +3,10 @@ import { ASSESSMENT_KEY, SUBJECTS, isAssessmentRecord, readAssessments, summariz
 import { ASSESSMENT_MAX_BYTES, ASSESSMENT_MIMES, listAssessmentFiles, saveAssessmentFile, deleteAssessmentFile, type AssessmentFile } from './assessment-files';
 import { readSchedule } from './schedule-model';
 import { onAssessmentChange, withAssessmentLock } from './assessment-lock';
+import { readShortTests, type ReviewRecord } from './short-test-model';
 import './short-test-review.css';
 
-const blank = { teacher:'', subject:'فيزياء', title:'', grade:'9', submitted:false, analyzed:false, reviewed:false, notes:'' };
+const blank = { teacher:'', subject:'فيزياء', title:'', grade:'9', submitted:false, analyzed:false, reviewed:false as boolean | undefined, notes:'' };
 const fallbackMimes: Record<string, string> = {pdf:'application/pdf', png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document', xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'};
 export default function AssessmentTracking() {
   const [records, setRecords] = useState<AssessmentRecord[]>([]);
@@ -17,14 +18,20 @@ export default function AssessmentTracking() {
   const [message, setMessage] = useState('');
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [legacyReviews, setLegacyReviews] = useState<ReviewRecord[]>([]);
+  const [legacyError, setLegacyError] = useState(false);
   const pendingFiles = useRef(new Set<string>());
   const [pendingRecords, setPendingRecords] = useState<string[]>([]);
   const teachers = readSchedule().teachers;
   useEffect(() => {
     let active = true;
     const refresh = () => {
-      void withAssessmentLock(async () => ({items:readAssessments(), saved:await listAssessmentFiles()}), false)
-        .then(({items, saved}) => {if (active) {setRecords(items); setFiles(saved); setReady(true);}})
+      void withAssessmentLock(async () => {
+        let previous: ReviewRecord[] = [], invalid = false;
+        try { previous = readShortTests(); } catch { invalid = true; }
+        return {items:readAssessments(), saved:await listAssessmentFiles(), previous, invalid};
+      }, false)
+        .then(({items, saved, previous, invalid}) => {if (active) {setRecords(items); setFiles(saved); setLegacyReviews(previous); setLegacyError(invalid); setReady(true);}})
         .catch((error: unknown) => {if (active) {setReady(false); setMessage(error instanceof Error ? error.message : 'تعذر قراءة سجلات الاختبارات أو ملفاتها؛ لم تُغيّر بياناتك.');}});
     };
     refresh();
@@ -100,7 +107,7 @@ export default function AssessmentTracking() {
     <p>سجّل اختبار المعلم وتابع مراجعته وتسليمه وتحليله. بعد حفظ السجل، افتحه لإرفاق نسخة الاختبار والتحليل. تُحفظ البيانات والملفات في هذا المتصفح فقط.</p>
     <div className="assessment-overview">
       <label className="assessment-filter">عرض حسب التخصص<select aria-label="عرض حسب التخصص" value={filter} onChange={e=>setFilter(e.target.value)}><option>الكل</option>{SUBJECTS.map(s=><option key={s}>{s}</option>)}</select></label>
-      <div className="assessment-counts" aria-label="ملخص المتابعة"><span>السجلات <strong>{summary.total}</strong></span><span>لم يُراجع <strong>{summary.pendingReview}</strong></span><span>لم يُسلّم <strong>{summary.pendingSubmission}</strong></span><span>لم يُحلّل <strong>{summary.pendingAnalysis}</strong></span></div>
+      <div className="assessment-counts" aria-label="ملخص المتابعة"><span>السجلات <strong>{summary.total}</strong></span><span>المراجعة غير مكتملة <strong>{summary.pendingReview}</strong></span><span>لم يُسلّم <strong>{summary.pendingSubmission}</strong></span><span>لم يُحلّل <strong>{summary.pendingAnalysis}</strong></span></div>
     </div>
     <h3>{editing ? 'تعديل سجل المتابعة' : 'إضافة سجل متابعة'}</h3>
     <fieldset className="short-test-fields" disabled={saving}>
@@ -110,7 +117,7 @@ export default function AssessmentTracking() {
       <label>الصف<select aria-label="صف الاختبار" value={form.grade} onChange={e=>setForm({...form,grade:e.target.value})}><option value="8">الثامن</option><option value="9">التاسع</option><option value="10">العاشر</option></select></label>
       <label><input type="checkbox" checked={form.submitted} onChange={e=>setForm({...form,submitted:e.target.checked})}/> تم تسليم الاختبار</label>
       <label><input type="checkbox" checked={form.analyzed} onChange={e=>setForm({...form,analyzed:e.target.checked})}/> تم تحليل النتائج</label>
-      <label><input type="checkbox" checked={form.reviewed} onChange={e=>setForm({...form,reviewed:e.target.checked})}/> تمت مراجعة الاختبار</label>
+      <label><input type="checkbox" checked={form.reviewed === true} onChange={e=>setForm({...form,reviewed:e.target.checked})}/> تمت مراجعة الاختبار</label>
       <label className="short-test-notes">ملاحظات<textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
     </fieldset>
     <div><button type="button" disabled={!ready || saving} onClick={save}>{editing ? 'حفظ تعديل المتابعة' : 'حفظ سجل المتابعة'}</button>{editing && <button type="button" disabled={saving} onClick={()=>{setEditing(null);setForm(blank);}}>إلغاء تعديل المتابعة</button>}</div>
@@ -120,14 +127,16 @@ export default function AssessmentTracking() {
     {visible.map(r=><details className="short-test-item" key={r.id}>
       <summary><strong>{r.title} · {r.teacher}</strong><span>{r.subject} · الصف {r.grade}</span></summary>
       <p>تسليم الاختبار: {r.submitted ? 'تم التسليم' : 'لم يُسلّم'} · تحليل النتائج: {r.analyzed ? 'تم التحليل' : 'لم يُحلّل'}</p>
-      <p>مراجعة الاختبار: {r.reviewed ? 'تمت المراجعة' : 'لم تتم المراجعة'}</p>
+      <p>مراجعة الاختبار: {r.reviewed === undefined ? 'لم تُسجّل حالة المراجعة' : r.reviewed ? 'تمت المراجعة' : 'لم تتم المراجعة'}</p>
       {r.notes && <p>ملاحظات: {r.notes}</p>}
       {(['اختبار','تحليل'] as const).map(kind=><div className="assessment-file-group" key={kind}>
         <h4>ملفات {kind === 'اختبار' ? 'الاختبار' : 'التحليل'}</h4>
         {files.filter(f=>f.recordId===r.id && f.kind===kind).map(f=><div className="assessment-file-row" key={f.id}><span>{f.name}</span><div><button type="button" onClick={()=>download(f)}>تنزيل الملف</button> <button type="button" onClick={()=>void removeFile(f)}>حذف الملف</button></div></div>)}
         <label className="assessment-file-upload">{kind === 'اختبار' ? 'إرفاق نسخة الاختبار' : 'إرفاق التحليل'}<input type="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" onChange={e=>{void addFile(r,kind,e.target.files?.[0]); e.currentTarget.value='';}}/></label>
       </div>)}
-      <p><button type="button" disabled={saving} onClick={()=>{editSnapshot.current = r;setEditing(r.id);setForm({teacher:r.teacher,subject:r.subject,title:r.title,grade:r.grade,submitted:r.submitted,analyzed:r.analyzed,reviewed:r.reviewed === true,notes:r.notes});}}>تعديل المتابعة</button> <button type="button" disabled={saving || pendingRecords.includes(r.id)} onClick={()=>void removeRecord(r)}>حذف سجل المتابعة</button></p>
+      <p><button type="button" disabled={saving} onClick={()=>{editSnapshot.current = r;setEditing(r.id);setForm({teacher:r.teacher,subject:r.subject,title:r.title,grade:r.grade,submitted:r.submitted,analyzed:r.analyzed,reviewed:r.reviewed,notes:r.notes});}}>تعديل المتابعة</button> <button type="button" disabled={saving || pendingRecords.includes(r.id)} onClick={()=>void removeRecord(r)}>حذف سجل المتابعة</button></p>
     </details>)}
+    {legacyError && <p role="alert">تعذر قراءة سجلات المراجعة السابقة؛ لم تُحذف بياناتها.</p>}
+    {legacyReviews.length > 0 && <details className="short-test-item"><summary><strong>سجلات المراجعة السابقة ({legacyReviews.length})</strong></summary><p>سجلات محفوظة من الإصدار السابق، للرجوع إليها فقط. لم تُربط تلقائيًا بسجلات المتابعة.</p>{legacyReviews.map(r => <div key={r.id}><h4>{r.title} · {r.teacher}</h4><p>{r.subject} · الصف {r.grade} · {r.status}</p>{r.notes && <p>ملاحظات: {r.notes}</p>}</div>)}</details>}
   </section>;
 }
