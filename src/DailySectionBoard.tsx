@@ -76,7 +76,8 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
   const completedTodayCount = completedToday(plans, date);
   const technical = readTechnicalTopicSummary(date);
   const technicalCount = readTechnicalTopics().length;
-  const shortTests = readShortTests();
+  let reviewReadFailed = false;
+  const shortTests = (() => { try { return readShortTests(); } catch { reviewReadFailed = true; return []; } })();
   const testsPending = shortTests.filter((test) => test.status !== 'تمت المراجعة').length;
   let assessmentSummary: ReturnType<typeof summarizeAssessments> | null = null;
   try { assessmentSummary = summarizeAssessments(readAssessments()); } catch { /* Show an explicit warning below. */ }
@@ -125,9 +126,9 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
     {
       name: 'الاختبارات والتحصيل',
       icon: FileText,
-      status: assessmentSummary === null ? 'تعذر قراءة متابعة الاختبارات' : assessmentSummary.total ? `${assessmentSummary.total} سجل متابعة` : shortTests.length ? `${shortTests.length} اختبار مسجل` : 'لا توجد اختبارات مسجلة',
+      status: reviewReadFailed ? 'تعذر قراءة سجلات مراجعة الاختبارات' : assessmentSummary === null ? 'تعذر قراءة متابعة الاختبارات' : assessmentSummary.total ? `${assessmentSummary.total} سجل متابعة` : shortTests.length ? `${shortTests.length} اختبار مسجل` : 'لا توجد اختبارات مسجلة',
       detail: assessmentSummary?.total ? `${assessmentSummary.pendingSubmission} بانتظار التسليم · ${assessmentSummary.pendingAnalysis} بانتظار التحليل · ${testsPending} للمراجعة` : `${testsPending} بانتظار المراجعة أو تحتاج تعديلًا`,
-      alert: assessmentSummary === null || testsPending > 0 || !!assessmentSummary && assessmentSummary.pendingSubmission + assessmentSummary.pendingAnalysis > 0,
+      alert: reviewReadFailed || assessmentSummary === null || testsPending > 0 || !!assessmentSummary && assessmentSummary.pendingSubmission + assessmentSummary.pendingAnalysis > 0,
     },
     {
       name: 'الإنماء المهني',

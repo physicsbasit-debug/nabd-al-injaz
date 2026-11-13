@@ -25,5 +25,7 @@ export function isReviewRecord(value: unknown): value is ReviewRecord {
     ['items', 'total', 'knowledge', 'application', 'reasoning', 'multipleChoice', 'longAnswer', 'lessons'].every((k) => Number.isInteger(x[k]) && Number(x[k]) >= 0 && Number(x[k]) <= 1000);
 }
 export function readShortTests(): ReviewRecord[] {
-  try { const raw: unknown = JSON.parse(localStorage.getItem(SHORT_TEST_KEY) || '[]'); return Array.isArray(raw) ? raw.filter(isReviewRecord) : []; } catch { return []; }
+  const raw: unknown = JSON.parse(localStorage.getItem(SHORT_TEST_KEY) || '[]');
+  if (!Array.isArray(raw) || !raw.every(isReviewRecord)) throw new Error('تعذر قراءة سجلات المراجعة؛ لم تُغيّر البيانات.');
+  return raw;
 }

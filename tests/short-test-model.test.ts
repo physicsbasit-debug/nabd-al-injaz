@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { checkShortTest, isReviewRecord } from '../src/short-test-model';
+import { describe, expect, it, vi } from 'vitest';
+import { checkShortTest, isReviewRecord, readShortTests } from '../src/short-test-model';
 
 describe('short test specifications', () => {
   it('checks grade 8 and 9 against their published numeric specifications', () => {
@@ -15,5 +15,10 @@ describe('short test specifications', () => {
   });
   it('rejects invalid records when checking backup data', () => {
     expect(isReviewRecord({ id: 'x', title: 'x' })).toBe(false);
+  });
+  it('refuses to silently discard malformed saved reviews', () => {
+    vi.stubGlobal('localStorage', { getItem: () => '[{"id":"incomplete"}]' });
+    expect(() => readShortTests()).toThrow();
+    vi.unstubAllGlobals();
   });
 });

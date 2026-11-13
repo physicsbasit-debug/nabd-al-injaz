@@ -254,6 +254,7 @@ export async function restoreAppBackup(file: File): Promise<{ tasks: Task[]; pla
   try {
     for (const key of APP_STORAGE_KEYS) {
       if (key === ASSESSMENT_KEY && !hasAssessmentFiles && !Object.hasOwn(nextData, key)) continue;
+      if (key === SHORT_TEST_KEY && !hasAssessmentFiles && !Object.hasOwn(nextData, key)) continue;
       if (Object.hasOwn(nextData, key)) localStorage.setItem(key, nextData[key]);
       else localStorage.removeItem(key);
     }

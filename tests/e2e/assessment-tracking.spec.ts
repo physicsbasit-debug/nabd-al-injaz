@@ -33,6 +33,16 @@ test('tracks hand-in and analysis separately and backs up both file kinds', asyn
   const backup = JSON.parse(await readFile(path, 'utf8'));
   expect(backup.assessmentFiles).toHaveLength(2);
   expect(backup.localData['nabd-al-injaz:assessment-tracking:v1']).toContain('معلم افتراضي');
+  await page.evaluate(() => localStorage.setItem('nabd-al-injaz:short-tests:v1', JSON.stringify([{id:'old-review', teacher:'معلم', subject:'فيزياء', title:'مراجعة', grade:'9', items:9, total:15, knowledge:6, application:6, reasoning:3, multipleChoice:3, longAnswer:1, lessons:2, status:'بانتظار المراجعة', notes:''}])));
+  const legacy = structuredClone(backup);
+  delete legacy.assessmentFiles;
+  delete legacy.localData['nabd-al-injaz:assessment-tracking:v1'];
+  delete legacy.localData['nabd-al-injaz:short-tests:v1'];
+  page.once('dialog', dialog => dialog.accept());
+  await backupTools.locator('input[type=file]').setInputFiles({name:'legacy.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(legacy))});
+  await expect(backupTools.getByRole('status')).toContainText('استُعيدت بيانات المنظومة');
+  expect(await page.evaluate(() => localStorage.getItem('nabd-al-injaz:short-tests:v1'))).toContain('old-review');
+  expect(await page.evaluate(() => localStorage.getItem('nabd-al-injaz:assessment-tracking:v1'))).toContain('معلم افتراضي');
   const context = await browser.newContext();
   const restoredPage = await context.newPage();
   await restoredPage.goto('http://127.0.0.1:4173/');

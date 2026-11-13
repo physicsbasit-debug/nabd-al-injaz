@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ASSESSMENT_KEY, SUBJECTS, isAssessmentRecord, readAssessments, summarizeAssessments, type AssessmentRecord } from './assessment-tracking';
 import { ASSESSMENT_MAX_BYTES, ASSESSMENT_MIMES, listAssessmentFiles, saveAssessmentFile, deleteAssessmentFile, type AssessmentFile } from './assessment-files';
 import { readSchedule } from './schedule-model';
 import './short-test-review.css';
 
 const blank = { teacher:'', subject:'فيزياء', title:'', grade:'9', submitted:false, analyzed:false, notes:'' };
+const fallbackMimes: Record<string, string> = {pdf:'application/pdf', png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document', xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'};
 export default function AssessmentTracking() {
   const [records, setRecords] = useState<AssessmentRecord[]>([]);
   const [files, setFiles] = useState<AssessmentFile[]>([]);
@@ -13,6 +14,8 @@ export default function AssessmentTracking() {
   const [editing, setEditing] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [ready, setReady] = useState(false);
+  const pendingFiles = useRef(new Set<string>());
+  const [pendingRecords, setPendingRecords] = useState<string[]>([]);
   const teachers = readSchedule().teachers;
   useEffect(() => {
     let active = true;
@@ -33,10 +36,14 @@ export default function AssessmentTracking() {
   }
   async function addFile(record: AssessmentRecord, kind: 'اختبار' | 'تحليل', file?: File) {
     if (!file) return;
-    if (!ASSESSMENT_MIMES.includes(file.type) || file.size < 1 || file.size > ASSESSMENT_MAX_BYTES) {setMessage('استخدم PDF أو صورة أو DOCX أو XLSX بحجم لا يتجاوز 8MB للملف.'); return;}
-    const item: AssessmentFile = {id:crypto.randomUUID(), recordId:record.id, kind, name:file.name, mime:file.type, size:file.size, createdAt:new Date().toISOString(), blob:file};
+    const mime = file.type || fallbackMimes[file.name.split('.').pop()?.toLowerCase() ?? ''];
+    if (!mime || !ASSESSMENT_MIMES.includes(mime) || file.size < 1 || file.size > ASSESSMENT_MAX_BYTES) {setMessage('استخدم PDF أو صورة أو DOCX أو XLSX بحجم لا يتجاوز 8MB للملف.'); return;}
+    if (pendingFiles.current.has(record.id)) {setMessage('انتظر حتى يكتمل حفظ الملف الحالي.'); return;}
+    pendingFiles.current.add(record.id); setPendingRecords(current => [...current, record.id]);
+    const item: AssessmentFile = {id:crypto.randomUUID(), recordId:record.id, kind, name:file.name, mime, size:file.size, createdAt:new Date().toISOString(), blob:file};
     try {await saveAssessmentFile(item); setFiles(current => [...current, item]); setMessage('حُفظ الملف على هذا الجهاز.');}
     catch {setMessage('تعذر حفظ الملف؛ تحقق من مساحة الجهاز.');}
+    finally {pendingFiles.current.delete(record.id); setPendingRecords(current => current.filter(id => id !== record.id));}
   }
   function download(file: AssessmentFile) {
     const url=URL.createObjectURL(file.blob); const a=document.createElement('a');
@@ -48,6 +55,7 @@ export default function AssessmentTracking() {
     catch {setMessage('تعذر حذف الملف.');}
   }
   function removeRecord(record: AssessmentRecord) {
+    if (pendingFiles.current.has(record.id)) {setMessage('انتظر حتى يكتمل حفظ الملف.'); return;}
     if (files.some(f => f.recordId===record.id)) {setMessage('احذف ملفات السجل أولًا أو احتفظ بالسجل للحفاظ عليها.'); return;}
     if (!window.confirm('سيُحذف سجل المتابعة. هل تريد المتابعة؟')) return;
     const next=records.filter(r=>r.id!==record.id);
@@ -84,7 +92,7 @@ export default function AssessmentTracking() {
         {files.filter(f=>f.recordId===r.id && f.kind===kind).map(f=><div className="assessment-file-row" key={f.id}><span>{f.name}</span><div><button type="button" onClick={()=>download(f)}>تنزيل الملف</button> <button type="button" onClick={()=>void removeFile(f)}>حذف الملف</button></div></div>)}
         <label className="assessment-file-upload">إضافة ملف {kind}<input type="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" onChange={e=>{void addFile(r,kind,e.target.files?.[0]); e.currentTarget.value='';}}/></label>
       </div>)}
-      <p><button type="button" onClick={()=>{setEditing(r.id);setForm({teacher:r.teacher,subject:r.subject,title:r.title,grade:r.grade,submitted:r.submitted,analyzed:r.analyzed,notes:r.notes});}}>تعديل المتابعة</button> <button type="button" onClick={()=>removeRecord(r)}>حذف سجل المتابعة</button></p>
+      <p><button type="button" onClick={()=>{setEditing(r.id);setForm({teacher:r.teacher,subject:r.subject,title:r.title,grade:r.grade,submitted:r.submitted,analyzed:r.analyzed,notes:r.notes});}}>تعديل المتابعة</button> <button type="button" disabled={pendingRecords.includes(r.id)} onClick={()=>removeRecord(r)}>حذف سجل المتابعة</button></p>
     </details>)}
   </section>;
 }

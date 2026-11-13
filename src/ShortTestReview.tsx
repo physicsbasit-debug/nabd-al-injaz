@@ -9,11 +9,13 @@ const fields: [keyof Omit<ShortTestNumbers, 'grade'>, string][] = [
 ];
 const empty = { grade: '8' as Grade, items: '', total: '', knowledge: '', application: '', reasoning: '', multipleChoice: '', longAnswer: '', lessons: '', teacher: '', subject: '', title: '', status: 'بانتظار المراجعة' as ReviewRecord['status'], notes: '' };
 export default function ShortTestReview() {
-  const [records, setRecords] = useState(readShortTests);
+  const [loaded] = useState(() => { try { return { records:readShortTests(), error:false }; } catch { return { records:[] as ReviewRecord[], error:true }; } });
+  const [records, setRecords] = useState(loaded.records);
   const [form, setForm] = useState(empty);
   const [editing, setEditing] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   function save() {
+    if (loaded.error) return;
     if (!form.teacher.trim() || !form.subject.trim() || !form.title.trim() || fields.some(([key]) => form[key].trim() === '')) { setMessage('أكمل بيانات الاختبار والأعداد قبل الحفظ؛ أدخل صفرًا إذا لم يوجد نوع من المفردات.'); return; }
     const numeric = Object.fromEntries(fields.map(([key]) => [key, Number(form[key])])) as Omit<ShortTestNumbers, 'grade'>;
     const record: ReviewRecord = { ...numeric, id: editing ?? crypto.randomUUID(), grade: form.grade, teacher: form.teacher.trim(), subject: form.subject.trim(), title: form.title.trim(), notes: form.notes.trim(), status: form.status };
@@ -23,6 +25,7 @@ export default function ShortTestReview() {
     setRecords(next); setForm(empty); setEditing(null); setMessage('حُفظ سجل المراجعة محليًا.');
   }
   function remove(record: ReviewRecord) {
+    if (loaded.error) return;
     if (!window.confirm('سيُحذف سجل مراجعة الاختبار فقط. هل تريد المتابعة؟')) return;
     const next = records.filter((item) => item.id !== record.id);
     try { localStorage.setItem(SHORT_TEST_KEY, JSON.stringify(next)); } catch { setMessage('تعذر حذف السجل من الجهاز.'); return; }
@@ -36,6 +39,7 @@ export default function ShortTestReview() {
   }
   return <section className="card short-test-review" aria-label="مراجعة الاختبارات القصيرة">
     <h2>مراجعة الاختبارات القصيرة</h2>
+    {loaded.error && <p role="alert">تعذر قراءة سجلات المراجعة؛ أوقفنا التعديل لحماية البيانات. استعد نسخة سليمة.</p>}
     <p className="short-test-source">هذه مراجعة اختيارية بسجل مستقل عن سجل المتابعة أعلاه، وتُستخدم لفحص المواصفات العددية.</p>
     <p>سجّل بيانات الاختبار لمقارنة الأعداد بالوثيقة. فحص الأعداد لا يغني عن مراجعة الأسئلة ونموذج الإجابة ومحتواهما؛ قرار المراجعة يحدده المعلم الأول.</p>
     <p className="short-test-source">المرجع: وثيقة تقويم تعلم الطلبة في مواد العلوم (5–10)، إصدار 2026–2027، الصفحتان 20 و21.</p>
@@ -48,10 +52,10 @@ export default function ShortTestReview() {
       <label className="short-test-status">حالة المراجعة<select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as ReviewRecord['status'] })}><option>بانتظار المراجعة</option><option>يحتاج تعديلًا</option><option>تمت المراجعة</option></select></label>
       <label className="short-test-notes">ملاحظات المراجع<textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
     </div>
-    <div><button type="button" onClick={save}>{editing ? 'حفظ التعديل' : 'حفظ سجل الاختبار'}</button>{editing && <button type="button" onClick={() => { setEditing(null); setForm(empty); }}>إلغاء التعديل</button>}</div>
+    <div><button type="button" disabled={loaded.error} onClick={save}>{editing ? 'حفظ التعديل' : 'حفظ سجل الاختبار'}</button>{editing && <button type="button" onClick={() => { setEditing(null); setForm(empty); }}>إلغاء التعديل</button>}</div>
     {message && <p role="status">{message}</p>}
     <h3>السجلات ({records.length})</h3>
-    {records.length === 0 && <p>لا توجد اختبارات مسجلة بعد.</p>}
+    {!loaded.error && records.length === 0 && <p>لا توجد اختبارات مسجلة بعد.</p>}
     {records.map((record) => { const issues = checkShortTest(record); return <details key={record.id} className="short-test-item">
       <summary><strong>{record.title}</strong><span>{record.teacher} · الصف {record.grade} · {record.status}</span></summary>
       <p>{record.subject} · {record.items} مفردة · {record.total} درجة</p>
