@@ -39,3 +39,23 @@
 .short-test-fields input[type=checkbox] { width: 20px; min-height: 20px; height: 20px; accent-color: #17634e; }
 .short-test-item input[type=file] { max-width: 100%; }
 .short-test-review + .short-test-review { margin-top: 20px; }
+.assessment-overview { display: grid; gap: 14px; padding: 16px; background: #f2f8f5; border: 1px solid #d9eae1; border-radius: 12px; }
+.assessment-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; color: #234f43; font-weight: 600; }
+.assessment-filter select { min-height: 42px; min-width: 150px; padding: 8px 12px; border: 1px solid #abc6b9; border-radius: 8px; background: #fff; color: #173f35; font: inherit; }
+.assessment-counts { display: flex; flex-wrap: wrap; gap: 8px; }
+.assessment-counts span { display: inline-flex; align-items: center; gap: 8px; padding: 6px 11px; background: white; border: 1px solid #d9eae1; border-radius: 8px; color: #365e51; }
+.assessment-counts strong { color: #075b49; }
+.assessment-file-group { margin-top: 16px; padding: 12px; border: 1px solid #dfebe4; border-radius: 10px; background: #fff; }
+.assessment-file-group h4 { margin: 0 0 10px; }
+.assessment-file-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 8px 0; }
+.assessment-file-row span { overflow-wrap: anywhere; min-width: 0; }
+.assessment-file-row > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.assessment-file-row button + button { margin: 0; }
+.assessment-file-upload { position: relative; display: inline-flex; align-items: center; min-height: 44px; padding: 8px 14px; margin-top: 8px; border: 1px dashed #438b72; border-radius: 8px; color: #17634e; font-weight: 600; cursor: pointer; }
+.assessment-file-upload input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.assessment-file-upload:focus-within, .assessment-filter select:focus-visible { outline: 3px solid #a8d7c0; outline-offset: 2px; }
+@media (max-width: 650px) {
+  .assessment-counts span { flex: 1 1 auto; justify-content: space-between; }
+  .assessment-file-row { align-items: flex-start; flex-direction: column; }
+  .assessment-file-group { padding: 10px; }
+}

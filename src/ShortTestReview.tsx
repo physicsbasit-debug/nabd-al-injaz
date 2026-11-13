@@ -36,6 +36,7 @@ export default function ShortTestReview() {
   }
   return <section className="card short-test-review" aria-label="مراجعة الاختبارات القصيرة">
     <h2>مراجعة الاختبارات القصيرة</h2>
+    <p className="short-test-source">هذه مراجعة اختيارية بسجل مستقل عن سجل المتابعة أعلاه، وتُستخدم لفحص المواصفات العددية.</p>
     <p>سجّل بيانات الاختبار لمقارنة الأعداد بالوثيقة. فحص الأعداد لا يغني عن مراجعة الأسئلة ونموذج الإجابة ومحتواهما؛ قرار المراجعة يحدده المعلم الأول.</p>
     <p className="short-test-source">المرجع: وثيقة تقويم تعلم الطلبة في مواد العلوم (5–10)، إصدار 2026–2027، الصفحتان 20 و21.</p>
     <div className="short-test-fields">

@@ -57,8 +57,11 @@ export default function AssessmentTracking() {
   return <section className="card short-test-review" aria-label="متابعة الاختبارات والتحليل">
     <h2>متابعة الاختبارات والتحليل</h2>
     <p>سجّل لكل معلم اختبارًا، وتابع تسليمه وتحليله كلًا على حدة. الملفات والسجلات تحفظ على هذا الجهاز فقط.</p>
-    <label>عرض حسب التخصص<select aria-label="عرض حسب التخصص" value={filter} onChange={e=>setFilter(e.target.value)}><option>الكل</option>{SUBJECTS.map(s=><option key={s}>{s}</option>)}</select></label>
-    <p>السجلات: {summary.total} · لم يُسلّم: {summary.pendingSubmission} · لم يُحلّل: {summary.pendingAnalysis}</p>
+    <div className="assessment-overview">
+      <label className="assessment-filter">عرض حسب التخصص<select aria-label="عرض حسب التخصص" value={filter} onChange={e=>setFilter(e.target.value)}><option>الكل</option>{SUBJECTS.map(s=><option key={s}>{s}</option>)}</select></label>
+      <div className="assessment-counts" aria-label="ملخص المتابعة"><span>السجلات <strong>{summary.total}</strong></span><span>لم يُسلّم <strong>{summary.pendingSubmission}</strong></span><span>لم يُحلّل <strong>{summary.pendingAnalysis}</strong></span></div>
+    </div>
+    <h3>{editing ? 'تعديل سجل المتابعة' : 'إضافة سجل متابعة'}</h3>
     <div className="short-test-fields">
       <label>عنوان الاختبار<input value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></label>
       <label>المعلم<input list="assessment-teachers" value={form.teacher} onChange={e=>setForm({...form,teacher:e.target.value})}/><datalist id="assessment-teachers">{teachers.map(t=><option value={t} key={t}/>)}</datalist></label>
@@ -76,10 +79,10 @@ export default function AssessmentTracking() {
       <summary><strong>{r.title} · {r.teacher}</strong><span>{r.subject} · الصف {r.grade}</span></summary>
       <p>تسليم الاختبار: {r.submitted ? 'تم التسليم' : 'لم يُسلّم'} · تحليل النتائج: {r.analyzed ? 'تم التحليل' : 'لم يُحلّل'}</p>
       {r.notes && <p>ملاحظات: {r.notes}</p>}
-      {(['اختبار','تحليل'] as const).map(kind=><div key={kind}>
+      {(['اختبار','تحليل'] as const).map(kind=><div className="assessment-file-group" key={kind}>
         <h4>ملفات {kind === 'اختبار' ? 'الاختبار' : 'التحليل'}</h4>
-        {files.filter(f=>f.recordId===r.id && f.kind===kind).map(f=><div key={f.id}><span>{f.name}</span> <button type="button" onClick={()=>download(f)}>تنزيل الملف</button> <button type="button" onClick={()=>void removeFile(f)}>حذف الملف</button></div>)}
-        <label>إضافة ملف {kind}<input type="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" onChange={e=>{void addFile(r,kind,e.target.files?.[0]); e.currentTarget.value='';}}/></label>
+        {files.filter(f=>f.recordId===r.id && f.kind===kind).map(f=><div className="assessment-file-row" key={f.id}><span>{f.name}</span><div><button type="button" onClick={()=>download(f)}>تنزيل الملف</button> <button type="button" onClick={()=>void removeFile(f)}>حذف الملف</button></div></div>)}
+        <label className="assessment-file-upload">إضافة ملف {kind}<input type="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" onChange={e=>{void addFile(r,kind,e.target.files?.[0]); e.currentTarget.value='';}}/></label>
       </div>)}
       <p><button type="button" onClick={()=>{setEditing(r.id);setForm({teacher:r.teacher,subject:r.subject,title:r.title,grade:r.grade,submitted:r.submitted,analyzed:r.analyzed,notes:r.notes});}}>تعديل المتابعة</button> <button type="button" onClick={()=>removeRecord(r)}>حذف سجل المتابعة</button></p>
     </details>)}
