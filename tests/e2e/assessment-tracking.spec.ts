@@ -41,6 +41,8 @@ test('tracks hand-in and analysis separately and backs up both file kinds', asyn
   restoredPage.once('dialog', dialog => dialog.accept());
   await restoredTools.locator('input[type=file]').setInputFiles(path);
   await expect(restoredTools.getByRole('status')).toContainText('استُعيدت بيانات المنظومة');
+  const restoredMenu = restoredPage.getByRole('button', { name: /عرض الأقسام/ });
+  if (await restoredMenu.isVisible()) await restoredMenu.click();
   await restoredPage.getByRole('button', { name:'الاختبارات والتحصيل', exact:true }).click();
   const restored = restoredPage.getByRole('region', { name:'متابعة الاختبارات والتحليل' });
   await restored.getByText('اختبار افتراضي · معلم افتراضي').click();
