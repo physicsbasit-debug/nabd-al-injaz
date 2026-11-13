@@ -125,7 +125,7 @@ export default function AssessmentTracking() {
         {files.filter(f=>f.recordId===r.id && f.kind===kind).map(f=><div className="assessment-file-row" key={f.id}><span>{f.name}</span><div><button type="button" onClick={()=>download(f)}>تنزيل الملف</button> <button type="button" onClick={()=>void removeFile(f)}>حذف الملف</button></div></div>)}
         <label className="assessment-file-upload">إضافة ملف {kind}<input type="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" onChange={e=>{void addFile(r,kind,e.target.files?.[0]); e.currentTarget.value='';}}/></label>
       </div>)}
-      <p><button type="button" onClick={()=>{editSnapshot.current = r;setEditing(r.id);setForm({teacher:r.teacher,subject:r.subject,title:r.title,grade:r.grade,submitted:r.submitted,analyzed:r.analyzed,notes:r.notes});}}>تعديل المتابعة</button> <button type="button" disabled={pendingRecords.includes(r.id)} onClick={()=>void removeRecord(r)}>حذف سجل المتابعة</button></p>
+      <p><button type="button" disabled={saving} onClick={()=>{editSnapshot.current = r;setEditing(r.id);setForm({teacher:r.teacher,subject:r.subject,title:r.title,grade:r.grade,submitted:r.submitted,analyzed:r.analyzed,notes:r.notes});}}>تعديل المتابعة</button> <button type="button" disabled={saving || pendingRecords.includes(r.id)} onClick={()=>void removeRecord(r)}>حذف سجل المتابعة</button></p>
     </details>)}
   </section>;
 }

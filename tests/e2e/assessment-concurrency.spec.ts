@@ -73,3 +73,30 @@ test('restoration waits for the assessment lock', async ({ page, context }, info
   await page.evaluate(() => (window as unknown as {releaseAssessmentTest: () => void}).releaseAssessmentTest());
   await expect(secondTools.getByRole('status')).toContainText('استُعيدت بيانات المنظومة');
 });
+
+test('a stale edit cannot overwrite a newer edit in another tab', async ({ page, context }, info) => {
+  async function openTests(p: typeof page) {
+    await p.goto('/');
+    if (info.project.name === 'phone') await p.getByRole('button', {name:/عرض الأقسام/}).click();
+    await p.getByRole('button', {name:'الاختبارات والتحصيل', exact:true}).click();
+    return p.getByRole('region', {name:'متابعة الاختبارات والتحليل'});
+  }
+  const a = await openTests(page);
+  await a.getByLabel('عنوان الاختبار').fill('سجل مشترك');
+  await a.getByLabel('المعلم', {exact:true}).fill('معلم');
+  await a.getByRole('button', {name:'حفظ سجل المتابعة'}).click();
+  await expect(a.getByRole('status')).toContainText('حُفظ سجل');
+  const second = await context.newPage();
+  const b = await openTests(second);
+  await a.getByText('سجل مشترك · معلم').click();
+  await b.getByText('سجل مشترك · معلم').click();
+  await a.getByRole('button', {name:'تعديل المتابعة'}).click();
+  await b.getByRole('button', {name:'تعديل المتابعة'}).click();
+  await a.getByLabel('ملاحظات').fill('تعديل أحدث');
+  await a.getByRole('button', {name:'حفظ تعديل المتابعة'}).click();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('nabd-al-injaz:assessment-tracking:v1'))).toContain('تعديل أحدث');
+  await b.getByLabel('ملاحظات').fill('تعديل قديم');
+  await b.getByRole('button', {name:'حفظ تعديل المتابعة'}).click();
+  await expect(b.getByRole('status')).toContainText('تغيّر السجل في نافذة أخرى');
+  expect(await page.evaluate(() => localStorage.getItem('nabd-al-injaz:assessment-tracking:v1'))).toContain('تعديل أحدث');
+});

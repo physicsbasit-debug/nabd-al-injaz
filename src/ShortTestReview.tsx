@@ -83,8 +83,8 @@ export default function ShortTestReview() {
       {issues.length ? <ul>{issues.map((issue) => <li key={issue}>{issue}</li>)}</ul> : <p>الأعداد المدخلة توافق البنود العددية المفحوصة؛ بقية البنود تحتاج مراجعة يدوية.</p>}
       <p>تحقق يدويًا من مراجعة الاختبار ونموذج الإجابة قبل التطبيق، وتنوع أهداف التعلم، ومناسبة الأسئلة والزمن، وتغطية الاختيار من متعدد لأهداف التقويم حيث ينطبق.</p>
       {record.notes && <p>ملاحظات المراجع: {record.notes}</p>}
-      <button type="button" onClick={() => edit(record)}>تعديل سجل الاختبار</button>
-      <button type="button" onClick={() => void remove(record)}>حذف سجل الاختبار</button>
+      <button type="button" disabled={saving} onClick={() => edit(record)}>تعديل سجل الاختبار</button>
+      <button type="button" disabled={saving} onClick={() => void remove(record)}>حذف سجل الاختبار</button>
     </details>; })}
   </section>;
 }
