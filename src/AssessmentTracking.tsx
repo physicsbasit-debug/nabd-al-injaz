@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ASSESSMENT_KEY, SUBJECTS, isAssessmentRecord, readAssessments, summarizeAssessments, type AssessmentRecord } from './assessment-tracking';
 import { ASSESSMENT_MAX_BYTES, ASSESSMENT_MIMES, listAssessmentFiles, saveAssessmentFile, deleteAssessmentFile, type AssessmentFile } from './assessment-files';
 import { readSchedule } from './schedule-model';
+import { withAssessmentLock } from './assessment-lock';
 import './short-test-review.css';
 
 const blank = { teacher:'', subject:'فيزياء', title:'', grade:'9', submitted:false, analyzed:false, notes:'' };
@@ -12,6 +13,7 @@ export default function AssessmentTracking() {
   const [form, setForm] = useState(blank);
   const [filter, setFilter] = useState('الكل');
   const [editing, setEditing] = useState<string | null>(null);
+  const editSnapshot = useRef<AssessmentRecord | null>(null);
   const [message, setMessage] = useState('');
   const [ready, setReady] = useState(false);
   const pendingFiles = useRef(new Set<string>());
@@ -27,12 +29,19 @@ export default function AssessmentTracking() {
   }, []);
   const visible = filter === 'الكل' ? records : records.filter(r => r.subject === filter);
   const summary = summarizeAssessments(visible);
-  function save() {
+  async function save() {
     const record = {...form, id:editing ?? crypto.randomUUID(), teacher:form.teacher.trim(), title:form.title.trim(), notes:form.notes.trim()};
     if (!isAssessmentRecord(record)) {setMessage('أدخل عنوان الاختبار واسم المعلم واختر التخصص والصف.'); return;}
-    const next = editing ? records.map(r => r.id === editing ? record : r) : [...records, record];
-    try {localStorage.setItem(ASSESSMENT_KEY, JSON.stringify(next));} catch {setMessage('تعذر حفظ السجل.'); return;}
-    setRecords(next); setForm(blank); setEditing(null); setMessage('حُفظ سجل المتابعة على هذا الجهاز.');
+    try {
+      const next = await withAssessmentLock(async () => {
+        const current = readAssessments();
+        if (editing && JSON.stringify(current.find(r => r.id === editing)) !== JSON.stringify(editSnapshot.current)) throw new Error('تغيّر السجل في نافذة أخرى؛ افتحه مجددًا قبل التعديل.');
+        const updated = editing ? current.map(r => r.id === editing ? record : r) : [...current, record];
+        localStorage.setItem(ASSESSMENT_KEY, JSON.stringify(updated));
+        return updated;
+      });
+      setRecords(next); setForm(blank); setEditing(null); editSnapshot.current = null; setMessage('حُفظ سجل المتابعة على هذا الجهاز.');
+    } catch (error) {setMessage(error instanceof Error ? error.message : 'تعذر حفظ السجل.');}
   }
   async function addFile(record: AssessmentRecord, kind: 'اختبار' | 'تحليل', file?: File) {
     if (!file) return;
@@ -42,12 +51,14 @@ export default function AssessmentTracking() {
     pendingFiles.current.add(record.id); setPendingRecords(current => [...current, record.id]);
     const item: AssessmentFile = {id:crypto.randomUUID(), recordId:record.id, kind, name:file.name, mime, size:file.size, createdAt:new Date().toISOString(), blob:file};
     try {
-      await saveAssessmentFile(item);
-      try { if (!readAssessments().some(saved => saved.id === record.id)) throw new Error('السجل غير موجود'); }
-      catch { await deleteAssessmentFile(item.id); throw new Error('تعذر ربط الملف بالسجل.'); }
-      setFiles(current => [...current, item]); setMessage('حُفظ الملف على هذا الجهاز.');
+      const savedFiles = await withAssessmentLock(async () => {
+        if (!readAssessments().some(saved => saved.id === record.id)) throw new Error('السجل لم يعد موجودًا؛ لم يُحفظ الملف.');
+        await saveAssessmentFile(item);
+        return listAssessmentFiles();
+      });
+      setFiles(savedFiles); setMessage('حُفظ الملف على هذا الجهاز.');
     }
-    catch {setMessage('تعذر حفظ الملف؛ تحقق من مساحة الجهاز.');}
+    catch (error) {setMessage(error instanceof Error ? error.message : 'تعذر حفظ الملف؛ تحقق من مساحة الجهاز.');}
     finally {pendingFiles.current.delete(record.id); setPendingRecords(current => current.filter(id => id !== record.id));}
   }
   function download(file: AssessmentFile) {
@@ -56,16 +67,24 @@ export default function AssessmentTracking() {
   }
   async function removeFile(file: AssessmentFile) {
     if (!window.confirm('سيُحذف هذا الملف المحفوظ محليًا. هل تريد المتابعة؟')) return;
-    try {await deleteAssessmentFile(file.id); setFiles(current => current.filter(f=>f.id!==file.id)); setMessage('حُذف الملف.');}
-    catch {setMessage('تعذر حذف الملف.');}
+    try {const savedFiles = await withAssessmentLock(async () => {await deleteAssessmentFile(file.id); return listAssessmentFiles();}); setFiles(savedFiles); setMessage('حُذف الملف.');}
+    catch (error) {setMessage(error instanceof Error ? error.message : 'تعذر حذف الملف.');}
   }
-  function removeRecord(record: AssessmentRecord) {
+  async function removeRecord(record: AssessmentRecord) {
     if (pendingFiles.current.has(record.id)) {setMessage('انتظر حتى يكتمل حفظ الملف.'); return;}
-    if (files.some(f => f.recordId===record.id)) {setMessage('احذف ملفات السجل أولًا أو احتفظ بالسجل للحفاظ عليها.'); return;}
     if (!window.confirm('سيُحذف سجل المتابعة. هل تريد المتابعة؟')) return;
-    const next=records.filter(r=>r.id!==record.id);
-    try {localStorage.setItem(ASSESSMENT_KEY, JSON.stringify(next)); setRecords(next); if (editing===record.id) {setEditing(null);setForm(blank);} setMessage('حُذف سجل المتابعة.');}
-    catch {setMessage('تعذر حذف السجل.');}
+    try {
+      const next = await withAssessmentLock(async () => {
+        const current = readAssessments();
+        const saved = current.find(r => r.id === record.id);
+        if (JSON.stringify(saved) !== JSON.stringify(record)) throw new Error('تغيّر السجل في نافذة أخرى؛ أعد فتح القسم قبل الحذف.');
+        if ((await listAssessmentFiles()).some(f => f.recordId === record.id)) throw new Error('احذف ملفات السجل أولًا أو احتفظ بالسجل للحفاظ عليها.');
+        const updated = current.filter(r => r.id !== record.id);
+        localStorage.setItem(ASSESSMENT_KEY, JSON.stringify(updated));
+        return updated;
+      });
+      setRecords(next); if (editing===record.id) {setEditing(null);setForm(blank); editSnapshot.current = null;} setMessage('حُذف سجل المتابعة.');
+    } catch (error) {setMessage(error instanceof Error ? error.message : 'تعذر حذف السجل.');}
   }
   return <section className="card short-test-review" aria-label="متابعة الاختبارات والتحليل">
     <h2>متابعة الاختبارات والتحليل</h2>
@@ -97,7 +116,7 @@ export default function AssessmentTracking() {
         {files.filter(f=>f.recordId===r.id && f.kind===kind).map(f=><div className="assessment-file-row" key={f.id}><span>{f.name}</span><div><button type="button" onClick={()=>download(f)}>تنزيل الملف</button> <button type="button" onClick={()=>void removeFile(f)}>حذف الملف</button></div></div>)}
         <label className="assessment-file-upload">إضافة ملف {kind}<input type="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" onChange={e=>{void addFile(r,kind,e.target.files?.[0]); e.currentTarget.value='';}}/></label>
       </div>)}
-      <p><button type="button" onClick={()=>{setEditing(r.id);setForm({teacher:r.teacher,subject:r.subject,title:r.title,grade:r.grade,submitted:r.submitted,analyzed:r.analyzed,notes:r.notes});}}>تعديل المتابعة</button> <button type="button" disabled={pendingRecords.includes(r.id)} onClick={()=>removeRecord(r)}>حذف سجل المتابعة</button></p>
+      <p><button type="button" onClick={()=>{editSnapshot.current = r;setEditing(r.id);setForm({teacher:r.teacher,subject:r.subject,title:r.title,grade:r.grade,submitted:r.submitted,analyzed:r.analyzed,notes:r.notes});}}>تعديل المتابعة</button> <button type="button" disabled={pendingRecords.includes(r.id)} onClick={()=>void removeRecord(r)}>حذف سجل المتابعة</button></p>
     </details>)}
   </section>;
 }

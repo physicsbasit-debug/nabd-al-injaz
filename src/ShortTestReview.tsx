@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { checkShortTest, isReviewRecord, readShortTests, SHORT_TEST_KEY, type Grade, type ReviewRecord, type ShortTestNumbers } from './short-test-model';
+import { withAssessmentLock } from './assessment-lock';
 import './short-test-review.css';
 
 const fields: [keyof Omit<ShortTestNumbers, 'grade'>, string][] = [
@@ -13,27 +14,42 @@ export default function ShortTestReview() {
   const [records, setRecords] = useState(loaded.records);
   const [form, setForm] = useState(empty);
   const [editing, setEditing] = useState<string | null>(null);
+  const editSnapshot = useRef<ReviewRecord | null>(null);
   const [message, setMessage] = useState('');
-  function save() {
+  async function save() {
     if (loaded.error) return;
     if (!form.teacher.trim() || !form.subject.trim() || !form.title.trim() || fields.some(([key]) => form[key].trim() === '')) { setMessage('أكمل بيانات الاختبار والأعداد قبل الحفظ؛ أدخل صفرًا إذا لم يوجد نوع من المفردات.'); return; }
     const numeric = Object.fromEntries(fields.map(([key]) => [key, Number(form[key])])) as Omit<ShortTestNumbers, 'grade'>;
     const record: ReviewRecord = { ...numeric, id: editing ?? crypto.randomUUID(), grade: form.grade, teacher: form.teacher.trim(), subject: form.subject.trim(), title: form.title.trim(), notes: form.notes.trim(), status: form.status };
     if (!isReviewRecord(record)) { setMessage('أدخل أعدادًا صحيحة غير سالبة.'); return; }
-    const next = editing ? records.map((item) => item.id === editing ? record : item) : [...records, record];
-    try { localStorage.setItem(SHORT_TEST_KEY, JSON.stringify(next)); } catch { setMessage('تعذر الحفظ على الجهاز.'); return; }
-    setRecords(next); setForm(empty); setEditing(null); setMessage('حُفظ سجل المراجعة محليًا.');
+    try {
+      const next = await withAssessmentLock(async () => {
+        const current = readShortTests();
+        if (editing && JSON.stringify(current.find(item => item.id === editing)) !== JSON.stringify(editSnapshot.current)) throw new Error('تغيّر السجل في نافذة أخرى؛ افتحه مجددًا قبل التعديل.');
+        const updated = editing ? current.map(item => item.id === editing ? record : item) : [...current, record];
+        localStorage.setItem(SHORT_TEST_KEY, JSON.stringify(updated));
+        return updated;
+      });
+      setRecords(next); setForm(empty); setEditing(null); editSnapshot.current = null; setMessage('حُفظ سجل المراجعة محليًا.');
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'تعذر الحفظ على الجهاز.'); }
   }
-  function remove(record: ReviewRecord) {
+  async function remove(record: ReviewRecord) {
     if (loaded.error) return;
     if (!window.confirm('سيُحذف سجل مراجعة الاختبار فقط. هل تريد المتابعة؟')) return;
-    const next = records.filter((item) => item.id !== record.id);
-    try { localStorage.setItem(SHORT_TEST_KEY, JSON.stringify(next)); } catch { setMessage('تعذر حذف السجل من الجهاز.'); return; }
+    let next: ReviewRecord[];
+    try { next = await withAssessmentLock(async () => {
+      const current = readShortTests();
+      if (JSON.stringify(current.find(item => item.id === record.id)) !== JSON.stringify(record)) throw new Error('تغيّر السجل في نافذة أخرى؛ أعد فتح القسم قبل الحذف.');
+      const updated = current.filter(item => item.id !== record.id);
+      localStorage.setItem(SHORT_TEST_KEY, JSON.stringify(updated));
+      return updated;
+    }); } catch (error) { setMessage(error instanceof Error ? error.message : 'تعذر حذف السجل من الجهاز.'); return; }
     setRecords(next);
     if (editing === record.id) { setEditing(null); setForm(empty); }
     setMessage('حُذف سجل مراجعة الاختبار.');
   }
   function edit(record: ReviewRecord) {
+    editSnapshot.current = record;
     setForm({ grade: record.grade, teacher: record.teacher, subject: record.subject, title: record.title, notes: record.notes, status: record.status, ...Object.fromEntries(fields.map(([key]) => [key, String(record[key])])) } as typeof empty);
     setEditing(record.id); setMessage('يمكنك تعديل السجل ثم حفظه.');
   }
@@ -64,7 +80,7 @@ export default function ShortTestReview() {
       <p>تحقق يدويًا من مراجعة الاختبار ونموذج الإجابة قبل التطبيق، وتنوع أهداف التعلم، ومناسبة الأسئلة والزمن، وتغطية الاختيار من متعدد لأهداف التقويم حيث ينطبق.</p>
       {record.notes && <p>ملاحظات المراجع: {record.notes}</p>}
       <button type="button" onClick={() => edit(record)}>تعديل سجل الاختبار</button>
-      <button type="button" onClick={() => remove(record)}>حذف سجل الاختبار</button>
+      <button type="button" onClick={() => void remove(record)}>حذف سجل الاختبار</button>
     </details>; })}
   </section>;
 }

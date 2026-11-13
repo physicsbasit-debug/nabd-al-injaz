@@ -14,6 +14,7 @@ import { weekdayForDate } from './cover-planning';
 import { SHORT_TEST_KEY, isReviewRecord } from './short-test-model';
 import { ASSESSMENT_KEY, isAssessmentRecord } from './assessment-tracking';
 import { createAssessmentArchive, decodeAssessmentArchive, listAssessmentFiles, replaceAssessmentFiles } from './assessment-files';
+import { withAssessmentLock } from './assessment-lock';
 
 const FORMAT = 'nabd-al-injaz-full-backup';
 const VERSION = 1;
@@ -195,6 +196,9 @@ function download(blob: Blob, name: string) {
 }
 
 export async function exportAppBackup(plans: Plan[]): Promise<void> {
+  return withAssessmentLock(() => exportAppBackupLocked(plans));
+}
+async function exportAppBackupLocked(plans: Plan[]): Promise<void> {
   const localData: Record<string, string> = {};
   for (const key of APP_STORAGE_KEYS) {
     const value = localStorage.getItem(key);
@@ -221,6 +225,9 @@ export async function exportAppBackup(plans: Plan[]): Promise<void> {
 }
 
 export async function restoreAppBackup(file: File): Promise<{ tasks: Task[]; plans: Plan[] }> {
+  return withAssessmentLock(() => restoreAppBackupLocked(file));
+}
+async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plans: Plan[] }> {
   if (file.size > MAX_BACKUP_BYTES) throw new Error('حجم النسخة يتجاوز 128MB.');
   let parsed: unknown;
   try {
