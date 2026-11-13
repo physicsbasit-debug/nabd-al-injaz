@@ -11,6 +11,10 @@ import { readTasks, STORAGE_KEY, type Task } from './task-model';
 import { validDate } from './plan-model';
 import { TECHNICAL_FOLLOWUP_STORAGE_KEY } from './technical-followup-model';
 import { weekdayForDate } from './cover-planning';
+import { SHORT_TEST_KEY, isReviewRecord } from './short-test-model';
+import { ASSESSMENT_KEY, isAssessmentRecord } from './assessment-tracking';
+import { createAssessmentArchive, decodeAssessmentArchive, listAssessmentFiles, replaceAssessmentFiles } from './assessment-files';
+import { withAssessmentLock } from './assessment-lock';
 
 const FORMAT = 'nabd-al-injaz-full-backup';
 const VERSION = 1;
@@ -21,6 +25,8 @@ const APP_STORAGE_KEYS = [
   SCHEDULE_STORAGE_KEY,
   COVER_DRAFT_KEY,
   TECHNICAL_FOLLOWUP_STORAGE_KEY,
+  SHORT_TEST_KEY,
+  ASSESSMENT_KEY,
 ];
 type AppBackup = {
   format: string;
@@ -28,6 +34,7 @@ type AppBackup = {
   createdAt: string;
   localData: Record<string, string>;
   plansAndEvidence: PlansBackupArchive;
+  assessmentFiles: Awaited<ReturnType<typeof createAssessmentArchive>>;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -145,6 +152,14 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
     )
       throw new Error('سجل الاحتياط في ملف النسخة غير صالح.');
   }
+  if (data[ASSESSMENT_KEY] !== undefined) {
+    const assessments = parseJson(data[ASSESSMENT_KEY], 'متابعة الاختبارات');
+    if (!Array.isArray(assessments) || !assessments.every(isAssessmentRecord) || new Set(assessments.map((item) => item.id)).size !== assessments.length) throw new Error('بيانات متابعة الاختبارات في النسخة غير صالحة.');
+  }
+  if (data[SHORT_TEST_KEY] !== undefined) {
+    const reviews = parseJson(data[SHORT_TEST_KEY], 'مراجعة الاختبارات');
+    if (!Array.isArray(reviews) || !reviews.every(isReviewRecord)) throw new Error('بيانات مراجعة الاختبارات في ملف النسخة غير صالحة.');
+  }
   if (data[TECHNICAL_FOLLOWUP_STORAGE_KEY] !== undefined) {
     const topics = parseJson(data[TECHNICAL_FOLLOWUP_STORAGE_KEY], 'المتابعة الفنية');
     if (
@@ -181,18 +196,26 @@ function download(blob: Blob, name: string) {
 }
 
 export async function exportAppBackup(plans: Plan[]): Promise<void> {
+  return withAssessmentLock(() => exportAppBackupLocked(plans));
+}
+async function exportAppBackupLocked(plans: Plan[]): Promise<void> {
   const localData: Record<string, string> = {};
   for (const key of APP_STORAGE_KEYS) {
     const value = localStorage.getItem(key);
     if (value !== null) localData[key] = value;
   }
   validateLocalData(localData);
+  const savedFiles = await listAssessmentFiles();
+  if (savedFiles.length > 1000 || savedFiles.reduce((sum, file) => sum + 4 * Math.ceil(file.size / 3), 0) > MAX_BACKUP_BYTES) throw new Error('ملفات الاختبارات تتجاوز الحد المدعوم للنسخ.');
+  const assessmentRecords: unknown = JSON.parse(localData[ASSESSMENT_KEY] ?? '[]');
+  if (!Array.isArray(assessmentRecords) || savedFiles.some(file => !assessmentRecords.some(record => isAssessmentRecord(record) && record.id === file.recordId))) throw new Error('يوجد ملف اختبار غير مرتبط بسجل؛ لم تُنشأ النسخة.');
   const archive: AppBackup = {
     format: FORMAT,
     version: VERSION,
     createdAt: new Date().toISOString(),
     localData,
     plansAndEvidence: await createPlansBackupArchive(plans),
+    assessmentFiles: await createAssessmentArchive(savedFiles),
   };
   const backupBlob = new Blob([JSON.stringify(archive)], { type: 'application/json' });
   if (new Blob([JSON.stringify(archive.plansAndEvidence)]).size > MAX_PLANS_BACKUP_BYTES)
@@ -202,6 +225,9 @@ export async function exportAppBackup(plans: Plan[]): Promise<void> {
 }
 
 export async function restoreAppBackup(file: File): Promise<{ tasks: Task[]; plans: Plan[] }> {
+  return withAssessmentLock(() => restoreAppBackupLocked(file));
+}
+async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plans: Plan[] }> {
   if (file.size > MAX_BACKUP_BYTES) throw new Error('حجم النسخة يتجاوز 128MB.');
   let parsed: unknown;
   try {
@@ -219,13 +245,23 @@ export async function restoreAppBackup(file: File): Promise<{ tasks: Task[]; pla
     throw new Error('ملف النسخة لا يطابق نسخة المنظومة المعتمدة.');
   validateLocalData(parsed.localData);
 
+  const hasAssessmentFiles = Object.hasOwn(parsed, 'assessmentFiles');
+  if (!hasAssessmentFiles && Object.hasOwn(parsed.localData, ASSESSMENT_KEY)) throw new Error('نسخة متابعة الاختبارات غير مكتملة؛ لم تُستعد البيانات.');
+  const nextAssessmentFiles = hasAssessmentFiles ? decodeAssessmentArchive(parsed.assessmentFiles) : null;
+  if (nextAssessmentFiles) {
+    const records: unknown = JSON.parse(parsed.localData[ASSESSMENT_KEY] ?? '[]');
+    if (!Array.isArray(records) || nextAssessmentFiles.some(file => !records.some(record => isAssessmentRecord(record) && record.id === file.recordId))) throw new Error('تحتوي النسخة ملفات اختبار غير مرتبطة بسجلاتها.');
+  }
   const previous: Record<string, string | null> = Object.fromEntries(
     [PLAN_STORAGE_KEY, ...APP_STORAGE_KEYS].map((key) => [key, localStorage.getItem(key)]),
   );
   const previousEvidence: Evidence[] = await allEvidence();
+  const previousAssessmentFiles = nextAssessmentFiles ? await listAssessmentFiles() : null;
   const nextData = parsed.localData;
   try {
     for (const key of APP_STORAGE_KEYS) {
+      if (key === ASSESSMENT_KEY && !hasAssessmentFiles && !Object.hasOwn(nextData, key)) continue;
+      if (key === SHORT_TEST_KEY && !hasAssessmentFiles && !Object.hasOwn(nextData, key)) continue;
       if (Object.hasOwn(nextData, key)) localStorage.setItem(key, nextData[key]);
       else localStorage.removeItem(key);
     }
@@ -233,6 +269,7 @@ export async function restoreAppBackup(file: File): Promise<{ tasks: Task[]; pla
       type: 'application/json',
     });
     const plans = await restorePlansBackup(plansFile);
+    if (nextAssessmentFiles) await replaceAssessmentFiles(nextAssessmentFiles);
     const tasks = readTasks();
     return { tasks, plans };
   } catch (error) {
@@ -242,6 +279,7 @@ export async function restoreAppBackup(file: File): Promise<{ tasks: Task[]; pla
         else localStorage.setItem(key, value);
       }
       await replaceAllEvidence(previousEvidence);
+      if (previousAssessmentFiles) await replaceAssessmentFiles(previousAssessmentFiles);
     } catch {
       throw new Error(
         'فشلت الاستعادة وتعذّر التراجع الآلي بالكامل؛ لا تغلق الصفحة، وحاول استعادة آخر نسخة سليمة.',
