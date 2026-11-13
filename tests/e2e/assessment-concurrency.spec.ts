@@ -31,7 +31,7 @@ test('two tabs cannot erase newer records or delete a record with an attached fi
   await page.evaluate(() => (window as unknown as {releaseAssessmentTest: () => void}).releaseAssessmentTest());
   await expect(a.getByText('سجل جديد · معلم')).toBeVisible();
   await a.getByText('سجل أول · معلم').click();
-  await a.locator('details').filter({hasText:'سجل أول · معلم'}).getByLabel('إضافة ملف اختبار').setInputFiles({name:'test.pdf', mimeType:'application/pdf', buffer:Buffer.from('example')});
+  await a.locator('details').filter({hasText:'سجل أول · معلم'}).getByLabel('إرفاق نسخة الاختبار').setInputFiles({name:'test.pdf', mimeType:'application/pdf', buffer:Buffer.from('example')});
   await expect(a.getByText('test.pdf')).toBeVisible();
   other.on('dialog', dialog => dialog.accept());
   await b.locator('details').filter({hasText:'سجل أول · معلم'}).getByRole('button', {name:'حذف سجل المتابعة'}).click();
