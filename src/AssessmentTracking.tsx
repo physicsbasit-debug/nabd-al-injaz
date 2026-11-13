@@ -41,7 +41,12 @@ export default function AssessmentTracking() {
     if (pendingFiles.current.has(record.id)) {setMessage('انتظر حتى يكتمل حفظ الملف الحالي.'); return;}
     pendingFiles.current.add(record.id); setPendingRecords(current => [...current, record.id]);
     const item: AssessmentFile = {id:crypto.randomUUID(), recordId:record.id, kind, name:file.name, mime, size:file.size, createdAt:new Date().toISOString(), blob:file};
-    try {await saveAssessmentFile(item); setFiles(current => [...current, item]); setMessage('حُفظ الملف على هذا الجهاز.');}
+    try {
+      await saveAssessmentFile(item);
+      try { if (!readAssessments().some(saved => saved.id === record.id)) throw new Error('السجل غير موجود'); }
+      catch { await deleteAssessmentFile(item.id); throw new Error('تعذر ربط الملف بالسجل.'); }
+      setFiles(current => [...current, item]); setMessage('حُفظ الملف على هذا الجهاز.');
+    }
     catch {setMessage('تعذر حفظ الملف؛ تحقق من مساحة الجهاز.');}
     finally {pendingFiles.current.delete(record.id); setPendingRecords(current => current.filter(id => id !== record.id));}
   }
