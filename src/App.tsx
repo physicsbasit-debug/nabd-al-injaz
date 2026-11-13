@@ -16,7 +16,6 @@ import PlanOverview from './PlanOverview';
 import PlanLibrary from './PlanLibrary';
 import ScheduleManager from './ScheduleManager';
 import TechnicalFollowup from './TechnicalFollowup';
-import ShortTestReview from './ShortTestReview';
 import AssessmentTracking from './AssessmentTracking';
 import AppBackupTools from './AppBackupTools';
 import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
@@ -171,7 +170,7 @@ export default function App() {
         ) : tab === 'المتابعة الفنية' ? (
           <TechnicalFollowup />
         ) : tab === 'الاختبارات والتحصيل' ? (
-          <><AssessmentTracking /><ShortTestReview /></>
+          <AssessmentTracking />
         ) : (
           <section className="card">
             <h2>{tab}</h2>

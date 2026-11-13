@@ -12,9 +12,9 @@ test('tracks hand-in and analysis separately and backs up both file kinds', asyn
   await expect(panel.getByRole('status')).toContainText('حُفظ سجل');
   await panel.getByText('اختبار افتراضي · معلم افتراضي').click();
   await expect(panel.getByText('تسليم الاختبار: لم يُسلّم · تحليل النتائج: لم يُحلّل')).toBeVisible();
-  await panel.getByLabel('إضافة ملف اختبار').setInputFiles({ name:'اختبار.pdf', mimeType:'application/pdf', buffer:Buffer.from('%PDF-fake-test') });
+  await panel.getByLabel('إرفاق نسخة الاختبار').setInputFiles({ name:'اختبار.pdf', mimeType:'application/pdf', buffer:Buffer.from('%PDF-fake-test') });
   await expect(panel.getByText('اختبار.pdf')).toBeVisible();
-  await panel.getByLabel('إضافة ملف تحليل').setInputFiles({ name:'تحليل.pdf', mimeType:'application/pdf', buffer:Buffer.from('%PDF-fake-analysis') });
+  await panel.getByLabel('إرفاق التحليل').setInputFiles({ name:'تحليل.pdf', mimeType:'application/pdf', buffer:Buffer.from('%PDF-fake-analysis') });
   await expect(panel.getByText('تحليل.pdf')).toBeVisible();
   await panel.getByRole('button', { name:'تعديل المتابعة' }).click();
   await panel.getByLabel('تم تسليم الاختبار').check();
