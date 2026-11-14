@@ -16,6 +16,7 @@ import { readSchedule } from './schedule-model';
 import { getCoverDailySummary, getCoverDay, readCoverStore, weekdayForDate } from './cover-planning';
 import { readTechnicalTopicSummary, readTechnicalTopics } from './technical-followup-model';
 import { readAssessments, summarizeAssessments } from './assessment-tracking';
+import { readProfessionalPrograms } from './professional-development-model';
 import './daily-section-board.css';
 
 const today = () => localDateKey(new Date());
@@ -78,6 +79,8 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
   let assessmentSummary: ReturnType<typeof summarizeAssessments> | null = null;
   try { assessmentSummary = summarizeAssessments(readAssessments()); } catch { /* Show an explicit warning below. */ }
 
+  let programs: ReturnType<typeof readProfessionalPrograms> | null = null;
+  try { programs = readProfessionalPrograms(); } catch { /* Show a warning in the card. */ }
   const cards: DailyCard[] = [
     {
       name: 'الخطط والمهام',
@@ -129,9 +132,9 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
     {
       name: 'الإنماء المهني',
       icon: GraduationCap,
-      status: 'القسم لم يُفعّل بعد',
-      detail: 'لم تُسجل أنشطة إنماء مهني في المنظومة بعد',
-      pending: true,
+      status: programs === null ? 'تعذر قراءة برامج الإنماء المهني' : programs.length ? `${programs.length} برنامج مسجل` : 'لا توجد برامج مسجلة',
+      detail: programs === null ? 'تحقق من البيانات المحفوظة' : `${programs.filter(p => p.date === date).length} برنامج موعده اليوم`,
+      alert: programs === null || programs.some(p => p.date === date),
     },
     {
       name: 'الإنجازات والشواهد',

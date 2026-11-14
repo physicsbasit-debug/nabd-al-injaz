@@ -15,6 +15,8 @@ import { SHORT_TEST_KEY, isReviewRecord } from './short-test-model';
 import { ASSESSMENT_KEY, isAssessmentRecord } from './assessment-tracking';
 import { createAssessmentArchive, decodeAssessmentArchive, listAssessmentFiles, replaceAssessmentFiles } from './assessment-files';
 import { withAssessmentLock } from './assessment-lock';
+import { PROFESSIONAL_DEVELOPMENT_KEY, isProfessionalProgram } from './professional-development-model';
+import { createProfessionalArchive, decodeProfessionalArchive, listProfessionalFiles, replaceProfessionalFiles } from './professional-development-files';
 
 const FORMAT = 'nabd-al-injaz-full-backup';
 const VERSION = 1;
@@ -27,6 +29,7 @@ const APP_STORAGE_KEYS = [
   TECHNICAL_FOLLOWUP_STORAGE_KEY,
   SHORT_TEST_KEY,
   ASSESSMENT_KEY,
+  PROFESSIONAL_DEVELOPMENT_KEY,
 ];
 type AppBackup = {
   format: string;
@@ -35,6 +38,7 @@ type AppBackup = {
   localData: Record<string, string>;
   plansAndEvidence: PlansBackupArchive;
   assessmentFiles: Awaited<ReturnType<typeof createAssessmentArchive>>;
+  professionalFiles: Awaited<ReturnType<typeof createProfessionalArchive>>;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -152,6 +156,10 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
     )
       throw new Error('سجل الاحتياط في ملف النسخة غير صالح.');
   }
+  if (data[PROFESSIONAL_DEVELOPMENT_KEY] !== undefined) {
+    const programs = parseJson(data[PROFESSIONAL_DEVELOPMENT_KEY], 'الإنماء المهني');
+    if (!Array.isArray(programs) || !programs.every(isProfessionalProgram) || new Set(programs.map(item=>item.id)).size !== programs.length) throw new Error('بيانات الإنماء المهني في النسخة غير صالحة.');
+  }
   if (data[ASSESSMENT_KEY] !== undefined) {
     const assessments = parseJson(data[ASSESSMENT_KEY], 'متابعة الاختبارات');
     if (!Array.isArray(assessments) || !assessments.every(isAssessmentRecord) || new Set(assessments.map((item) => item.id)).size !== assessments.length) throw new Error('بيانات متابعة الاختبارات في النسخة غير صالحة.');
@@ -209,6 +217,10 @@ async function exportAppBackupLocked(plans: Plan[]): Promise<void> {
   if (savedFiles.length > 1000 || savedFiles.reduce((sum, file) => sum + 4 * Math.ceil(file.size / 3), 0) > MAX_BACKUP_BYTES) throw new Error('ملفات الاختبارات تتجاوز الحد المدعوم للنسخ.');
   const assessmentRecords: unknown = JSON.parse(localData[ASSESSMENT_KEY] ?? '[]');
   if (!Array.isArray(assessmentRecords) || savedFiles.some(file => !assessmentRecords.some(record => isAssessmentRecord(record) && record.id === file.recordId))) throw new Error('يوجد ملف اختبار غير مرتبط بسجل؛ لم تُنشأ النسخة.');
+  const professionalFiles = await listProfessionalFiles();
+  if (professionalFiles.length > 1000 || professionalFiles.reduce((sum, file) => sum + 4 * Math.ceil(file.size / 3), 0) > MAX_BACKUP_BYTES) throw new Error('ملفات الإنماء المهني تتجاوز الحد المدعوم.');
+  const programs: unknown = JSON.parse(localData[PROFESSIONAL_DEVELOPMENT_KEY] ?? '[]');
+  if (!Array.isArray(programs) || professionalFiles.some(file => !programs.some(program => isProfessionalProgram(program) && program.id === file.recordId))) throw new Error('يوجد ملف إنماء مهني غير مرتبط ببرنامج.');
   const archive: AppBackup = {
     format: FORMAT,
     version: VERSION,
@@ -216,6 +228,7 @@ async function exportAppBackupLocked(plans: Plan[]): Promise<void> {
     localData,
     plansAndEvidence: await createPlansBackupArchive(plans),
     assessmentFiles: await createAssessmentArchive(savedFiles),
+    professionalFiles: await createProfessionalArchive(professionalFiles),
   };
   const backupBlob = new Blob([JSON.stringify(archive)], { type: 'application/json' });
   if (new Blob([JSON.stringify(archive.plansAndEvidence)]).size > MAX_PLANS_BACKUP_BYTES)
@@ -245,6 +258,13 @@ async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plan
     throw new Error('ملف النسخة لا يطابق نسخة المنظومة المعتمدة.');
   validateLocalData(parsed.localData);
 
+  const hasProfessionalFiles = Object.hasOwn(parsed, 'professionalFiles');
+  if (!hasProfessionalFiles && Object.hasOwn(parsed.localData, PROFESSIONAL_DEVELOPMENT_KEY)) throw new Error('نسخة الإنماء المهني غير مكتملة.');
+  const nextProfessionalFiles = hasProfessionalFiles ? decodeProfessionalArchive(parsed.professionalFiles) : null;
+  if (nextProfessionalFiles) {
+    const programs: unknown = JSON.parse(parsed.localData[PROFESSIONAL_DEVELOPMENT_KEY] ?? '[]');
+    if (!Array.isArray(programs) || nextProfessionalFiles.some(file => !programs.some(program => isProfessionalProgram(program) && program.id === file.recordId))) throw new Error('تحتوي النسخة ملفات غير مرتبطة ببرامجها.');
+  }
   const hasAssessmentFiles = Object.hasOwn(parsed, 'assessmentFiles');
   if (!hasAssessmentFiles && Object.hasOwn(parsed.localData, ASSESSMENT_KEY)) throw new Error('نسخة متابعة الاختبارات غير مكتملة؛ لم تُستعد البيانات.');
   const nextAssessmentFiles = hasAssessmentFiles ? decodeAssessmentArchive(parsed.assessmentFiles) : null;
@@ -257,9 +277,11 @@ async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plan
   );
   const previousEvidence: Evidence[] = await allEvidence();
   const previousAssessmentFiles = nextAssessmentFiles ? await listAssessmentFiles() : null;
+  const previousProfessionalFiles = nextProfessionalFiles ? await listProfessionalFiles() : null;
   const nextData = parsed.localData;
   try {
     for (const key of APP_STORAGE_KEYS) {
+      if (key === PROFESSIONAL_DEVELOPMENT_KEY && !hasProfessionalFiles) continue;
       if (key === ASSESSMENT_KEY && !hasAssessmentFiles && !Object.hasOwn(nextData, key)) continue;
       if (key === SHORT_TEST_KEY && !hasAssessmentFiles && !Object.hasOwn(nextData, key)) continue;
       if (Object.hasOwn(nextData, key)) localStorage.setItem(key, nextData[key]);
@@ -270,6 +292,7 @@ async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plan
     });
     const plans = await restorePlansBackup(plansFile);
     if (nextAssessmentFiles) await replaceAssessmentFiles(nextAssessmentFiles);
+    if (nextProfessionalFiles) await replaceProfessionalFiles(nextProfessionalFiles);
     const tasks = readTasks();
     return { tasks, plans };
   } catch (error) {
@@ -280,6 +303,7 @@ async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plan
       }
       await replaceAllEvidence(previousEvidence);
       if (previousAssessmentFiles) await replaceAssessmentFiles(previousAssessmentFiles);
+      if (previousProfessionalFiles) await replaceProfessionalFiles(previousProfessionalFiles);
     } catch {
       throw new Error(
         'فشلت الاستعادة وتعذّر التراجع الآلي بالكامل؛ لا تغلق الصفحة، وحاول استعادة آخر نسخة سليمة.',
