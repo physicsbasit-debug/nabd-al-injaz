@@ -17,6 +17,7 @@ import PlanLibrary from './PlanLibrary';
 import ScheduleManager from './ScheduleManager';
 import TechnicalFollowup from './TechnicalFollowup';
 import AssessmentTracking from './AssessmentTracking';
+import ProfessionalDevelopment from './ProfessionalDevelopment';
 import AppBackupTools from './AppBackupTools';
 import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
@@ -171,6 +172,8 @@ export default function App() {
           <TechnicalFollowup />
         ) : tab === 'الاختبارات والتحصيل' ? (
           <AssessmentTracking />
+        ) : tab === 'الإنماء المهني' ? (
+          <ProfessionalDevelopment />
         ) : (
           <section className="card">
             <h2>{tab}</h2>
