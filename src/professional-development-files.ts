@@ -17,7 +17,7 @@ export async function createProfessionalArchive(records: ProfessionalFile[]): Pr
     let binary = '';
     for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
     const entry = {...r, base64: btoa(binary)};
-    if (!isEntry(entry)) throw new Error('بيانات ملف الاختبار غير صالحة.');
+    if (!isEntry(entry)) throw new Error('بيانات ملف الإنماء المهني غير صالحة.');
     return entry;
   }));
 }
@@ -29,7 +29,7 @@ export function decodeProfessionalArchive(raw: unknown): ProfessionalFile[] {
     ids.add(value.id);
     let binary: string;
     try { binary = atob(value.base64); } catch { throw new Error('تعذر قراءة ملف إنماء مهني من النسخة.'); }
-    if (binary.length !== value.size || btoa(binary) !== value.base64) throw new Error('حجم ملف الاختبار أو ترميزه غير صالح.');
+    if (binary.length !== value.size || btoa(binary) !== value.base64) throw new Error('حجم ملف الإنماء المهني أو ترميزه غير صالح.');
     const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
     const record = {id:value.id, recordId:value.recordId, kind:value.kind, name:value.name, mime:value.mime, size:value.size, createdAt:value.createdAt};
     return {...record, blob: new Blob([bytes], { type: value.mime })};

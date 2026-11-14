@@ -18,12 +18,17 @@ test('records teacher attendance and restores programme attachments', async ({pa
   await expect(section.getByText('material.pdf')).toBeVisible();
   await section.getByLabel('إرفاق شاهد').setInputFiles({name:'evidence.pdf',mimeType:'application/pdf',buffer:Buffer.from('evidence')});
   await expect(section.getByText('evidence.pdf')).toBeVisible();
+  await page.screenshot({path:info.outputPath('professional-development.png'),fullPage:true});
   if(info.project.name==='phone') await page.getByRole('button',{name:/عرض الأقسام/}).click();
   await page.getByRole('button',{name:'الرئيسية',exact:true}).click();
   const tools=page.locator('.app-backup-tools');await tools.locator('summary').click();
   const pending=page.waitForEvent('download');await tools.getByRole('button',{name:'تنزيل نسخة كاملة'}).click();const download=await pending;
   const path=info.outputPath('professional-backup.json');await download.saveAs(path);
   const backup=JSON.parse(await readFile(path,'utf8'));expect(backup.professionalFiles).toHaveLength(2);
+  const damaged=structuredClone(backup);damaged.professionalFiles[0].base64='AA==';
+  page.once('dialog',dialog=>dialog.accept());await tools.locator('input[type=file]').setInputFiles({name:'damaged.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(damaged))});
+  await expect(tools.getByRole('status')).toContainText('غير صالح');
+  expect(await page.evaluate(()=>localStorage.getItem('nabd-al-injaz:professional-development:v1'))).toContain('مشغل افتراضي');
   const legacy=structuredClone(backup);delete legacy.professionalFiles;delete legacy.localData['nabd-al-injaz:professional-development:v1'];
   page.once('dialog',dialog=>dialog.accept());await tools.locator('input[type=file]').setInputFiles({name:'old.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(legacy))});
   await expect(tools.getByRole('status')).toContainText('استُعيدت بيانات المنظومة');

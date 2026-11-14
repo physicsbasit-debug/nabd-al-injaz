@@ -16,7 +16,7 @@ export default function AppBackupTools({ plans, setPlans, setTasks }: Props) {
   return (
     <details className="app-backup-tools">
       <summary>نقل نسخة المنظومة بين الأجهزة</summary>
-      <p>ملف واحد يحوي المهام والخطط والشواهد والجداول وسجل الاحتياط والمتابعة الفنية.</p>
+      <p>ملف واحد يحوي المهام والخطط والشواهد والجداول وسجل الاحتياط والمتابعة الفنية والاختبارات والإنماء المهني.</p>
       <div className="app-backup-actions">
         <button
           type="button"
@@ -46,7 +46,7 @@ export default function AppBackupTools({ plans, setPlans, setTasks }: Props) {
               if (
                 !file ||
                 !window.confirm(
-                  'ستُستبدل بيانات هذا المتصفح بالنسخة المختارة، بما فيها الجداول وسجل الاحتياط والخطط والشواهد. هل تتابع؟',
+                  'ستُستبدل بيانات هذا المتصفح بالنسخة المختارة، بما فيها الجداول وسجل الاحتياط والخطط والشواهد والاختبارات والإنماء المهني. هل تتابع؟',
                 )
               )
                 return;
