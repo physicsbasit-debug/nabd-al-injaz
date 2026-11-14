@@ -1,0 +1,4 @@
+.professional-attendance {display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:8px; padding:10px 12px; border:1px solid #dbe8e1; border-radius:8px; background:#fff;}
+.professional-attendance select {min-height:44px; min-width:130px; padding:8px 10px; border:1px solid #abc6b9; border-radius:8px; color:#173f35; background:#fff; font:inherit;}
+.professional-attendance select:focus-visible {outline:3px solid #a8d7c0; outline-offset:2px;}
+@media(max-width:650px){.professional-form > label:nth-child(5){grid-column:1/-1;}}
