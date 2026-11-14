@@ -23,6 +23,7 @@ export default function ProfessionalDevelopment() {
     refresh(); const unsubscribe=onAssessmentChange(refresh); return ()=>{active=false;unsubscribe();};
   },[]);
   async function save(){
+    if (editing && Object.entries(editing.attendance).some(([name,status]) => !targets.includes(name) && status !== 'لم يُرصد')) {setMessage('لإزالة معلم رُصد حضوره أو غيابه، أعد حالته أولًا إلى لم يُرصد.');return;}
     const record:ProfessionalProgram={...form,title:form.title.trim(),presenter:form.presenter.trim(),notes:form.notes.trim(),id:editing?.id ?? crypto.randomUUID(),attendance:Object.fromEntries(targets.map(name=>[name,editing?.attendance[name] ?? 'لم يُرصد']))};
     if(!isProfessionalProgram(record)){setMessage('أدخل عنوان البرنامج والتاريخ ونوع البرنامج.');return;}
     setBusy(true);try {const next=await withAssessmentLock(async()=>{const current=readProfessionalPrograms();if(editing && JSON.stringify(current.find(x=>x.id===editing.id))!==JSON.stringify(editing)) throw new Error('تغير البرنامج في نافذة أخرى؛ افتحه مجددًا.');const updated=editing?current.map(x=>x.id===editing.id?record:x):[...current,record];localStorage.setItem(PROFESSIONAL_DEVELOPMENT_KEY,JSON.stringify(updated));return updated;});setRecords(next);setEditing(null);setForm(blank);setTargets([]);setMessage('حُفظ البرنامج على هذا الجهاز.');}catch(e){setMessage(e instanceof Error?e.message:'تعذر حفظ البرنامج.');}finally{setBusy(false);}

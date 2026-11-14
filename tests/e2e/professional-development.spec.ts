@@ -14,6 +14,12 @@ test('records teacher attendance and restores programme attachments', async ({pa
   await expect(section.getByRole('status')).toContainText('حُفظ البرنامج');
   await section.getByText('مشغل افتراضي').click();
   await section.getByLabel('حضور معلم افتراضي').selectOption('حاضر');
+  await expect.poll(()=>page.evaluate(()=>localStorage.getItem('nabd-al-injaz:professional-development:v1'))).toContain('حاضر');
+  await section.getByRole('button',{name:'تعديل البرنامج'}).click();
+  await section.getByLabel('معلم افتراضي',{exact:true}).uncheck();
+  await section.getByRole('button',{name:'حفظ التعديل'}).click();
+  await expect(section.getByRole('status')).toContainText('أعد حالته أولًا');
+  await section.getByRole('button',{name:'إلغاء التعديل'}).click();
   await section.getByLabel('إرفاق مادة').setInputFiles({name:'material.pdf',mimeType:'application/pdf',buffer:Buffer.from('example')});
   await expect(section.getByText('material.pdf')).toBeVisible();
   await section.getByLabel('إرفاق شاهد').setInputFiles({name:'evidence.pdf',mimeType:'application/pdf',buffer:Buffer.from('evidence')});
