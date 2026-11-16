@@ -20,6 +20,7 @@ import AssessmentTracking from './AssessmentTracking';
 import ProfessionalDevelopment from './ProfessionalDevelopment';
 import AppBackupTools from './AppBackupTools';
 import PlanSectionActivities from './PlanSectionActivities';
+import SupervisoryVisits from './SupervisoryVisits';
 import { PLAN_DESTINATIONS, type PlanDestination } from './plan-routing';
 import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
@@ -44,6 +45,7 @@ export default function App() {
   const [plans, setPlans] = useState<Plan[]>(readPlans);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [focusedActivityId, setFocusedActivityId] = useState<string | null>(null);
+  const [visitLink, setVisitLink] = useState<{ planId: string; activityId: string } | null>(null);
   const [planCreateRequested, setPlanCreateRequested] = useState(false);
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
@@ -190,6 +192,16 @@ export default function App() {
               setTab('مكتبة الخطط');
             }} />
             <ProfessionalDevelopment />
+          </>
+        ) : tab === 'الزيارات الإشرافية' ? (
+          <>
+            <PlanSectionActivities plans={plans} destination="الزيارات الإشرافية" onOpenPlan={(id, activityId) => {
+              setSelectedPlanId(id);
+              setFocusedActivityId(activityId);
+              setPlanCreateRequested(false);
+              setTab('مكتبة الخطط');
+            }} onLinkVisit={(planId, activityId) => setVisitLink({ planId, activityId })} />
+            <SupervisoryVisits plans={plans} requestedLink={visitLink} onLinkHandled={() => setVisitLink(null)} />
           </>
         ) : PLAN_DESTINATIONS.includes(tab as PlanDestination) ? (
           <PlanSectionActivities plans={plans} destination={tab as PlanDestination} onOpenPlan={(id, activityId) => {

@@ -17,6 +17,8 @@ import { createAssessmentArchive, decodeAssessmentArchive, listAssessmentFiles, 
 import { withAssessmentLock } from './assessment-lock';
 import { PROFESSIONAL_DEVELOPMENT_KEY, isProfessionalProgram } from './professional-development-model';
 import { createProfessionalArchive, decodeProfessionalArchive, listProfessionalFiles, replaceProfessionalFiles } from './professional-development-files';
+import { SUPERVISORY_VISITS_KEY, isSupervisoryVisit } from './supervisory-visits-model';
+import { createVisitArchive, decodeVisitArchive, listVisitFiles, replaceVisitFiles } from './supervisory-visit-files';
 
 const FORMAT = 'nabd-al-injaz-full-backup';
 const VERSION = 1;
@@ -30,6 +32,7 @@ const APP_STORAGE_KEYS = [
   SHORT_TEST_KEY,
   ASSESSMENT_KEY,
   PROFESSIONAL_DEVELOPMENT_KEY,
+  SUPERVISORY_VISITS_KEY,
 ];
 type AppBackup = {
   format: string;
@@ -39,6 +42,7 @@ type AppBackup = {
   plansAndEvidence: PlansBackupArchive;
   assessmentFiles: Awaited<ReturnType<typeof createAssessmentArchive>>;
   professionalFiles: Awaited<ReturnType<typeof createProfessionalArchive>>;
+  supervisoryVisitFiles: Awaited<ReturnType<typeof createVisitArchive>>;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -59,6 +63,11 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
   )
     throw new Error('ملف النسخة يحتوي بيانات أقسام غير معروفة. لم تُستبدل بياناتك.');
   const data = value as Record<string, string>;
+  if (data[SUPERVISORY_VISITS_KEY] !== undefined) {
+    const visits = parseJson(data[SUPERVISORY_VISITS_KEY], 'الزيارات الإشرافية');
+    if (!Array.isArray(visits) || !visits.every(isSupervisoryVisit) || new Set(visits.map(item => item.id)).size !== visits.length)
+      throw new Error('بيانات الزيارات الإشرافية في النسخة غير صالحة.');
+  }
   if (data[STORAGE_KEY] !== undefined) {
     const tasks = parseJson(data[STORAGE_KEY], 'المهام');
     if (
@@ -221,6 +230,10 @@ async function exportAppBackupLocked(plans: Plan[]): Promise<void> {
   if (professionalFiles.length > 1000 || professionalFiles.reduce((sum, file) => sum + 4 * Math.ceil(file.size / 3), 0) > MAX_BACKUP_BYTES) throw new Error('ملفات الإنماء المهني تتجاوز الحد المدعوم.');
   const programs: unknown = JSON.parse(localData[PROFESSIONAL_DEVELOPMENT_KEY] ?? '[]');
   if (!Array.isArray(programs) || professionalFiles.some(file => !programs.some(program => isProfessionalProgram(program) && program.id === file.recordId))) throw new Error('يوجد ملف إنماء مهني غير مرتبط ببرنامج.');
+  const visitFiles = await listVisitFiles();
+  if (visitFiles.length > 1000 || visitFiles.reduce((sum, file) => sum + 4 * Math.ceil(file.size / 3), 0) > MAX_BACKUP_BYTES) throw new Error('شواهد الزيارات تتجاوز الحد المدعوم للنسخ.');
+  const visits: unknown = JSON.parse(localData[SUPERVISORY_VISITS_KEY] ?? '[]');
+  if (!Array.isArray(visits) || visitFiles.some(file => !visits.some(visit => isSupervisoryVisit(visit) && visit.id === file.recordId))) throw new Error('يوجد شاهد غير مرتبط بزيارة؛ لم تُنشأ النسخة.');
   const archive: AppBackup = {
     format: FORMAT,
     version: VERSION,
@@ -229,6 +242,7 @@ async function exportAppBackupLocked(plans: Plan[]): Promise<void> {
     plansAndEvidence: await createPlansBackupArchive(plans),
     assessmentFiles: await createAssessmentArchive(savedFiles),
     professionalFiles: await createProfessionalArchive(professionalFiles),
+    supervisoryVisitFiles: await createVisitArchive(visitFiles),
   };
   const backupBlob = new Blob([JSON.stringify(archive)], { type: 'application/json' });
   if (new Blob([JSON.stringify(archive.plansAndEvidence)]).size > MAX_PLANS_BACKUP_BYTES)
@@ -258,6 +272,13 @@ async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plan
     throw new Error('ملف النسخة لا يطابق نسخة المنظومة المعتمدة.');
   validateLocalData(parsed.localData);
 
+  const hasVisitFiles = Object.hasOwn(parsed, 'supervisoryVisitFiles');
+  if (!hasVisitFiles && Object.hasOwn(parsed.localData, SUPERVISORY_VISITS_KEY)) throw new Error('نسخة الزيارات الإشرافية غير مكتملة؛ لم تُستعد البيانات.');
+  const nextVisitFiles = hasVisitFiles ? decodeVisitArchive(parsed.supervisoryVisitFiles) : null;
+  if (nextVisitFiles) {
+    const visits: unknown = JSON.parse(parsed.localData[SUPERVISORY_VISITS_KEY] ?? '[]');
+    if (!Array.isArray(visits) || nextVisitFiles.some(file => !visits.some(visit => isSupervisoryVisit(visit) && visit.id === file.recordId))) throw new Error('تحتوي النسخة شواهد غير مرتبطة بزياراتها.');
+  }
   const hasProfessionalFiles = Object.hasOwn(parsed, 'professionalFiles');
   if (!hasProfessionalFiles && Object.hasOwn(parsed.localData, PROFESSIONAL_DEVELOPMENT_KEY)) throw new Error('نسخة الإنماء المهني غير مكتملة.');
   const nextProfessionalFiles = hasProfessionalFiles ? decodeProfessionalArchive(parsed.professionalFiles) : null;
@@ -278,9 +299,11 @@ async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plan
   const previousEvidence: Evidence[] = await allEvidence();
   const previousAssessmentFiles = nextAssessmentFiles ? await listAssessmentFiles() : null;
   const previousProfessionalFiles = nextProfessionalFiles ? await listProfessionalFiles() : null;
+  const previousVisitFiles = nextVisitFiles ? await listVisitFiles() : null;
   const nextData = parsed.localData;
   try {
     for (const key of APP_STORAGE_KEYS) {
+      if (key === SUPERVISORY_VISITS_KEY && !hasVisitFiles) continue;
       if (key === PROFESSIONAL_DEVELOPMENT_KEY && !hasProfessionalFiles) continue;
       if (key === ASSESSMENT_KEY && !hasAssessmentFiles && !Object.hasOwn(nextData, key)) continue;
       if (key === SHORT_TEST_KEY && !hasAssessmentFiles && !Object.hasOwn(nextData, key)) continue;
@@ -293,6 +316,7 @@ async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plan
     const plans = await restorePlansBackup(plansFile);
     if (nextAssessmentFiles) await replaceAssessmentFiles(nextAssessmentFiles);
     if (nextProfessionalFiles) await replaceProfessionalFiles(nextProfessionalFiles);
+    if (nextVisitFiles) await replaceVisitFiles(nextVisitFiles);
     const tasks = readTasks();
     return { tasks, plans };
   } catch (error) {
@@ -304,6 +328,7 @@ async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plan
       await replaceAllEvidence(previousEvidence);
       if (previousAssessmentFiles) await replaceAssessmentFiles(previousAssessmentFiles);
       if (previousProfessionalFiles) await replaceProfessionalFiles(previousProfessionalFiles);
+      if (previousVisitFiles) await replaceVisitFiles(previousVisitFiles);
     } catch {
       throw new Error(
         'فشلت الاستعادة وتعذّر التراجع الآلي بالكامل؛ لا تغلق الصفحة، وحاول استعادة آخر نسخة سليمة.',

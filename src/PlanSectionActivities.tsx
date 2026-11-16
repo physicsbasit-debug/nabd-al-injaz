@@ -5,6 +5,7 @@ type Props = {
   plans: Plan[];
   destination: PlanDestination;
   onOpenPlan: (id: string, activityId: string) => void;
+  onLinkVisit?: (id: string, activityId: string) => void;
 };
 
 const labels = {
@@ -13,7 +14,7 @@ const labels = {
   completed: 'مكتمل',
 } as const;
 
-export default function PlanSectionActivities({ plans, destination, onOpenPlan }: Props) {
+export default function PlanSectionActivities({ plans, destination, onOpenPlan, onLinkVisit }: Props) {
   const activities = activitiesForDestination(plans, destination);
   return (
     <section className="card" aria-label={'أنشطة الخطط: ' + destination}>
@@ -30,6 +31,7 @@ export default function PlanSectionActivities({ plans, destination, onOpenPlan }
               {activity.assignee && <p>المسؤول: {activity.assignee}</p>}
               {activity.dueDate && <p>الاستحقاق: {activity.dueDate}</p>}
               <button type="button" onClick={() => onOpenPlan(plan.id, activity.id)}>فتح الخطة</button>
+              {onLinkVisit && <button type="button" onClick={() => onLinkVisit(plan.id, activity.id)}>ربط زيارة بهذا النشاط</button>}
             </li>
           ))}
         </ul>
