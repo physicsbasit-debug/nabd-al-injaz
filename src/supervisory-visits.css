@@ -5,3 +5,12 @@
 .visit-list-header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: .75rem; margin-top: 1.3rem; }
 .visit-list-header label { display: grid; gap: .3rem; max-width: 100%; }
 .supervisory-visits details p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.visit-teacher-followup { border: 1px solid #d9e7d8; border-radius: .75rem; padding: 1rem; margin: 1rem 0; background: #fbfdfb; }
+.visit-teacher-list { list-style: none; padding: 0; display: grid; gap: .5rem; }
+.visit-teacher-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; padding: .65rem; background: white; border: 1px solid #e2ebe1; border-radius: .6rem; }
+.visit-teacher-list li div { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.visit-teacher-list li small { color: #52665b; }
+.visit-done, .visit-pending { border-radius: 1rem; padding: .2rem .65rem; font-size: .875rem; }
+.visit-done { background: #dff2e4; color: #146239; }
+.visit-pending { background: #fff3dc; color: #7a5312; }
+.visit-legacy-notes { border-inline-start: 3px solid #cbdcca; margin: .75rem 0; padding-inline-start: .75rem; }

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, isSupervisoryVisit, readSupervisoryVisits } from '../src/supervisory-visits-model';
+import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, isSupervisoryVisit, readSupervisoryVisits, summarizeTeacherVisits } from '../src/supervisory-visits-model';
 import { createVisitArchive, decodeVisitArchive } from '../src/supervisory-visit-files';
 import { projectedBackupBytes, assertVisitBackupCapacity } from '../src/backup-capacity';
 
@@ -22,6 +22,23 @@ describe('supervisory visit records', () => {
     expect(isSupervisoryVisit({ ...visit, activityId: '' })).toBe(false);
     expect(isSupervisoryVisit({ ...visit, date: '2026-02-30' })).toBe(false);
     expect(isSupervisoryVisit({ ...visit, teacher: '  ' })).toBe(false);
+    expect(isSupervisoryVisit({ ...visit, status: 'planned', date: '' })).toBe(true);
+    expect(isSupervisoryVisit({ ...visit, status: 'completed', date: '' })).toBe(false);
+    expect(isSupervisoryVisit({ ...visit, documentation: 'تم توثيق الزيارة' })).toBe(true);
+  });
+
+  it('summarizes teachers by completed visits without assuming unsaved visits occurred', () => {
+    const rows = summarizeTeacherVisits(['أحمد', 'سالم', 'أحمد'], [
+      { ...visit, id: 'v1', teacher: 'أحمد', date: '2026-10-01', status: 'completed' },
+      { ...visit, id: 'v2', teacher: 'أحمد', date: '2026-11-16', status: 'completed' },
+      { ...visit, id: 'v3', teacher: 'سالم', date: '', status: 'planned' },
+      { ...visit, id: 'v4', teacher: 'ناصر', date: '2026-11-01', status: 'completed' },
+    ]);
+    expect(rows).toEqual([
+      { teacher: 'أحمد', completedCount: 2, lastVisit: '2026-11-16' },
+      { teacher: 'سالم', completedCount: 0, lastVisit: null },
+      { teacher: 'ناصر', completedCount: 1, lastVisit: '2026-11-01' },
+    ]);
   });
 
   it('refuses corrupt stored records rather than overwriting them with an empty list', () => {
