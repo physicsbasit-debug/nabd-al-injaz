@@ -19,6 +19,7 @@ test('backup includes evidence and restores plans without losing file bytes', as
   await page.getByRole('button', { name: 'إضافة نشاط يدوي' }).click();
   await page.getByRole('textbox', { name: 'اسم النشاط *' }).fill('نشاط شاهد');
   await page.getByRole('button', { name: 'حفظ النشاط' }).click();
+  await page.getByLabel('قسم النشاط: نشاط شاهد').selectOption('الإنماء المهني');
   await page.getByRole('button', { name: 'الشواهد والتوثيق' }).click();
   await page.getByLabel('ملف الشاهد (PDF، صورة، Word، Excel)').setInputFiles({
     name: 'original.pdf',
@@ -38,6 +39,7 @@ test('backup includes evidence and restores plans without losing file bytes', as
   );
   expect(archive.version).toBe(1);
   expect(archive.plans).toHaveLength(1);
+  expect(archive.plans[0].activities[0].destination).toBe('الإنماء المهني');
   expect(archive.evidence).toHaveLength(1);
   expect(Buffer.from(archive.evidence[0].base64, 'base64').toString()).toBe(
     '%PDF-1.4 safe evidence',
@@ -52,6 +54,7 @@ test('backup includes evidence and restores plans without losing file bytes', as
   await expect(page.getByText('استُعيدت الخطط والشواهد بنجاح.')).toBeVisible();
   await page.reload();
   await page.getByRole('button', { name: /خطة النسخ الآمن/ }).click();
+  await expect(page.getByLabel('قسم النشاط: نشاط شاهد')).toHaveValue('الإنماء المهني');
   await page.getByRole('button', { name: 'الشواهد والتوثيق' }).click();
   await expect(page.getByText('original.pdf')).toBeVisible();
 
