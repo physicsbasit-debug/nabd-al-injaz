@@ -93,6 +93,8 @@ test('links a visit to a plan, preserves evidence and safely handles old or dama
   other.once('dialog', dialog => dialog.accept());
   await restoreTools.locator('input[type=file]').setInputFiles(path);
   await expect(restoreTools.getByRole('status')).toContainText('استُعيدت');
+  const otherMenu = other.getByRole('button', { name: /عرض الأقسام/ });
+  if (await otherMenu.isVisible()) await otherMenu.click();
   await other.getByRole('button', { name: 'الزيارات الإشرافية', exact: true }).click();
   const restored = other.getByRole('region', { name: 'سجل الزيارات الإشرافية' });
   await restored.getByText('معلم تجريبي', { exact: false }).first().click();
