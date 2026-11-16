@@ -1,3 +1,4 @@
+import { proposePlanDestination, type PlanDestination } from './plan-routing';
 import type { PlanActivity } from './plan-model';
 
 export type ImportCandidate = {
@@ -7,6 +8,7 @@ export type ImportCandidate = {
   assignee: string;
   dueDate: string;
   details: string;
+  destination?: PlanDestination;
 };
 export type ImportPreview = {
   filename: string;
@@ -33,6 +35,7 @@ function fromLines(lines: string[], filename: string, label: string): ImportPrev
       assignee: '',
       dueDate: '',
       details: '',
+      destination: proposePlanDestination(title) ?? undefined,
     });
   }
   return {
@@ -87,6 +90,7 @@ export async function previewPlanFile(file: File): Promise<ImportPreview> {
           key: sheet.name + ':' + index,
           source: sheet.name + '، صف ' + index,
           title,
+          destination: proposePlanDestination(title) ?? undefined,
           assignee: '',
           dueDate: '',
           details: cells
@@ -148,6 +152,7 @@ export function approvedActivities(candidates: ImportCandidate[]): PlanActivity[
       assignee: c.assignee.trim().slice(0, 100),
       dueDate: c.dueDate,
       details: c.details.trim().slice(0, 1000),
+      ...(c.destination ? { destination: c.destination } : {}),
       progress: 'not_started',
       completedAt: null,
       createdAt: new Date().toISOString(),

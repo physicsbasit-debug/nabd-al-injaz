@@ -19,6 +19,8 @@ import TechnicalFollowup from './TechnicalFollowup';
 import AssessmentTracking from './AssessmentTracking';
 import ProfessionalDevelopment from './ProfessionalDevelopment';
 import AppBackupTools from './AppBackupTools';
+import PlanSectionActivities from './PlanSectionActivities';
+import { PLAN_DESTINATIONS, type PlanDestination } from './plan-routing';
 import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
   ['الرئيسية', Activity],
@@ -28,6 +30,10 @@ const sections = [
   ['المتابعة الفنية', Users],
   ['الاختبارات والتحصيل', FileText],
   ['الإنماء المهني', GraduationCap],
+  ['الزيارات الإشرافية', Users],
+  ['الزيارات المتبادلة', Users],
+  ['الاجتماعات الدورية', Users],
+  ['رفع المستوى التحصيلي', GraduationCap],
   ['الإنجازات والشواهد', Medal],
   ['التقارير', FileText],
 ] as const;
@@ -37,6 +43,7 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>(readTasks);
   const [plans, setPlans] = useState<Plan[]>(readPlans);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [focusedActivityId, setFocusedActivityId] = useState<string | null>(null);
   const [planCreateRequested, setPlanCreateRequested] = useState(false);
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
@@ -163,6 +170,8 @@ export default function App() {
             onSelect={setSelectedPlanId}
             createRequested={planCreateRequested}
             onCreateHandled={() => setPlanCreateRequested(false)}
+            focusedActivityId={focusedActivityId}
+            onFocusHandled={() => setFocusedActivityId(null)}
           />
         ) : tab === 'الخطط والمهام' ? (
           <TaskManager tasks={tasks} setTasks={setTasks} />
@@ -173,7 +182,22 @@ export default function App() {
         ) : tab === 'الاختبارات والتحصيل' ? (
           <AssessmentTracking />
         ) : tab === 'الإنماء المهني' ? (
-          <ProfessionalDevelopment />
+          <>
+            <PlanSectionActivities plans={plans} destination="الإنماء المهني" onOpenPlan={(id, activityId) => {
+              setSelectedPlanId(id);
+              setFocusedActivityId(activityId);
+              setPlanCreateRequested(false);
+              setTab('مكتبة الخطط');
+            }} />
+            <ProfessionalDevelopment />
+          </>
+        ) : PLAN_DESTINATIONS.includes(tab as PlanDestination) ? (
+          <PlanSectionActivities plans={plans} destination={tab as PlanDestination} onOpenPlan={(id, activityId) => {
+            setSelectedPlanId(id);
+            setFocusedActivityId(activityId);
+            setPlanCreateRequested(false);
+            setTab('مكتبة الخطط');
+          }} />
         ) : (
           <section className="card">
             <h2>{tab}</h2>

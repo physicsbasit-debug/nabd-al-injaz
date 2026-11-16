@@ -1,3 +1,4 @@
+import { PLAN_DESTINATIONS, type PlanDestination } from './plan-routing';
 export const PLAN_STORAGE_KEY = 'nabd-al-injaz:plans:v1';
 export const PLAN_KINDS = [
   'خطة المادة',
@@ -19,6 +20,7 @@ export type PlanActivity = {
   progress: Progress;
   completedAt: string | null;
   createdAt: string;
+  destination?: PlanDestination;
 };
 export type Plan = {
   id: string;
@@ -47,6 +49,7 @@ function normalizeActivity(v: unknown): PlanActivity | null {
     progress,
     completedAt: progress === 'completed' ? str(v.completedAt) || null : null,
     createdAt: str(v.createdAt),
+    ...(PLAN_DESTINATIONS.includes(v.destination as PlanDestination) ? { destination: v.destination as PlanDestination } : {}),
   };
 }
 function normalizePlan(v: unknown): Plan | null {

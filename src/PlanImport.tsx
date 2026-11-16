@@ -1,3 +1,4 @@
+import { PLAN_DESTINATIONS, type PlanDestination } from './plan-routing';
 import { useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { FileUp, Check, X } from 'lucide-react';
@@ -118,10 +119,16 @@ export default function PlanImport({ onApprove, existingTitles }: Props) {
                   value={c.title}
                   onChange={(e) =>
                     setItems((old) =>
-                      old.map((x) => (x.key === c.key ? { ...x, title: e.target.value } : x)),
+                      old.map((x) => (x.key === c.key ? { ...x, title: e.target.value, destination: undefined } : x)),
                     )
                   }
                 />
+                <label>القسم المقترح
+                  <select aria-label={'قسم النشاط: ' + c.source} value={c.destination ?? ''} onChange={(e) => setItems(old => old.map(x => x.key === c.key ? { ...x, destination: (e.target.value || undefined) as PlanDestination | undefined } : x))}>
+                    <option value="">غير محدد — اختر القسم</option>
+                    {PLAN_DESTINATIONS.map(destination => <option key={destination} value={destination}>{destination}</option>)}
+                  </select>
+                </label>
                 <div className="plan-import-metadata">
                   <label>
                     المسؤول

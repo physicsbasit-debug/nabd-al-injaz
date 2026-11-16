@@ -3,6 +3,7 @@ import EvidencePanel from './EvidencePanel';
 import EvidenceStatus from './EvidenceStatus';
 import { deleteActivityEvidence, deletePlanEvidence } from './evidence-store';
 import PlanImport from './PlanImport';
+import { PLAN_DESTINATIONS, type PlanDestination } from './plan-routing';
 import { useEffect, useState } from 'react';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import { ArrowRight, Plus, Archive, RotateCcw } from 'lucide-react';
@@ -27,6 +28,8 @@ type Props = {
   onSelect: (id: string | null) => void;
   createRequested: boolean;
   onCreateHandled: () => void;
+  focusedActivityId: string | null;
+  onFocusHandled: () => void;
 };
 const emptyPlan = {
   title: '',
@@ -44,6 +47,8 @@ export default function PlanLibrary({
   onSelect,
   createRequested,
   onCreateHandled,
+  focusedActivityId,
+  onFocusHandled,
 }: Props) {
   const [form, setForm] = useState(emptyPlan);
   const [activityForm, setActivityForm] = useState(emptyActivity);
@@ -65,6 +70,12 @@ export default function PlanLibrary({
     }
   }, [createRequested, onCreateHandled]);
   const selected = plans.find((p) => p.id === selectedId);
+  useEffect(() => {
+    if (!focusedActivityId || !selected) return;
+    const index = selected.activities.findIndex((activity) => activity.id === focusedActivityId);
+    if (index >= 0) setActivityPage(Math.floor(index / PAGE_SIZE) + 1);
+    onFocusHandled();
+  }, [focusedActivityId, selected, onFocusHandled]);
   const today = localDateKey(new Date());
   const pageCount = Math.max(1, Math.ceil((selected?.activities.length ?? 0) / PAGE_SIZE));
   const currentPage = Math.min(activityPage, pageCount);
@@ -549,6 +560,27 @@ export default function PlanLibrary({
                           <option value="not_started">لم يبدأ</option>
                           <option value="in_progress">قيد التنفيذ</option>
                           <option value="completed">مكتمل</option>
+                        </select>
+                      </label>
+                      <label className="plan-progress-select">
+                        القسم
+                        <select
+                          aria-label={'قسم النشاط: ' + a.title}
+                          value={a.destination ?? ''}
+                          onChange={(e) => {
+                            const destination = (e.target.value || undefined) as PlanDestination | undefined;
+                            updatePlan(selected.id, (p) => ({
+                              ...p,
+                              activities: p.activities.map((item) =>
+                                item.id === a.id ? { ...item, destination } : item,
+                              ),
+                            }));
+                          }}
+                        >
+                          <option value="">غير محدد</option>
+                          {PLAN_DESTINATIONS.map((destination) => (
+                            <option key={destination} value={destination}>{destination}</option>
+                          ))}
                         </select>
                       </label>
                       <div className="plan-activity-actions">
