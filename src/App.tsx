@@ -21,6 +21,7 @@ import ProfessionalDevelopment from './ProfessionalDevelopment';
 import AppBackupTools from './AppBackupTools';
 import PlanSectionActivities from './PlanSectionActivities';
 import SupervisoryVisits from './SupervisoryVisits';
+import { emptySupervisoryVisitForm, type SupervisoryVisit, type SupervisoryVisitForm } from './supervisory-visits-model';
 import { PLAN_DESTINATIONS, type PlanDestination } from './plan-routing';
 import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
@@ -46,6 +47,8 @@ export default function App() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [focusedActivityId, setFocusedActivityId] = useState<string | null>(null);
   const [visitLink, setVisitLink] = useState<{ planId: string; activityId: string } | null>(null);
+  const [visitForm, setVisitForm] = useState<SupervisoryVisitForm>(emptySupervisoryVisitForm);
+  const [visitEditing, setVisitEditing] = useState<SupervisoryVisit | null>(null);
   const [planCreateRequested, setPlanCreateRequested] = useState(false);
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
@@ -53,6 +56,17 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(plans));
   }, [plans]);
+  useEffect(() => {
+    const syncPlans = (event: StorageEvent) => {
+      if (event.key !== PLAN_STORAGE_KEY) return;
+      if (event.newValue === null) { setPlans([]); return; }
+      try {
+        if (Array.isArray(JSON.parse(event.newValue))) setPlans(readPlans());
+      } catch { /* Keep the current view if another tab writes invalid data. */ }
+    };
+    window.addEventListener('storage', syncPlans);
+    return () => window.removeEventListener('storage', syncPlans);
+  }, []);
   const done = tasks.filter((t) => t.done).length;
 
   return (
@@ -201,7 +215,12 @@ export default function App() {
               setPlanCreateRequested(false);
               setTab('مكتبة الخطط');
             }} onLinkVisit={(planId, activityId) => setVisitLink({ planId, activityId })} />
-            <SupervisoryVisits plans={plans} requestedLink={visitLink} onLinkHandled={() => setVisitLink(null)} />
+            <SupervisoryVisits plans={plans} requestedLink={visitLink} form={visitForm} setForm={setVisitForm} editing={visitEditing} setEditing={setVisitEditing} onLinkHandled={() => setVisitLink(null)} onOpenPlan={(id, activityId) => {
+              setSelectedPlanId(id);
+              setFocusedActivityId(activityId);
+              setPlanCreateRequested(false);
+              setTab('مكتبة الخطط');
+            }} />
           </>
         ) : PLAN_DESTINATIONS.includes(tab as PlanDestination) ? (
           <PlanSectionActivities plans={plans} destination={tab as PlanDestination} onOpenPlan={(id, activityId) => {

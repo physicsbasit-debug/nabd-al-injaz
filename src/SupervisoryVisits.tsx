@@ -1,24 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Plan } from './plan-model';
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { readPlans, type Plan } from './plan-model';
 import { activitiesForDestination } from './plan-routing';
 import { readSchedule } from './schedule-model';
 import { onAssessmentChange, withAssessmentLock } from './assessment-lock';
-import { isSupervisoryVisit, readSupervisoryVisits, SUPERVISORY_VISITS_KEY, VISIT_SUBJECTS, type SupervisoryVisit } from './supervisory-visits-model';
+import { emptySupervisoryVisitForm, isSupervisoryVisit, readSupervisoryVisits, SUPERVISORY_VISITS_KEY, VISIT_SUBJECTS, type SupervisoryVisit, type SupervisoryVisitForm } from './supervisory-visits-model';
 import { deleteVisitFile, listVisitFiles, saveVisitFile, VISIT_MAX_BYTES, VISIT_MIMES, type VisitFile } from './supervisory-visit-files';
+import { ensureVisitFileFitsBackup } from './app-backup';
 import './short-test-review.css';
 import './supervisory-visits.css';
 
 type PlanLink = { planId: string; activityId: string };
-type Form = Omit<SupervisoryVisit, 'id' | 'createdAt'>;
-type Props = { plans: Plan[]; requestedLink: PlanLink | null; onLinkHandled: () => void };
-const blank = (): Form => ({ teacher: '', date: '', status: 'planned', subject: '', grade: '', period: '', lesson: '', strengths: '', improvements: '', recommendations: '', followUp: '', planId: '', activityId: '' });
+type Form = SupervisoryVisitForm;
+type Props = { plans: Plan[]; requestedLink: PlanLink | null; onLinkHandled: () => void; onOpenPlan: (planId: string, activityId: string) => void; form: Form; setForm: Dispatch<SetStateAction<Form>>; editing: SupervisoryVisit | null; setEditing: Dispatch<SetStateAction<SupervisoryVisit | null>> };
 const mimeByExtension: Record<string, string> = { pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
 
-export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled }: Props) {
+export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled, onOpenPlan, form, setForm, editing, setEditing }: Props) {
   const [records, setRecords] = useState<SupervisoryVisit[]>([]);
   const [files, setFiles] = useState<VisitFile[]>([]);
-  const [form, setForm] = useState<Form>(blank);
-  const [editing, setEditing] = useState<SupervisoryVisit | null>(null);
   const [filter, setFilter] = useState('');
   const [message, setMessage] = useState('');
   const [ready, setReady] = useState(false);
@@ -64,11 +62,13 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled 
       const updated = await withAssessmentLock(async () => {
         const current = readSupervisoryVisits();
         if (editing && JSON.stringify(current.find(item => item.id === editing.id)) !== JSON.stringify(editing)) throw new Error('تغيّر سجل الزيارة في نافذة أخرى؛ أعد فتحه قبل التعديل.');
+        const linkStillExists = activitiesForDestination(readPlans(), 'الزيارات الإشرافية').some(({ plan, activity }) => plan.id === record.planId && activity.id === record.activityId);
+        if (record.planId && !linkStillExists && !unchangedLink) throw new Error('نشاط الخطة لم يعد متاحًا؛ اختر نشاطًا آخر أو احفظ الزيارة مستقلة.');
         const next = editing ? current.map(item => item.id === editing.id ? record : item) : [...current, record];
         localStorage.setItem(SUPERVISORY_VISITS_KEY, JSON.stringify(next));
         return next;
       });
-      setRecords(updated); setForm(blank()); setEditing(null); setMessage('حُفظت الزيارة على هذا الجهاز.');
+      setRecords(updated); setForm(emptySupervisoryVisitForm()); setEditing(null); setMessage('حُفظت الزيارة على هذا الجهاز.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'تعذر حفظ الزيارة.'); }
     finally { setBusy(false); }
   }
@@ -81,7 +81,9 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled 
     try {
       const next = await withAssessmentLock(async () => {
         if (!readSupervisoryVisits().some(item => item.id === record.id)) throw new Error('سجل الزيارة لم يعد موجودًا؛ لم يُحفظ الشاهد.');
-        await saveVisitFile({ id: crypto.randomUUID(), recordId: record.id, kind: 'شاهد', name: file.name, mime, size: file.size, createdAt: new Date().toISOString(), blob: file });
+        const item: VisitFile = { id: crypto.randomUUID(), recordId: record.id, kind: 'شاهد', name: file.name, mime, size: file.size, createdAt: new Date().toISOString(), blob: file };
+        await ensureVisitFileFitsBackup(readPlans(), item);
+        await saveVisitFile(item);
         return listVisitFiles();
       });
       setFiles(next); setMessage('حُفظ شاهد الزيارة على هذا الجهاز.');
@@ -112,7 +114,7 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled 
         localStorage.setItem(SUPERVISORY_VISITS_KEY, JSON.stringify(updated));
         return updated;
       });
-      setRecords(next); if (editing?.id === record.id) { setEditing(null); setForm(blank()); } setMessage('حُذف سجل الزيارة.');
+      setRecords(next); if (editing?.id === record.id) { setEditing(null); setForm(emptySupervisoryVisitForm()); } setMessage('حُذف سجل الزيارة.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'تعذر حذف الزيارة.'); }
     finally { setBusy(false); }
   }
@@ -129,6 +131,7 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled 
       <label>حالة الزيارة<select value={form.status} onChange={e => change('status', e.target.value as Form['status'])}><option value="planned">مجدولة</option><option value="completed">منفذة</option></select></label>
       <label>المادة<select value={form.subject} onChange={e => change('subject', e.target.value)}><option value="">غير محددة</option>{VISIT_SUBJECTS.map(subject => <option key={subject}>{subject}</option>)}</select></label>
       <label>الصف<select value={form.grade} onChange={e => change('grade', e.target.value)}><option value="">غير محدد</option><option value="8">الثامن</option><option value="9">التاسع</option><option value="10">العاشر</option></select></label>
+      <label>الشعبة<input value={form.section ?? ''} maxLength={100} onChange={e => change('section', e.target.value)} /></label>
       <label>الحصة<select value={form.period} onChange={e => change('period', e.target.value)}><option value="">غير محددة</option>{[1, 2, 3, 4, 5, 6, 7].map(n => <option key={n} value={String(n)}>{n}</option>)}</select></label>
       <label className="short-test-notes">موضوع الدرس<input value={form.lesson} maxLength={300} onChange={e => change('lesson', e.target.value)} /></label>
       <label className="short-test-notes">النشاط المرتبط من الخطة<select value={linkValue} onChange={e => { const option = options.find(({ plan, activity }) => JSON.stringify([plan.id, activity.id]) === e.target.value); setForm(current => ({ ...current, planId: option?.plan.id ?? '', activityId: option?.activity.id ?? '' })); }}><option value="">زيارة مستقلة — دون ربط بخطة</option>{linkValue && !knownLink && <option value={linkValue}>النشاط المرتبط سابقًا غير متاح حاليًا</option>}{options.map(({ plan, activity }) => <option key={JSON.stringify([plan.id, activity.id])} value={JSON.stringify([plan.id, activity.id])}>{plan.title} — {activity.title}</option>)}</select></label>
@@ -137,7 +140,7 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled 
       <label className="short-test-notes">التوصيات<textarea value={form.recommendations} maxLength={4000} onChange={e => change('recommendations', e.target.value)} /></label>
       <label className="short-test-notes">المتابعة اللاحقة<textarea value={form.followUp} maxLength={4000} onChange={e => change('followUp', e.target.value)} /></label>
     </fieldset>
-    <div className="visit-actions"><button type="button" disabled={!ready || busy} onClick={() => void save()}>{editing ? 'حفظ التعديل' : 'حفظ الزيارة'}</button>{editing && <button type="button" disabled={busy} onClick={() => { setEditing(null); setForm(blank()); setMessage(''); }}>إلغاء التعديل</button>}</div>
+    <div className="visit-actions"><button type="button" disabled={!ready || busy} onClick={() => void save()}>{editing ? 'حفظ التعديل' : 'حفظ الزيارة'}</button>{editing && <button type="button" disabled={busy} onClick={() => { setEditing(null); setForm(emptySupervisoryVisitForm()); setMessage(''); }}>إلغاء التعديل</button>}</div>
     {message && <p role="status">{message}</p>}
     <div className="visit-list-header"><h3>الزيارات المسجلة ({shown.length})</h3><label>بحث في الزيارات<input value={filter} onChange={e => setFilter(e.target.value)} placeholder="اسم المعلم أو المادة أو الدرس" /></label></div>
     {shown.length === 0 && <p>لا توجد زيارات مطابقة.</p>}
@@ -146,8 +149,9 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled 
       const activity = plan?.activities.find(item => item.id === record.activityId);
       return <details className="short-test-item" key={record.id}>
         <summary><strong>{record.teacher} · {record.date}</strong><span>{record.status === 'completed' ? 'منفذة' : 'مجدولة'}{record.subject ? ' · ' + record.subject : ''}</span></summary>
-        <p>{record.grade ? 'الصف: ' + record.grade + ' · ' : ''}{record.period ? 'الحصة: ' + record.period + ' · ' : ''}{record.lesson ? 'الدرس: ' + record.lesson : ''}</p>
+        <p>{record.grade ? 'الصف: ' + record.grade + ' · ' : ''}{record.section ? 'الشعبة: ' + record.section + ' · ' : ''}{record.period ? 'الحصة: ' + record.period + ' · ' : ''}{record.lesson ? 'الدرس: ' + record.lesson : ''}</p>
         <p>{record.planId ? plan && activity ? 'الخطة: ' + plan.title + ' · النشاط: ' + activity.title : 'النشاط المرتبط غير متاح حاليًا؛ الزيارة محفوظة.' : 'زيارة مستقلة دون ربط بخطة.'}</p>
+        {plan && activity && <button type="button" onClick={() => onOpenPlan(plan.id, activity.id)}>فتح نشاط الخطة</button>}
         {record.strengths && <p><strong>الجوانب الإيجابية:</strong> {record.strengths}</p>}
         {record.improvements && <p><strong>جوانب التحسين:</strong> {record.improvements}</p>}
         {record.recommendations && <p><strong>التوصيات:</strong> {record.recommendations}</p>}

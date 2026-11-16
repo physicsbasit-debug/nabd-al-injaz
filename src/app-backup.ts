@@ -18,7 +18,8 @@ import { withAssessmentLock } from './assessment-lock';
 import { PROFESSIONAL_DEVELOPMENT_KEY, isProfessionalProgram } from './professional-development-model';
 import { createProfessionalArchive, decodeProfessionalArchive, listProfessionalFiles, replaceProfessionalFiles } from './professional-development-files';
 import { SUPERVISORY_VISITS_KEY, isSupervisoryVisit } from './supervisory-visits-model';
-import { createVisitArchive, decodeVisitArchive, listVisitFiles, replaceVisitFiles } from './supervisory-visit-files';
+import { createVisitArchive, decodeVisitArchive, listVisitFiles, replaceVisitFiles, type VisitFile } from './supervisory-visit-files';
+import { assertVisitBackupCapacity, projectedBackupBytes } from './backup-capacity';
 
 const FORMAT = 'nabd-al-injaz-full-backup';
 const VERSION = 1;
@@ -44,6 +45,32 @@ type AppBackup = {
   professionalFiles: Awaited<ReturnType<typeof createProfessionalArchive>>;
   supervisoryVisitFiles: Awaited<ReturnType<typeof createVisitArchive>>;
 };
+
+/** Caller holds the shared lock. Calculate payload size without encoding existing files. */
+export async function ensureVisitFileFitsBackup(plans: Plan[], candidate: VisitFile): Promise<void> {
+  const localData: Record<string, string> = {};
+  for (const key of APP_STORAGE_KEYS) {
+    const value = localStorage.getItem(key);
+    if (value !== null) localData[key] = value;
+  }
+  localData[SUPERVISORY_VISITS_KEY] ??= '[]';
+  validateLocalData(localData);
+  const linked = new Set(plans.flatMap(plan => plan.activities.map(activity => plan.id + ':' + activity.id)));
+  const planFiles = (await allEvidence()).filter(file => linked.has(file.planId + ':' + file.activityId));
+  const assessmentFiles = await listAssessmentFiles();
+  const professionalFiles = await listProfessionalFiles();
+  const visitFiles = [...await listVisitFiles(), candidate];
+  const fileStub = (file: {id: string; recordId: string; kind: string; name: string; mime: string; size: number; createdAt: string}) => ({ id: file.id, recordId: file.recordId, kind: file.kind, name: file.name, mime: file.mime, size: file.size, createdAt: file.createdAt, base64: '' });
+  const planArchive = {
+    format: 'nabd-al-injaz-plans-evidence', version: 1, createdAt: new Date().toISOString(), plans,
+    evidence: planFiles.map(file => ({ id: file.id, planId: file.planId, activityId: file.activityId, name: file.name, mime: file.mime, size: file.size, createdAt: file.createdAt, note: file.note, base64: '' })),
+  };
+  const planSizes = planFiles.map(file => file.size);
+  if (projectedBackupBytes(planArchive, planSizes) > MAX_PLANS_BACKUP_BYTES) throw new Error('الخطط والشواهد تتجاوز الحد المدعوم للنسخ؛ خفف حجم الملفات أولًا.');
+  const archive = { format: FORMAT, version: VERSION, createdAt: new Date().toISOString(), localData, plansAndEvidence: planArchive, assessmentFiles: assessmentFiles.map(fileStub), professionalFiles: professionalFiles.map(fileStub), supervisoryVisitFiles: visitFiles.map(fileStub) };
+  const sizes = [...planSizes, ...assessmentFiles.map(file => file.size), ...professionalFiles.map(file => file.size), ...visitFiles.map(file => file.size)];
+  assertVisitBackupCapacity(projectedBackupBytes(archive, sizes), MAX_BACKUP_BYTES, visitFiles.length);
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -221,6 +248,8 @@ async function exportAppBackupLocked(plans: Plan[]): Promise<void> {
     const value = localStorage.getItem(key);
     if (value !== null) localData[key] = value;
   }
+  // An explicit empty list distinguishes a new empty backup from an older backup.
+  localData[SUPERVISORY_VISITS_KEY] ??= '[]';
   validateLocalData(localData);
   const savedFiles = await listAssessmentFiles();
   if (savedFiles.length > 1000 || savedFiles.reduce((sum, file) => sum + 4 * Math.ceil(file.size / 3), 0) > MAX_BACKUP_BYTES) throw new Error('ملفات الاختبارات تتجاوز الحد المدعوم للنسخ.');
@@ -274,6 +303,7 @@ async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plan
 
   const hasVisitFiles = Object.hasOwn(parsed, 'supervisoryVisitFiles');
   if (!hasVisitFiles && Object.hasOwn(parsed.localData, SUPERVISORY_VISITS_KEY)) throw new Error('نسخة الزيارات الإشرافية غير مكتملة؛ لم تُستعد البيانات.');
+  if (hasVisitFiles && !Object.hasOwn(parsed.localData, SUPERVISORY_VISITS_KEY)) throw new Error('نسخة الزيارات الإشرافية غير مكتملة؛ لم تُستعد البيانات.');
   const nextVisitFiles = hasVisitFiles ? decodeVisitArchive(parsed.supervisoryVisitFiles) : null;
   if (nextVisitFiles) {
     const visits: unknown = JSON.parse(parsed.localData[SUPERVISORY_VISITS_KEY] ?? '[]');

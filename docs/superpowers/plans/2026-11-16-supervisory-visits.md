@@ -8,9 +8,9 @@
 
 ## Tasks
 
-- [ ] Add tested visit validation and evidence archive functions, including corrupt-data rejection.
-- [ ] Add the supervisory visits interface, optional plan link, safe record editing and evidence handling.
-- [ ] Include records and files in full backups, reject incomplete archives, preserve visits on legacy restore, and roll back on failure.
+- [x] Add tested visit validation and evidence archive functions, including corrupt-data rejection.
+- [x] Add the supervisory visits interface, optional plan link, safe record editing and evidence handling.
+- [x] Include records and files in full backups, reject incomplete archives, preserve visits on legacy restore, and roll back on failure.
 - [ ] Exercise the new workflow and backups in desktop and phone browser tests; run all required checks before publication.
 
 ## Review focus

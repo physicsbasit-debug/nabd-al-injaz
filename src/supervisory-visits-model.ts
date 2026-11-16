@@ -9,6 +9,7 @@ export type SupervisoryVisit = {
   status: 'planned' | 'completed';
   subject: string;
   grade: string;
+  section?: string;
   period: string;
   lesson: string;
   strengths: string;
@@ -19,12 +20,17 @@ export type SupervisoryVisit = {
   activityId: string;
   createdAt: string;
 };
+export type SupervisoryVisitForm = Omit<SupervisoryVisit, 'id' | 'createdAt'>;
+export function emptySupervisoryVisitForm(): SupervisoryVisitForm {
+  return { teacher: '', date: '', status: 'planned', subject: '', grade: '', section: '', period: '', lesson: '', strengths: '', improvements: '', recommendations: '', followUp: '', planId: '', activityId: '' };
+}
 
 export function isSupervisoryVisit(value: unknown): value is SupervisoryVisit {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const item = value as Record<string, unknown>;
   const text = (key: string, max: number) => typeof item[key] === 'string' && item[key].length <= max;
   if (!['id', 'teacher', 'date', 'status', 'subject', 'grade', 'period', 'lesson', 'strengths', 'improvements', 'recommendations', 'followUp', 'planId', 'activityId', 'createdAt'].every((key) => text(key, ['strengths', 'improvements', 'recommendations', 'followUp'].includes(key) ? 4000 : 300))) return false;
+  if (item.section !== undefined && !text('section', 100)) return false;
   return Boolean((item.id as string).trim()) && Boolean((item.teacher as string).trim()) &&
     validDate(item.date as string) && ['planned', 'completed'].includes(item.status as string) &&
     ['', ...VISIT_SUBJECTS].includes(item.subject as typeof VISIT_SUBJECTS[number] | '') &&
