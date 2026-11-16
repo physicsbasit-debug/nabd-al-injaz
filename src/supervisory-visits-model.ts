@@ -1,4 +1,5 @@
 import { validDate } from './plan-model';
+import { localDateKey } from './dashboard-metrics';
 
 export const SUPERVISORY_VISITS_KEY = 'nabd-al-injaz:supervisory-visits:v1';
 export const VISIT_SUBJECTS = ['علوم عامة', 'فيزياء', 'كيمياء', 'أحياء'] as const;
@@ -16,13 +17,14 @@ export type SupervisoryVisit = {
   improvements: string;
   recommendations: string;
   followUp: string;
+  documentation?: string;
   planId: string;
   activityId: string;
   createdAt: string;
 };
 export type SupervisoryVisitForm = Omit<SupervisoryVisit, 'id' | 'createdAt'>;
 export function emptySupervisoryVisitForm(): SupervisoryVisitForm {
-  return { teacher: '', date: '', status: 'planned', subject: '', grade: '', section: '', period: '', lesson: '', strengths: '', improvements: '', recommendations: '', followUp: '', planId: '', activityId: '' };
+  return { teacher: '', date: '', status: 'planned', subject: '', grade: '', section: '', period: '', lesson: '', strengths: '', improvements: '', recommendations: '', followUp: '', documentation: '', planId: '', activityId: '' };
 }
 export function hasUnsavedVisitChanges(form: SupervisoryVisitForm, editing: SupervisoryVisit | null): boolean {
   const original = editing ?? emptySupervisoryVisitForm();
@@ -36,13 +38,30 @@ export function isSupervisoryVisit(value: unknown): value is SupervisoryVisit {
   const text = (key: string, max: number) => typeof item[key] === 'string' && item[key].length <= max;
   if (!['id', 'teacher', 'date', 'status', 'subject', 'grade', 'period', 'lesson', 'strengths', 'improvements', 'recommendations', 'followUp', 'planId', 'activityId', 'createdAt'].every((key) => text(key, ['strengths', 'improvements', 'recommendations', 'followUp'].includes(key) ? 4000 : 300))) return false;
   if (item.section !== undefined && !text('section', 100)) return false;
+  if (item.documentation !== undefined && !text('documentation', 4000)) return false;
   return Boolean((item.id as string).trim()) && Boolean((item.teacher as string).trim()) &&
-    validDate(item.date as string) && ['planned', 'completed'].includes(item.status as string) &&
+    (validDate(item.date as string) || (item.status === 'planned' && item.date === '')) && ['planned', 'completed'].includes(item.status as string) &&
     ['', ...VISIT_SUBJECTS].includes(item.subject as typeof VISIT_SUBJECTS[number] | '') &&
     ['', '8', '9', '10'].includes(item.grade as string) &&
     ['', '1', '2', '3', '4', '5', '6', '7'].includes(item.period as string) &&
     Boolean(item.planId) === Boolean(item.activityId) &&
     !Number.isNaN(Date.parse(item.createdAt as string));
+}
+
+export function isFutureCompletedVisit(visit: Pick<SupervisoryVisit, 'status' | 'date'>, today: string): boolean {
+  return visit.status === 'completed' && validDate(visit.date) && visit.date > today;
+}
+
+export function summarizeTeacherVisits(teachers: string[], records: SupervisoryVisit[], today = localDateKey(new Date())) {
+  const tidyName = (name: string) => name.trim().replace(/\s+/g, ' ');
+  const names = Array.from(new Set([...teachers, ...records.map(record => record.teacher)].map(tidyName).filter(Boolean)));
+  return names.map(teacher => {
+    const related = records.filter(record => tidyName(record.teacher) === teacher);
+    const completed = related.filter(record => record.status === 'completed' && !isFutureCompletedVisit(record, today));
+    const lastVisit = completed.reduce<string | null>((latest, record) => !latest || record.date > latest ? record.date : latest, null);
+    const futureCount = related.filter(record => isFutureCompletedVisit(record, today)).length;
+    return { teacher, completedCount: completed.length, lastVisit, futureCount };
+  });
 }
 
 export function readSupervisoryVisits(): SupervisoryVisit[] {
