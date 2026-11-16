@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { readPlans, type Plan } from './plan-model';
 import { activitiesForDestination } from './plan-routing';
-import { readSchedule } from './schedule-model';
+import { readSchedule, SCHEDULE_STORAGE_KEY } from './schedule-model';
 import { onAssessmentChange, withAssessmentLock } from './assessment-lock';
-import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, isSupervisoryVisit, readSupervisoryVisits, summarizeTeacherVisits, SUPERVISORY_VISITS_KEY, VISIT_SUBJECTS, type SupervisoryVisit, type SupervisoryVisitForm } from './supervisory-visits-model';
+import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, isFutureCompletedVisit, isSupervisoryVisit, readSupervisoryVisits, summarizeTeacherVisits, SUPERVISORY_VISITS_KEY, VISIT_SUBJECTS, type SupervisoryVisit, type SupervisoryVisitForm } from './supervisory-visits-model';
+import { localDateKey } from './dashboard-metrics';
 import { deleteVisitFile, listVisitFiles, saveVisitFile, VISIT_MAX_BYTES, VISIT_MIMES, type VisitFile } from './supervisory-visit-files';
 import { ensureVisitFileFitsBackup } from './app-backup';
 import './short-test-review.css';
@@ -17,6 +18,7 @@ const mimeByExtension: Record<string, string> = { pdf: 'application/pdf', png: '
 export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled, onOpenPlan, form, setForm, editing, setEditing }: Props) {
   const [records, setRecords] = useState<SupervisoryVisit[]>([]);
   const [files, setFiles] = useState<VisitFile[]>([]);
+  const [teachers, setTeachers] = useState<string[]>(() => readSchedule().teachers);
   const [filter, setFilter] = useState('');
   const [message, setMessage] = useState('');
   const [ready, setReady] = useState(false);
@@ -24,8 +26,8 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
   const pending = useRef(new Set<string>());
   const formRef = useRef<HTMLHeadingElement>(null);
   const options = useMemo(() => activitiesForDestination(plans, 'الزيارات الإشرافية'), [plans]);
-  const teachers = readSchedule().teachers;
-  const teacherFollowup = summarizeTeacherVisits(teachers, records);
+  const today = localDateKey(new Date());
+  const teacherFollowup = summarizeTeacherVisits(teachers, records, today);
   const linkValue = form.planId && form.activityId ? JSON.stringify([form.planId, form.activityId]) : '';
   const knownLink = options.some(({ plan, activity }) => plan.id === form.planId && activity.id === form.activityId);
 
@@ -38,7 +40,10 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
     };
     refresh();
     const unsubscribe = onAssessmentChange(refresh);
-    const onStorage = (event: StorageEvent) => { if (event.key === SUPERVISORY_VISITS_KEY) refresh(); };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === SUPERVISORY_VISITS_KEY) refresh();
+      if (event.key === SCHEDULE_STORAGE_KEY) setTeachers(readSchedule().teachers);
+    };
     window.addEventListener('storage', onStorage);
     return () => { active = false; unsubscribe(); window.removeEventListener('storage', onStorage); };
   }, []);
@@ -56,9 +61,14 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
     return !hasUnsavedVisitChanges(form, editing) || window.confirm('لديك بيانات زيارة غير محفوظة. هل تريد تجاهلها؟');
   }
   function prepareTeacher(teacher: string) {
-    if (!canReplaceDraft()) return;
-    setEditing(null);
-    setForm({ ...emptySupervisoryVisitForm(), teacher });
+    if (editing) {
+      if (!canReplaceDraft()) return;
+      setEditing(null);
+      setForm({ ...emptySupervisoryVisitForm(), teacher });
+    } else {
+      if (form.teacher && form.teacher !== teacher && !window.confirm('سيُغيّر اسم المعلم في المسودة الحالية. هل تتابع؟')) return;
+      setForm(current => ({ ...current, teacher }));
+    }
     setMessage('أكمل حالة الزيارة، ثم احفظ المتابعة.');
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -66,6 +76,8 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
     if (busy) return;
     const record: SupervisoryVisit = { ...form, teacher: form.teacher.trim(), lesson: form.lesson.trim(), documentation: form.documentation?.trim() ?? '', id: editing?.id ?? crypto.randomUUID(), createdAt: editing?.createdAt ?? new Date().toISOString() };
     if (!isSupervisoryVisit(record)) { setMessage('أدخل اسم المعلم، وتاريخًا صحيحًا عند تسجيل زيارة تمت.'); return; }
+    const unchangedFuture = editing?.status === 'completed' && editing.date === record.date;
+    if (isFutureCompletedVisit(record, today) && !unchangedFuture) { setMessage('لا يمكن تسجيل زيارة بتاريخ مستقبلي على أنها تمت. اختر تاريخًا حتى اليوم أو اجعلها غير منفذة.'); return; }
     const unchangedLink = editing && editing.planId === record.planId && editing.activityId === record.activityId;
     if (record.planId && !knownLink && !unchangedLink) { setMessage('نشاط الخطة لم يعد متاحًا؛ اختر نشاطًا آخر أو احفظ الزيارة مستقلة.'); return; }
     setBusy(true);
@@ -138,15 +150,15 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
       <h3>متابعة المعلمين</h3>
       <p>تعتمد الحالة على الزيارات المسجلة هنا؛ عدم تسجيل زيارة لا يعني بالضرورة أنها لم تحدث.</p>
       {!ready ? <p>{message ? 'تعذر تحميل المتابعة.' : 'جارٍ تحميل المتابعة...'}</p> : <>
-        <div className="visit-summary" aria-label="ملخص متابعة المعلمين"><span>المعلمون <strong>{teacherFollowup.length}</strong></span><span>تمت زيارتهم <strong>{teacherFollowup.filter(item => item.completedCount > 0).length}</strong></span><span>لم تُسجّل لهم زيارة منفذة <strong>{teacherFollowup.filter(item => item.completedCount === 0).length}</strong></span></div>
-        {teacherFollowup.length === 0 ? <p>أضف جداول المعلمين أو سجّل زيارة ليظهر المعلمون هنا.</p> : <ul className="visit-teacher-list">{teacherFollowup.map(item => <li key={item.teacher}><div><strong>{item.teacher}</strong><span className={item.completedCount ? 'visit-done' : 'visit-pending'}>{item.completedCount ? 'تمت الزيارة' : 'لم تُسجّل زيارة منفذة'}</span>{item.lastVisit && <small>آخر زيارة مسجلة: {item.lastVisit}</small>}</div><button type="button" disabled={busy} aria-label={'تسجيل متابعة: ' + item.teacher} onClick={() => prepareTeacher(item.teacher)}>تسجيل متابعة</button></li>)}</ul>}
+        <div className="visit-summary" aria-label="ملخص متابعة المعلمين"><span>المعلمون <strong>{teacherFollowup.length}</strong></span><span>تمت زيارتهم <strong>{teacherFollowup.filter(item => item.completedCount > 0).length}</strong></span><span>لم تُسجّل لهم زيارة منفذة حتى اليوم <strong>{teacherFollowup.filter(item => item.completedCount === 0).length}</strong></span></div>
+        {teacherFollowup.length === 0 ? <p>أضف جداول المعلمين أو سجّل زيارة ليظهر المعلمون هنا.</p> : <ul className="visit-teacher-list">{teacherFollowup.map(item => <li key={item.teacher}><div><strong>{item.teacher}</strong><span className={item.completedCount ? 'visit-done' : 'visit-pending'}>{item.completedCount ? 'تمت الزيارة' : 'لم تُسجّل زيارة منفذة'}</span>{item.lastVisit && <small>آخر زيارة مسجلة: {item.lastVisit}</small>}{item.futureCount > 0 && <small>تاريخ زيارة لاحق يحتاج مراجعة.</small>}</div><button type="button" disabled={busy} aria-label={'تسجيل متابعة: ' + item.teacher} onClick={() => prepareTeacher(item.teacher)}>تسجيل متابعة</button></li>)}</ul>}
       </>}
     </section>
     <h3 ref={formRef}>{editing ? 'تعديل الزيارة' : 'إضافة زيارة'}</h3>
     <fieldset className="short-test-fields" disabled={!ready || busy}>
       <label>المعلم<input list="visit-teachers" value={form.teacher} maxLength={300} onChange={e => change('teacher', e.target.value)} /><datalist id="visit-teachers">{teachers.map(name => <option key={name} value={name} />)}</datalist></label>
       <label>تاريخ الزيارة<input type="date" value={form.date} onChange={e => change('date', e.target.value)} /><small>يلزم عند تسجيل زيارة تمت.</small></label>
-      <label>حالة الزيارة<select value={form.status} onChange={e => change('status', e.target.value as Form['status'])}><option value="planned">لم تتم الزيارة</option><option value="completed">تمت الزيارة</option></select></label>
+      <label>حالة الزيارة<select value={form.status} onChange={e => change('status', e.target.value as Form['status'])}><option value="planned">لم تُسجّل كمنفذة</option><option value="completed">تمت الزيارة</option></select></label>
       <label>المادة<select value={form.subject} onChange={e => change('subject', e.target.value)}><option value="">غير محددة</option>{VISIT_SUBJECTS.map(subject => <option key={subject}>{subject}</option>)}</select></label>
       <label>الصف<select value={form.grade} onChange={e => change('grade', e.target.value)}><option value="">غير محدد</option><option value="8">الثامن</option><option value="9">التاسع</option><option value="10">العاشر</option></select></label>
       <label>الشعبة<input value={form.section ?? ''} maxLength={100} onChange={e => change('section', e.target.value)} /></label>
@@ -163,7 +175,7 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
       const plan = plans.find(item => item.id === record.planId);
       const activity = plan?.activities.find(item => item.id === record.activityId);
       return <details className="short-test-item" key={record.id}>
-        <summary><strong>{record.teacher} · {record.date || 'دون تاريخ'}</strong><span>{record.status === 'completed' ? 'تمت الزيارة' : 'لم تتم الزيارة'}{record.subject ? ' · ' + record.subject : ''}</span></summary>
+        <summary><strong>{record.teacher} · {record.date || 'دون تاريخ'}</strong><span>{isFutureCompletedVisit(record, today) ? 'تاريخ لاحق يحتاج مراجعة' : record.status === 'completed' ? 'تمت الزيارة' : 'لم تُسجّل كمنفذة'}{record.subject ? ' · ' + record.subject : ''}</span></summary>
         <p>{record.grade ? 'الصف: ' + record.grade + ' · ' : ''}{record.section ? 'الشعبة: ' + record.section + ' · ' : ''}{record.period ? 'الحصة: ' + record.period + ' · ' : ''}{record.lesson ? 'الدرس: ' + record.lesson : ''}</p>
         <p>{record.planId ? plan && activity ? 'الخطة: ' + plan.title + ' · النشاط: ' + activity.title : 'النشاط المرتبط غير متاح حاليًا؛ الزيارة محفوظة.' : 'زيارة مستقلة دون ربط بخطة.'}</p>
         {plan && activity && <button type="button" onClick={() => onOpenPlan(plan.id, activity.id)}>فتح نشاط الخطة</button>}

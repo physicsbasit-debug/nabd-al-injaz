@@ -1,10 +1,10 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, isSupervisoryVisit, readSupervisoryVisits, summarizeTeacherVisits } from '../src/supervisory-visits-model';
+import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, isFutureCompletedVisit, isSupervisoryVisit, readSupervisoryVisits, summarizeTeacherVisits } from '../src/supervisory-visits-model';
 import { createVisitArchive, decodeVisitArchive } from '../src/supervisory-visit-files';
 import { projectedBackupBytes, assertVisitBackupCapacity } from '../src/backup-capacity';
 
 const visit = {
-  id: 'visit-1', teacher: 'معلم تجريبي', date: '2026-11-16', status: 'completed',
+  id: 'visit-1', teacher: 'معلم تجريبي', date: '2026-11-16', status: 'completed' as const,
   subject: 'فيزياء', grade: '10', period: '2', lesson: 'القوى',
   strengths: '', improvements: '', recommendations: '', followUp: '',
   planId: 'plan-1', activityId: 'activity-1', createdAt: '2026-11-16T08:00:00.000Z',
@@ -33,12 +33,26 @@ describe('supervisory visit records', () => {
       { ...visit, id: 'v2', teacher: 'أحمد', date: '2026-11-16', status: 'completed' },
       { ...visit, id: 'v3', teacher: 'سالم', date: '', status: 'planned' },
       { ...visit, id: 'v4', teacher: 'ناصر', date: '2026-11-01', status: 'completed' },
-    ]);
+      { ...visit, id: 'v5', teacher: 'سالم', date: '2027-01-01', status: 'completed' },
+    ], '2026-11-16');
     expect(rows).toEqual([
-      { teacher: 'أحمد', completedCount: 2, lastVisit: '2026-11-16' },
-      { teacher: 'سالم', completedCount: 0, lastVisit: null },
-      { teacher: 'ناصر', completedCount: 1, lastVisit: '2026-11-01' },
+      { teacher: 'أحمد', completedCount: 2, lastVisit: '2026-11-16', futureCount: 0 },
+      { teacher: 'سالم', completedCount: 0, lastVisit: null, futureCount: 1 },
+      { teacher: 'ناصر', completedCount: 1, lastVisit: '2026-11-01', futureCount: 0 },
     ]);
+  });
+
+  it('matches harmless whitespace differences without creating two teacher rows', () => {
+    expect(summarizeTeacherVisits(['أحمد محمد'], [{ ...visit, teacher: 'أحمد  محمد', status: 'completed' }], '2026-11-16')).toEqual([
+      { teacher: 'أحمد محمد', completedCount: 1, lastVisit: '2026-11-16', futureCount: 0 },
+    ]);
+  });
+
+  it('flags completed visits dated after today while retaining them as valid stored records', () => {
+    const future = { ...visit, date: '2027-01-01' };
+    expect(isSupervisoryVisit(future)).toBe(true);
+    expect(isFutureCompletedVisit(future, '2026-11-16')).toBe(true);
+    expect(isFutureCompletedVisit({ ...future, status: 'planned' }, '2026-11-16')).toBe(false);
   });
 
   it('refuses corrupt stored records rather than overwriting them with an empty list', () => {

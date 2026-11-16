@@ -1,4 +1,5 @@
 import { validDate } from './plan-model';
+import { localDateKey } from './dashboard-metrics';
 
 export const SUPERVISORY_VISITS_KEY = 'nabd-al-injaz:supervisory-visits:v1';
 export const VISIT_SUBJECTS = ['علوم عامة', 'فيزياء', 'كيمياء', 'أحياء'] as const;
@@ -47,12 +48,19 @@ export function isSupervisoryVisit(value: unknown): value is SupervisoryVisit {
     !Number.isNaN(Date.parse(item.createdAt as string));
 }
 
-export function summarizeTeacherVisits(teachers: string[], records: SupervisoryVisit[]) {
-  const names = Array.from(new Set([...teachers, ...records.map(record => record.teacher)].map(name => name.trim()).filter(Boolean)));
+export function isFutureCompletedVisit(visit: Pick<SupervisoryVisit, 'status' | 'date'>, today: string): boolean {
+  return visit.status === 'completed' && validDate(visit.date) && visit.date > today;
+}
+
+export function summarizeTeacherVisits(teachers: string[], records: SupervisoryVisit[], today = localDateKey(new Date())) {
+  const tidyName = (name: string) => name.trim().replace(/\s+/g, ' ');
+  const names = Array.from(new Set([...teachers, ...records.map(record => record.teacher)].map(tidyName).filter(Boolean)));
   return names.map(teacher => {
-    const completed = records.filter(record => record.teacher.trim() === teacher && record.status === 'completed');
+    const related = records.filter(record => tidyName(record.teacher) === teacher);
+    const completed = related.filter(record => record.status === 'completed' && !isFutureCompletedVisit(record, today));
     const lastVisit = completed.reduce<string | null>((latest, record) => !latest || record.date > latest ? record.date : latest, null);
-    return { teacher, completedCount: completed.length, lastVisit };
+    const futureCount = related.filter(record => isFutureCompletedVisit(record, today)).length;
+    return { teacher, completedCount: completed.length, lastVisit, futureCount };
   });
 }
 
