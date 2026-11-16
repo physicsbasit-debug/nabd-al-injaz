@@ -9,6 +9,7 @@ describe('plan destination suggestions', () => {
   it('leaves ambiguous and unknown activities for human review', () => {
     expect(proposePlanDestination('متابعة الأعمال')).toBeNull();
     expect(proposePlanDestination('اجتماع دوري ومشغل للمعلمين')).toBeNull();
+    expect(proposePlanDestination('زيارة صفية متبادلة لمعلم العلوم')).toBeNull();
   });
 });
 

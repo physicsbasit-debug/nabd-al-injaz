@@ -4,7 +4,7 @@ import { activitiesForDestination, type PlanDestination } from './plan-routing';
 type Props = {
   plans: Plan[];
   destination: PlanDestination;
-  onOpenPlan: (id: string) => void;
+  onOpenPlan: (id: string, activityId: string) => void;
 };
 
 const labels = {
@@ -29,7 +29,7 @@ export default function PlanSectionActivities({ plans, destination, onOpenPlan }
               <p>الخطة: {plan.title} • الحالة: {labels[activity.progress]}</p>
               {activity.assignee && <p>المسؤول: {activity.assignee}</p>}
               {activity.dueDate && <p>الاستحقاق: {activity.dueDate}</p>}
-              <button type="button" onClick={() => onOpenPlan(plan.id)}>فتح الخطة</button>
+              <button type="button" onClick={() => onOpenPlan(plan.id, activity.id)}>فتح الخطة</button>
             </li>
           ))}
         </ul>

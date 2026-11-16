@@ -28,6 +28,8 @@ type Props = {
   onSelect: (id: string | null) => void;
   createRequested: boolean;
   onCreateHandled: () => void;
+  focusedActivityId: string | null;
+  onFocusHandled: () => void;
 };
 const emptyPlan = {
   title: '',
@@ -45,6 +47,8 @@ export default function PlanLibrary({
   onSelect,
   createRequested,
   onCreateHandled,
+  focusedActivityId,
+  onFocusHandled,
 }: Props) {
   const [form, setForm] = useState(emptyPlan);
   const [activityForm, setActivityForm] = useState(emptyActivity);
@@ -66,6 +70,12 @@ export default function PlanLibrary({
     }
   }, [createRequested, onCreateHandled]);
   const selected = plans.find((p) => p.id === selectedId);
+  useEffect(() => {
+    if (!focusedActivityId || !selected) return;
+    const index = selected.activities.findIndex((activity) => activity.id === focusedActivityId);
+    if (index >= 0) setActivityPage(Math.floor(index / PAGE_SIZE) + 1);
+    onFocusHandled();
+  }, [focusedActivityId, selected, onFocusHandled]);
   const today = localDateKey(new Date());
   const pageCount = Math.max(1, Math.ceil((selected?.activities.length ?? 0) / PAGE_SIZE));
   const currentPage = Math.min(activityPage, pageCount);

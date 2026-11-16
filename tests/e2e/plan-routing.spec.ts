@@ -40,3 +40,25 @@ test('approved imported activity appears in its section after reload', async ({ 
   await expect(page.getByRole('region', { name: 'أنشطة الخطط: الإنماء المهني' })
     .getByText('الزيارات المتبادلة بين المعلمين', { exact: true })).toHaveCount(1);
 });
+
+test('opening a section activity selects its page in a long plan', async ({ page }, testInfo) => {
+  await page.addInitScript(() => {
+    const activities = Array.from({ length: 9 }, (_, index) => ({
+      id: 'a' + index, title: 'نشاط رقم ' + (index + 1), details: '', assignee: '',
+      dueDate: '', progress: 'not_started', completedAt: null, createdAt: '',
+      ...(index === 8 ? { destination: 'الزيارات المتبادلة' } : {}),
+    }));
+    localStorage.setItem('nabd-al-injaz:plans:v1', JSON.stringify([{
+      id: 'long-plan', title: 'خطة طويلة', kind: 'خطة أخرى', owner: '',
+      periodStart: '', periodEnd: '', archived: false, createdAt: '', activities,
+    }]));
+  });
+  await page.goto('/');
+  const phone = testInfo.project.name === 'phone';
+  if (phone) await page.getByRole('button', { name: /عرض الأقسام/ }).click();
+  await page.getByRole('navigation', { name: phone ? 'أقسام الهاتف' : 'الأقسام الرئيسية' })
+    .getByRole('button', { name: 'الزيارات المتبادلة', exact: true }).click();
+  await page.getByRole('region', { name: 'أنشطة الخطط: الزيارات المتبادلة' })
+    .getByRole('button', { name: 'فتح الخطة' }).click();
+  await expect(page.locator('.plan-activity-list')).toContainText('نشاط رقم 9');
+});

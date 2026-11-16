@@ -43,6 +43,7 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>(readTasks);
   const [plans, setPlans] = useState<Plan[]>(readPlans);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [focusedActivityId, setFocusedActivityId] = useState<string | null>(null);
   const [planCreateRequested, setPlanCreateRequested] = useState(false);
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
@@ -169,6 +170,8 @@ export default function App() {
             onSelect={setSelectedPlanId}
             createRequested={planCreateRequested}
             onCreateHandled={() => setPlanCreateRequested(false)}
+            focusedActivityId={focusedActivityId}
+            onFocusHandled={() => setFocusedActivityId(null)}
           />
         ) : tab === 'الخطط والمهام' ? (
           <TaskManager tasks={tasks} setTasks={setTasks} />
@@ -180,16 +183,18 @@ export default function App() {
           <AssessmentTracking />
         ) : tab === 'الإنماء المهني' ? (
           <>
-            <PlanSectionActivities plans={plans} destination="الإنماء المهني" onOpenPlan={(id) => {
+            <PlanSectionActivities plans={plans} destination="الإنماء المهني" onOpenPlan={(id, activityId) => {
               setSelectedPlanId(id);
+              setFocusedActivityId(activityId);
               setPlanCreateRequested(false);
               setTab('مكتبة الخطط');
             }} />
             <ProfessionalDevelopment />
           </>
         ) : PLAN_DESTINATIONS.includes(tab as PlanDestination) ? (
-          <PlanSectionActivities plans={plans} destination={tab as PlanDestination} onOpenPlan={(id) => {
+          <PlanSectionActivities plans={plans} destination={tab as PlanDestination} onOpenPlan={(id, activityId) => {
             setSelectedPlanId(id);
+            setFocusedActivityId(activityId);
             setPlanCreateRequested(false);
             setTab('مكتبة الخطط');
           }} />
