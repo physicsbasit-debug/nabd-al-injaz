@@ -119,7 +119,7 @@ export default function PlanImport({ onApprove, existingTitles }: Props) {
                   value={c.title}
                   onChange={(e) =>
                     setItems((old) =>
-                      old.map((x) => (x.key === c.key ? { ...x, title: e.target.value } : x)),
+                      old.map((x) => (x.key === c.key ? { ...x, title: e.target.value, destination: undefined } : x)),
                     )
                   }
                 />
