@@ -3,6 +3,7 @@ import EvidencePanel from './EvidencePanel';
 import EvidenceStatus from './EvidenceStatus';
 import { deleteActivityEvidence, deletePlanEvidence } from './evidence-store';
 import PlanImport from './PlanImport';
+import { PLAN_DESTINATIONS, type PlanDestination } from './plan-routing';
 import { useEffect, useState } from 'react';
 import type { Dispatch, FormEvent, SetStateAction } from 'react';
 import { ArrowRight, Plus, Archive, RotateCcw } from 'lucide-react';
@@ -549,6 +550,27 @@ export default function PlanLibrary({
                           <option value="not_started">لم يبدأ</option>
                           <option value="in_progress">قيد التنفيذ</option>
                           <option value="completed">مكتمل</option>
+                        </select>
+                      </label>
+                      <label className="plan-progress-select">
+                        القسم
+                        <select
+                          aria-label={'قسم النشاط: ' + a.title}
+                          value={a.destination ?? ''}
+                          onChange={(e) => {
+                            const destination = (e.target.value || undefined) as PlanDestination | undefined;
+                            updatePlan(selected.id, (p) => ({
+                              ...p,
+                              activities: p.activities.map((item) =>
+                                item.id === a.id ? { ...item, destination } : item,
+                              ),
+                            }));
+                          }}
+                        >
+                          <option value="">غير محدد</option>
+                          {PLAN_DESTINATIONS.map((destination) => (
+                            <option key={destination} value={destination}>{destination}</option>
+                          ))}
                         </select>
                       </label>
                       <div className="plan-activity-actions">

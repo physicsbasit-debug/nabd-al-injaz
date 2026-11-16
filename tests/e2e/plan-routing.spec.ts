@@ -33,4 +33,10 @@ test('approved imported activity appears in its section after reload', async ({ 
   await expect(section.getByText('الزيارات المتبادلة بين المعلمين', { exact: true })).toHaveCount(1);
   await section.getByRole('button', { name: 'فتح الخطة' }).click();
   await expect(page.locator('.plan-activity-list')).toContainText('الزيارات المتبادلة بين المعلمين');
+  await page.getByLabel('قسم النشاط: الزيارات المتبادلة بين المعلمين').selectOption('الإنماء المهني');
+  await navigate('الزيارات المتبادلة');
+  await expect(section.getByText('الزيارات المتبادلة بين المعلمين', { exact: true })).toHaveCount(0);
+  await navigate('الإنماء المهني');
+  await expect(page.getByRole('region', { name: 'أنشطة الخطط: الإنماء المهني' })
+    .getByText('الزيارات المتبادلة بين المعلمين', { exact: true })).toHaveCount(1);
 });
