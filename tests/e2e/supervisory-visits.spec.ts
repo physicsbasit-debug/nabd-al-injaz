@@ -44,6 +44,11 @@ test('links a visit to a plan, preserves evidence and safely handles old or dama
   await expect(visits.getByRole('status')).toContainText('حُفظت الزيارة');
   await visits.getByText('معلم تجريبي', { exact: false }).first().click();
   await expect(visits.locator('details').getByText('خطة تجريبية', { exact: false })).toBeVisible();
+  await visits.getByLabel('المعلم').fill('مسودة أخرى');
+  page.once('dialog', dialog => dialog.dismiss());
+  await visits.getByRole('button', { name: 'تعديل الزيارة' }).click();
+  await expect(visits.getByLabel('المعلم')).toHaveValue('مسودة أخرى');
+  await visits.getByLabel('المعلم').fill('');
   await visits.getByLabel('إرفاق شاهد للزيارة').setInputFiles({ name: 'visit.pdf', mimeType: 'application/pdf', buffer: Buffer.from('safe visit evidence') });
   await expect(visits.getByText('visit.pdf')).toBeVisible();
   await page.reload();

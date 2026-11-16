@@ -21,7 +21,7 @@ import ProfessionalDevelopment from './ProfessionalDevelopment';
 import AppBackupTools from './AppBackupTools';
 import PlanSectionActivities from './PlanSectionActivities';
 import SupervisoryVisits from './SupervisoryVisits';
-import { emptySupervisoryVisitForm, type SupervisoryVisit, type SupervisoryVisitForm } from './supervisory-visits-model';
+import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, type SupervisoryVisit, type SupervisoryVisitForm } from './supervisory-visits-model';
 import { PLAN_DESTINATIONS, type PlanDestination } from './plan-routing';
 import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
@@ -49,6 +49,7 @@ export default function App() {
   const [visitLink, setVisitLink] = useState<{ planId: string; activityId: string } | null>(null);
   const [visitForm, setVisitForm] = useState<SupervisoryVisitForm>(emptySupervisoryVisitForm);
   const [visitEditing, setVisitEditing] = useState<SupervisoryVisit | null>(null);
+  const visitDraftChanged = hasUnsavedVisitChanges(visitForm, visitEditing);
   const [planCreateRequested, setPlanCreateRequested] = useState(false);
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
@@ -56,6 +57,12 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(plans));
   }, [plans]);
+  useEffect(() => {
+    if (!visitDraftChanged) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [visitDraftChanged]);
   useEffect(() => {
     const syncPlans = (event: StorageEvent) => {
       if (event.key !== PLAN_STORAGE_KEY) return;

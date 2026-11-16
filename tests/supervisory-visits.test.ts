@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { isSupervisoryVisit, readSupervisoryVisits } from '../src/supervisory-visits-model';
+import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, isSupervisoryVisit, readSupervisoryVisits } from '../src/supervisory-visits-model';
 import { createVisitArchive, decodeVisitArchive } from '../src/supervisory-visit-files';
 import { projectedBackupBytes, assertVisitBackupCapacity } from '../src/backup-capacity';
 
@@ -27,6 +27,13 @@ describe('supervisory visit records', () => {
   it('refuses corrupt stored records rather than overwriting them with an empty list', () => {
     vi.stubGlobal('localStorage', { getItem: () => '{bad' });
     expect(() => readSupervisoryVisits()).toThrow();
+  });
+
+  it('detects an unfinished new visit or a changed saved visit before replacing the form', () => {
+    expect(hasUnsavedVisitChanges(emptySupervisoryVisitForm(), null)).toBe(false);
+    expect(hasUnsavedVisitChanges({ ...emptySupervisoryVisitForm(), teacher: 'معلم تجريبي' }, null)).toBe(true);
+    expect(hasUnsavedVisitChanges(visit, visit)).toBe(false);
+    expect(hasUnsavedVisitChanges({ ...visit, recommendations: 'متابعة' }, visit)).toBe(true);
   });
 });
 

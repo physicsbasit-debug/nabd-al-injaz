@@ -3,7 +3,7 @@ import { readPlans, type Plan } from './plan-model';
 import { activitiesForDestination } from './plan-routing';
 import { readSchedule } from './schedule-model';
 import { onAssessmentChange, withAssessmentLock } from './assessment-lock';
-import { emptySupervisoryVisitForm, isSupervisoryVisit, readSupervisoryVisits, SUPERVISORY_VISITS_KEY, VISIT_SUBJECTS, type SupervisoryVisit, type SupervisoryVisitForm } from './supervisory-visits-model';
+import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, isSupervisoryVisit, readSupervisoryVisits, SUPERVISORY_VISITS_KEY, VISIT_SUBJECTS, type SupervisoryVisit, type SupervisoryVisitForm } from './supervisory-visits-model';
 import { deleteVisitFile, listVisitFiles, saveVisitFile, VISIT_MAX_BYTES, VISIT_MIMES, type VisitFile } from './supervisory-visit-files';
 import { ensureVisitFileFitsBackup } from './app-backup';
 import './short-test-review.css';
@@ -51,6 +51,9 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
   }, [requestedLink, onLinkHandled]);
 
   function change<K extends keyof Form>(key: K, value: Form[K]) { setForm(current => ({ ...current, [key]: value })); }
+  function canReplaceDraft(): boolean {
+    return !hasUnsavedVisitChanges(form, editing) || window.confirm('لديك بيانات زيارة غير محفوظة. هل تريد تجاهلها؟');
+  }
   async function save() {
     if (busy) return;
     const record: SupervisoryVisit = { ...form, teacher: form.teacher.trim(), lesson: form.lesson.trim(), strengths: form.strengths.trim(), improvements: form.improvements.trim(), recommendations: form.recommendations.trim(), followUp: form.followUp.trim(), id: editing?.id ?? crypto.randomUUID(), createdAt: editing?.createdAt ?? new Date().toISOString() };
@@ -140,7 +143,7 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
       <label className="short-test-notes">التوصيات<textarea value={form.recommendations} maxLength={4000} onChange={e => change('recommendations', e.target.value)} /></label>
       <label className="short-test-notes">المتابعة اللاحقة<textarea value={form.followUp} maxLength={4000} onChange={e => change('followUp', e.target.value)} /></label>
     </fieldset>
-    <div className="visit-actions"><button type="button" disabled={!ready || busy} onClick={() => void save()}>{editing ? 'حفظ التعديل' : 'حفظ الزيارة'}</button>{editing && <button type="button" disabled={busy} onClick={() => { setEditing(null); setForm(emptySupervisoryVisitForm()); setMessage(''); }}>إلغاء التعديل</button>}</div>
+    <div className="visit-actions"><button type="button" disabled={!ready || busy} onClick={() => void save()}>{editing ? 'حفظ التعديل' : 'حفظ الزيارة'}</button>{editing && <button type="button" disabled={busy} onClick={() => { if (!canReplaceDraft()) return; setEditing(null); setForm(emptySupervisoryVisitForm()); setMessage(''); }}>إلغاء التعديل</button>}</div>
     {message && <p role="status">{message}</p>}
     <div className="visit-list-header"><h3>الزيارات المسجلة ({shown.length})</h3><label>بحث في الزيارات<input value={filter} onChange={e => setFilter(e.target.value)} placeholder="اسم المعلم أو المادة أو الدرس" /></label></div>
     {shown.length === 0 && <p>لا توجد زيارات مطابقة.</p>}
@@ -160,7 +163,7 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
           {files.filter(file => file.recordId === record.id).map(file => <div className="assessment-file-row" key={file.id}><span>{file.name}</span><div><button type="button" onClick={() => download(file)}>تنزيل الشاهد</button> <button type="button" disabled={busy} onClick={() => void removeFile(file)}>حذف الشاهد</button></div></div>)}
           <label className="assessment-file-upload">إرفاق شاهد للزيارة<input type="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" disabled={busy} onChange={e => { const file = e.target.files?.[0]; e.currentTarget.value = ''; void addFile(record, file); }} /></label>
         </div>
-        <div className="visit-actions"><button type="button" disabled={busy} onClick={() => { setEditing(record); setForm(record); setMessage(''); formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>تعديل الزيارة</button> <button type="button" disabled={busy} onClick={() => void remove(record)}>حذف الزيارة</button></div>
+        <div className="visit-actions"><button type="button" disabled={busy} onClick={() => { if (!canReplaceDraft()) return; setEditing(record); setForm(record); setMessage(''); formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>تعديل الزيارة</button> <button type="button" disabled={busy} onClick={() => void remove(record)}>حذف الزيارة</button></div>
       </details>;
     })}
   </section>;

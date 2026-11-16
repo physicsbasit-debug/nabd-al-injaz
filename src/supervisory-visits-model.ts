@@ -24,6 +24,11 @@ export type SupervisoryVisitForm = Omit<SupervisoryVisit, 'id' | 'createdAt'>;
 export function emptySupervisoryVisitForm(): SupervisoryVisitForm {
   return { teacher: '', date: '', status: 'planned', subject: '', grade: '', section: '', period: '', lesson: '', strengths: '', improvements: '', recommendations: '', followUp: '', planId: '', activityId: '' };
 }
+export function hasUnsavedVisitChanges(form: SupervisoryVisitForm, editing: SupervisoryVisit | null): boolean {
+  const original = editing ?? emptySupervisoryVisitForm();
+  return (Object.keys(emptySupervisoryVisitForm()) as Array<keyof SupervisoryVisitForm>)
+    .some(key => (form[key] ?? '') !== (original[key] ?? ''));
+}
 
 export function isSupervisoryVisit(value: unknown): value is SupervisoryVisit {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
