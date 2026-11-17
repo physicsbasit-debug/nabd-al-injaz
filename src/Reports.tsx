@@ -14,9 +14,10 @@ import { listVisitFiles } from './supervisory-visit-files';
 import { listProfessionalFiles } from './professional-development-files';
 import { buildReport, filterReport, type ReportRow } from './report-model';
 import './reports.css';
+import VisitReport from './VisitReport';
 type Props={tasks:Task[];plans:Plan[]};
 type Counts={plans:Set<string>;work:Set<string>;visits:Set<string>;programs:Set<string>};
-export default function Reports({tasks,plans}:Props){
+function GeneralReport({tasks,plans}:Props){
  const [filters,setFilters]=useState({section:'الكل',person:'',from:'',to:'',status:'الكل'});
  const [counts,setCounts]=useState<Counts|null>(null);const [filesError,setFilesError]=useState(false);
  useEffect(()=>{let live=true;Promise.all([allEvidence(),listWorkEvidence(),listVisitFiles(),listProfessionalFiles()]).then(([p,w,v,g])=>{if(live)setCounts({plans:new Set(p.map(f=>f.planId+':'+f.activityId)),work:new Set(w.map(f=>f.ownerType+':'+f.ownerId)),visits:new Set(v.map(f=>f.recordId)),programs:new Set(g.filter(f=>f.kind==='شاهد').map(f=>f.recordId))})}).catch(()=>{if(live)setFilesError(true)});return()=>{live=false}},[]);
@@ -39,4 +40,9 @@ export default function Reports({tasks,plans}:Props){
  <p className="report-note">عند اختيار فترة، تُستبعد السجلات التي لا يوجد لها تاريخ مسجل. تاريخ السجل المفتوح هو موعده، وتاريخ المنجز هو تاريخ إنجازه عند توفره. قد يظهر نشاط وزيارته المرتبطة كسجلين.</p>
  <div className="report-table-wrap"><table><thead><tr><th>العمل</th><th>القسم</th><th>المسؤول</th><th>الحالة</th><th>التاريخ</th><th>الشاهد</th></tr></thead><tbody>{visible.map(row=><tr key={row.id}><td><strong>{row.title}</strong><small>{row.detail}</small></td><td>{row.section}</td><td>{row.person||'غير مسجل'}</td><td>{row.status}</td><td dir="ltr">{row.date||'غير مسجل'}</td><td>{counts?evidence(row):filesError?'تعذر التحقق':'جارٍ التحقق'}</td></tr>)}</tbody></table></div>{visible.length===0&&<p className="report-empty">لا توجد سجلات مطابقة للاختيار الحالي.</p>}<footer>نبض الإنجاز · تقرير مبني على البيانات المحفوظة في هذا المتصفح</footer></div>
  </section>;
+}
+
+export default function Reports(props:Props){
+ const [type,setType]=useState<'general'|'visits'>('general');
+ return <div className="reports-container"><div className="report-type" role="group" aria-label="نوع التقرير"><button type="button" aria-pressed={type==='general'} onClick={()=>setType('general')}>تقرير العمل والمتابعة</button><button type="button" aria-pressed={type==='visits'} onClick={()=>setType('visits')}>تقرير الزيارات الإشرافية</button></div>{type==='general'?<GeneralReport {...props}/>:<VisitReport/>}</div>;
 }
