@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import WorkEvidencePanel from './WorkEvidencePanel';
+import { listWorkEvidence } from './work-evidence';
+import { withAssessmentLock } from './assessment-lock';
 import type { FormEvent } from 'react';
 import {
   AlertTriangle,
@@ -264,7 +267,7 @@ export default function TechnicalFollowup() {
             <p>{topics.length} موضوع مسجل</p>
           </div>
         </div>
-        {teachers.length === 0 ? (
+        {teachers.length === 0 && topics.length === 0 ? (
           <div className="technical-empty">
             <BookOpenCheck size={28} />
             <strong>ارفع جدول المعلمين أولًا</strong>
@@ -318,6 +321,7 @@ export default function TechnicalFollowup() {
                       />
                     </div>
                   </div>
+                  <WorkEvidencePanel ownerType="topic" ownerId={topic.id} title={topic.title} />
                   <div className="technical-topic-actions">
                     <button
                       type="button"
@@ -352,14 +356,14 @@ export default function TechnicalFollowup() {
                       type="button"
                       className="technical-icon-action is-delete"
                       aria-label={`حذف ${topic.title}`}
-                      onClick={() => {
-                        if (window.confirm(`حذف متابعة «${topic.title}»؟`)) {
-                          setTopics((current) => removeTechnicalTopic(current, topic.id));
-                          if (editingId === topic.id) {
-                            setEditingId(undefined);
-                            setDraft(blankDraft());
-                          }
-                        }
+                      onClick={async () => {
+                        if (!window.confirm(`حذف متابعة «${topic.title}»؟`)) return;
+                        try { await withAssessmentLock(async () => {
+                          if ((await listWorkEvidence()).some(f => f.ownerType === 'topic' && f.ownerId === topic.id)) throw new Error('احذف شواهد المتابعة أولًا قبل حذفها.');
+                          const next = removeTechnicalTopic(readTechnicalTopics(), topic.id);
+                          localStorage.setItem(TECHNICAL_FOLLOWUP_STORAGE_KEY, JSON.stringify(next)); setTopics(next);
+                          if (editingId === topic.id) { setEditingId(undefined); setDraft(blankDraft()); }
+                        }); } catch (error) { setMessage(error instanceof Error ? error.message : 'تعذر حذف المتابعة.'); }
                       }}
                     >
                       <Trash2 size={17} />

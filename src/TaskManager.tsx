@@ -1,4 +1,8 @@
 import { useMemo, useState } from 'react';
+import WorkEvidencePanel from './WorkEvidencePanel';
+import { listWorkEvidence } from './work-evidence';
+import { withAssessmentLock } from './assessment-lock';
+import { readTasks, STORAGE_KEY } from './task-model';
 import {
   TASK_CATEGORIES,
   formatDueDate,
@@ -438,6 +442,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                       )}
                     </div>
                     {task.notes && <p className="task-notes-preview">{task.notes}</p>}
+                    <WorkEvidencePanel ownerType="task" ownerId={task.id} title={task.title} />
                     <button type="button" className="edit-task" onClick={() => startEdit(task)}>
                       تعديل
                     </button>
@@ -445,9 +450,13 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                       className="delete-task"
                       type="button"
                       aria-label={`حذف المهمة: ${task.title}`}
-                      onClick={() => {
-                        if (window.confirm('حذف هذه المهمة نهائيًا؟'))
-                          setTasks((old) => old.filter((item) => item.id !== task.id));
+                      onClick={async () => {
+                        if (!window.confirm('حذف هذه المهمة نهائيًا؟')) return;
+                        try { await withAssessmentLock(async () => {
+                          if ((await listWorkEvidence()).some(f => f.ownerType === 'task' && f.ownerId === task.id)) throw new Error('احذف شواهد المهمة أولًا قبل حذفها.');
+                          const next = readTasks().filter(item => item.id !== task.id);
+                          localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); setTasks(next);
+                        }); } catch (error) { window.alert(error instanceof Error ? error.message : 'تعذر حذف المهمة.'); }
                       }}
                     >
                       حذف
