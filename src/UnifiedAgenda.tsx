@@ -35,7 +35,7 @@ export default function UnifiedAgenda({ tasks, plans, navigate }: Props) {
     <div className="unified-heading"><div><span className="executive-eyebrow">أعمالك ومتابعة المعلمين</span><h2>متابعة اليوم والأسبوع</h2><p>عرض من السجلات الموجودة؛ افتح البند لتحديثه في قسمه.</p></div></div>
     {errors.length > 0 && <p role="alert">تعذرت قراءة: {errors.join('، ')}. راجع القسم؛ لم تُغيّر البيانات.</p>}
     {evidenceError && <p role="alert">تعذّر قراءة الشواهد؛ لا يمكن تحديد الأنشطة دون شاهد.</p>}
-    <div className="unified-sections">{sections.map(({title, detail, items}, index) => <details key={title} open={index === 0} className="unified-group">
+    <div className="unified-sections">{sections.map(({title, detail, items}, index) => <details key={title} open={index === 0 || (index === 2 && items.length > 0)} className="unified-group">
       <summary><strong>{title}</strong><span>{index === 5 && !counts && !evidenceError ? 'جارٍ التحقق' : items.length}</span></summary><p>{detail}</p>
       {items.length ? <ul>{items.map(item => <li key={item.id}><button type="button" onClick={() => navigate(item.section, item.planId, item.activityId)}><span><strong>{item.title}</strong><small>{item.detail}</small><small>{index === 4 ? (item.completionDate ? 'تاريخ الإنجاز المسجل: ' + item.completionDate.slice(0, 10) : 'تاريخ الإنجاز غير مسجل') : item.date ? 'الموعد: ' + item.date : 'دون موعد'}</small></span><span aria-hidden="true">←</span></button></li>)}</ul> : <p className="unified-empty">{index === 5 && !counts ? 'لم يكتمل التحقق من الشواهد.' : 'لا توجد بنود مسجلة هنا.'}</p>}
     </details>)}</div>

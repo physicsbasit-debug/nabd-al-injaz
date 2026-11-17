@@ -17,6 +17,8 @@ import { getCoverDailySummary, getCoverDay, readCoverStore, weekdayForDate } fro
 import { readTechnicalTopicSummary, readTechnicalTopics } from './technical-followup-model';
 import { readAssessments, summarizeAssessments } from './assessment-tracking';
 import { readProfessionalPrograms } from './professional-development-model';
+import { readSupervisoryVisits } from './supervisory-visits-model';
+import { activitiesForDestination, type PlanDestination } from './plan-routing';
 import './daily-section-board.css';
 
 const today = () => localDateKey(new Date());
@@ -81,6 +83,13 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
 
   let programs: ReturnType<typeof readProfessionalPrograms> | null = null;
   try { programs = readProfessionalPrograms(); } catch { /* Show a warning in the card. */ }
+  let visits: ReturnType<typeof readSupervisoryVisits> | null = null;
+  try { visits = readSupervisoryVisits(); } catch { /* Explicit warning in section card. */ }
+  const activityCard = (name: PlanDestination): DailyCard => {
+    const activities = activitiesForDestination(plans, name);
+    const open = activities.filter(({ activity }) => activity.progress !== 'completed').length;
+    return { name, icon: Users, status: `${activities.length} نشاط خطة مسجل`, detail: `${open} قيد المتابعة · افتح القسم للتفاصيل`, alert: open > 0 };
+  };
   const cards: DailyCard[] = [
     {
       name: 'الخطط والمهام',
@@ -137,6 +146,16 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
       alert: programs === null || programs.some(p => p.date === date),
     },
     {
+      name: 'الزيارات الإشرافية',
+      icon: Users,
+      status: visits === null ? 'تعذر قراءة الزيارات' : `${visits.filter(v => v.status === 'planned').length} زيارة مخططة`,
+      detail: visits === null ? 'راجع السجل المحفوظ' : `${visits.filter(v => v.status === 'completed' && v.date <= date).length} زيارة منفذة · متابعة وتوثيق`,
+      alert: visits === null || visits.some(v => v.status === 'planned' && !!v.date && v.date <= date),
+    },
+    activityCard('الزيارات المتبادلة'),
+    activityCard('الاجتماعات الدورية'),
+    activityCard('رفع المستوى التحصيلي'),
+    {
       name: 'الإنجازات والشواهد',
       icon: Medal,
       status: `${completedTodayCount} نشاط مكتمل اليوم`,
@@ -163,10 +182,10 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
               month: 'long',
             }).format(new Date())}
           </span>
-          <h2>لوحة اليوم</h2>
-          <p>نظرة سريعة على الأقسام وما يحتاج متابعة اليوم.</p>
+          <h2>كشاف أقسام العمل</h2>
+          <p>حالة كل قسم من سجلاته، مع الوصول المباشر للتفاصيل.</p>
         </div>
-        <span className="daily-section-count">{cards.length} أقسام</span>
+        <span className="daily-section-count">{cards.length} قسمًا</span>
       </div>
       <div className="daily-section-grid">
         {cards.map((item) => {

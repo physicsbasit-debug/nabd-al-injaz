@@ -104,7 +104,7 @@ test('home shows a truthful daily summary for every section', async ({ page }) =
   await page.reload();
 
   const board = page.getByRole('region', { name: 'ملخص الأقسام اليوم' });
-  await expect(board.getByRole('heading', { name: 'لوحة اليوم' })).toBeVisible();
+  await expect(board.getByRole('heading', { name: 'كشاف أقسام العمل' })).toBeVisible();
   await expect(board).toContainText('الخطط والمهام');
   await expect(board.getByRole('button', { name: /الخطط والمهام.*متابعة مطلوبة/ })).toContainText(
     '1 مستحق اليوم · 1 متأخر',
@@ -129,6 +129,7 @@ test('home shows a truthful daily summary for every section', async ({ page }) =
   ).toContainText('أدخل موضوعات النشرة لمتابعتها');
   await expect(board.getByRole('button', { name: /الاختبارات والتحصيل.*لا توجد اختبارات مسجلة/ })).toBeVisible();
   await expect(board.getByRole('button', { name: /الإنماء المهني.*لا توجد برامج مسجلة/ })).toBeVisible();
+  for (const name of ['الزيارات الإشرافية', 'الزيارات المتبادلة', 'الاجتماعات الدورية', 'رفع المستوى التحصيلي']) await expect(board.getByRole('button', { name: new RegExp(name) })).toBeVisible();
   for (const name of ['التقارير']) {
     await expect(
       board.getByRole('button', { name: new RegExp(name + '.*القسم لم يُفعّل بعد') }),
