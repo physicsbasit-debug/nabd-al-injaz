@@ -72,6 +72,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
         dueDate,
         priority,
         done: progress === 'مكتملة',
+        ...(progress === 'مكتملة' ? { completedAt: new Date().toISOString() } : {}),
         createdAt: new Date().toISOString(),
         category,
         assignedTo: assignedTo.trim(),

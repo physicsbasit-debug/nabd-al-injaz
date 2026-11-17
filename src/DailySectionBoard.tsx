@@ -160,7 +160,6 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
       icon: Medal,
       status: `${completedTodayCount} نشاط مكتمل اليوم`,
       detail: 'إرفاق الشاهد متاح من داخل النشاط في مكتبة الخطط',
-      onNavigateTo: 'مكتبة الخطط',
     },
     {
       name: 'التقارير',

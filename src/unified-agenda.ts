@@ -17,7 +17,7 @@ export function buildAgenda({ today, tasks, plans, visits, topics, programs }: I
     else if (item.date === today) result.today.push(item);
     else if (item.date <= weekEnd) result.week.push(item);
   };
-  for (const task of tasks) add({ id: 'task:' + task.id, title: task.title, detail: 'مهمة · ' + (task.assignedTo ? 'المسؤول: ' + task.assignedTo : task.category), date: task.dueDate, completionDate: null, section: 'الخطط والمهام' }, task.done);
+  for (const task of tasks) add({ id: 'task:' + task.id, title: task.title, detail: 'مهمة · ' + (task.assignedTo ? 'المسؤول: ' + task.assignedTo : task.category), date: task.dueDate, completionDate: task.completedAt ?? null, section: 'الخطط والمهام' }, task.done);
   for (const plan of plans) for (const a of plan.activities) {
     if (plan.archived && a.progress !== 'completed') continue;
     add({ id: 'activity:' + plan.id + ':' + a.id, title: a.title, detail: 'نشاط خطة: ' + plan.title + (a.assignee ? ' · المسؤول: ' + a.assignee : ''), date: a.dueDate, completionDate: a.completedAt, section: 'مكتبة الخطط', planId: plan.id, activityId: a.id }, a.progress === 'completed');
