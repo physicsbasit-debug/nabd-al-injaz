@@ -17,6 +17,7 @@ export type Task = {
   priority: TaskPriority;
   done: boolean;
   createdAt: string;
+  completedAt?: string;
   category: TaskCategory;
   assignedTo: string;
   progress: TaskProgress;
@@ -68,6 +69,7 @@ export function readTasks(): Task[] {
             ? { previousProgress: task.previousProgress }
             : {}),
           notes: typeof task.notes === 'string' ? task.notes.slice(0, 500) : '',
+          ...(task.done && typeof task.completedAt === 'string' && !Number.isNaN(Date.parse(task.completedAt)) ? { completedAt: task.completedAt } : {}),
         },
       ];
     });
@@ -76,12 +78,13 @@ export function readTasks(): Task[] {
   }
 }
 
-export function setTaskProgress(task: Task, progress: TaskProgress): Task {
+export function setTaskProgress(task: Task, progress: TaskProgress, now = new Date().toISOString()): Task {
   if (progress === 'مكتملة') {
     return {
       ...task,
       progress,
       done: true,
+      ...(!task.done ? { completedAt: now } : {}),
       previousProgress: task.done
         ? (task.previousProgress ?? 'لم تبدأ')
         : task.progress === 'قيد التنفيذ'
@@ -92,6 +95,7 @@ export function setTaskProgress(task: Task, progress: TaskProgress): Task {
 
   const updated: Task = { ...task, progress, done: false };
   delete updated.previousProgress;
+  delete updated.completedAt;
   return updated;
 }
 
