@@ -12,6 +12,7 @@ import TaskManager, { readTasks, STORAGE_KEY, type Task } from './TaskManager';
 import { toggleTaskCompletion } from './task-model';
 import ExecutiveDashboard from './ExecutiveDashboard';
 import DailySectionBoard from './DailySectionBoard';
+import UnifiedAgenda from './UnifiedAgenda';
 import PlanOverview from './PlanOverview';
 import PlanLibrary from './PlanLibrary';
 import ScheduleManager from './ScheduleManager';
@@ -146,6 +147,10 @@ export default function App() {
         {tab === 'الرئيسية' ? (
           <>
             <AppBackupTools plans={plans} setPlans={setPlans} setTasks={setTasks} />
+            <UnifiedAgenda tasks={tasks} plans={plans} navigate={(section, planId, activityId) => {
+              if (planId) { setSelectedPlanId(planId); setFocusedActivityId(activityId ?? null); setPlanCreateRequested(false); }
+              setTab(section); setMobileMenuOpen(false);
+            }} />
             <DailySectionBoard
               tasks={tasks}
               plans={plans}
