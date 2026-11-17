@@ -44,5 +44,5 @@ function GeneralReport({tasks,plans}:Props){
 
 export default function Reports(props:Props){
  const [type,setType]=useState<'general'|'visits'>('general');
- return <div><div className="report-type" role="group" aria-label="نوع التقرير"><button type="button" aria-pressed={type==='general'} onClick={()=>setType('general')}>تقرير العمل والمتابعة</button><button type="button" aria-pressed={type==='visits'} onClick={()=>setType('visits')}>تقرير الزيارات الإشرافية</button></div>{type==='general'?<GeneralReport {...props}/>:<VisitReport/>}</div>;
+ return <div className="reports-container"><div className="report-type" role="group" aria-label="نوع التقرير"><button type="button" aria-pressed={type==='general'} onClick={()=>setType('general')}>تقرير العمل والمتابعة</button><button type="button" aria-pressed={type==='visits'} onClick={()=>setType('visits')}>تقرير الزيارات الإشرافية</button></div>{type==='general'?<GeneralReport {...props}/>:<VisitReport/>}</div>;
 }

@@ -17,7 +17,7 @@ export default function VisitReport(){
  return <section className="reports visit-report" aria-label="تقرير الزيارات الإشرافية">
   <div className="reports-heading"><h2>تقرير الزيارات الإشرافية</h2><p>متابعة الزيارات وتوثيقها وشواهدها، دون تقييم المعلمين.</p></div>
   <div className="reports-controls">
-   <label>المعلم<select value={filters.teacher} onChange={e=>setFilters({...filters,teacher:e.target.value})}><option value="">جميع المعلمين</option>{teachers.map(t=><option key={t} value={t}>{t}</option>)}</select></label>
+   <label>المعلم<select aria-label="المعلم" value={filters.teacher} onChange={e=>setFilters({...filters,teacher:e.target.value})}><option value="">جميع المعلمين</option>{teachers.map(t=><option key={t} value={t}>{t}</option>)}</select></label>
    <label>حالة الزيارة<select value={filters.status} onChange={e=>setFilters({...filters,status:e.target.value as VisitReportFilters['status']})}><option value="all">الجميع</option><option value="planned">مخططة</option><option value="completed">منفذة</option></select></label>
    <label>من تاريخ<input type="date" value={filters.from} onChange={e=>setFilters({...filters,from:e.target.value})}/></label>
    <label>إلى تاريخ<input type="date" value={filters.to} onChange={e=>setFilters({...filters,to:e.target.value})}/></label>
