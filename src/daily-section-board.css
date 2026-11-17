@@ -159,3 +159,7 @@
     transition: none;
   }
 }
+@media (max-width: 560px) {
+  .daily-section-copy strong { font-size: 13px; }
+  .daily-section-status, .daily-section-copy small { font-size: 12px; }
+}

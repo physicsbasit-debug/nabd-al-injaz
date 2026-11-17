@@ -40,6 +40,7 @@ test('executive dashboard shows real overdue and priority indicators', async ({
   });
   await page.reload();
 
+  await page.getByText('مؤشرات المهام وتفاصيلها').click();
   const stats = page.getByRole('region', { name: 'مؤشرات المهام' });
   await expect(
     stats.locator('article').nth(0).locator('strong'),
@@ -64,6 +65,7 @@ test('executive dashboard shows real overdue and priority indicators', async ({
   await expect(page.getByRole('img', { name: 'نسبة الإنجاز 50%' })).toBeVisible();
 
   await page.reload();
+  await page.getByText('مؤشرات المهام وتفاصيلها').click();
   await expect(page.getByRole('img', { name: 'نسبة الإنجاز 50%' })).toBeVisible();
   await page.screenshot({
     path: 'test-results/executive-dashboard-' + testInfo.project.name + '.png',
@@ -98,6 +100,7 @@ test('dashboard brings today task and plan activity into one view', async ({ pag
     }]));
   });
   await page.reload();
+  await page.getByText('مؤشرات المهام وتفاصيلها').click();
   const today = page.getByRole('region', { name: 'مهام اليوم ومتابعته' });
   await expect(today).toContainText('مراجعة تحضير الدرس');
   await expect(today).toContainText('زيارة صفية');
@@ -108,6 +111,7 @@ test('dashboard brings today task and plan activity into one view', async ({ pag
 
 test('empty dashboard links to task creation without fabricated data', async ({ page }) => {
   await page.goto('/');
+  await page.getByText('مؤشرات المهام وتفاصيلها').click();
   await expect(page.getByText('لا توجد مهام مسجلة بعد')).toBeVisible();
   await expect(page.getByRole('img', { name: 'نسبة الإنجاز 0%' })).toBeVisible();
   await page.getByRole('button', { name: 'الانتقال إلى الخطط والمهام' }).click();

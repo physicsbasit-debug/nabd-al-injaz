@@ -39,5 +39,6 @@ test('empty plans show no fabricated completion and remain separate from tasks',
 }) => {
   await page.goto('/');
   await expect(page.getByText('لا توجد خطط مضافة بعد')).toBeVisible();
+  await page.getByText('مؤشرات المهام وتفاصيلها').click();
   await expect(page.getByRole('region', { name: 'مؤشرات المهام' })).toBeVisible();
 });

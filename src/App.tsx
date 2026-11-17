@@ -146,7 +146,6 @@ export default function App() {
         </header>
         {tab === 'الرئيسية' ? (
           <>
-            <AppBackupTools plans={plans} setPlans={setPlans} setTasks={setTasks} />
             <UnifiedAgenda tasks={tasks} plans={plans} navigate={(section, planId, activityId) => {
               if (planId) { setSelectedPlanId(planId); setFocusedActivityId(activityId ?? null); setPlanCreateRequested(false); }
               setTab(section); setMobileMenuOpen(false);
@@ -172,7 +171,7 @@ export default function App() {
                 setTab('مكتبة الخطط');
               }}
             />
-            <ExecutiveDashboard
+            <details className="home-extra"><summary>مؤشرات المهام وتفاصيلها</summary><ExecutiveDashboard
               tasks={tasks}
               completedCount={done}
               plans={plans}
@@ -188,7 +187,8 @@ export default function App() {
               onToggleTask={(id) =>
                 setTasks((old) => old.map((x) => (x.id === id ? toggleTaskCompletion(x) : x)))
               }
-            />
+            /></details>
+            <AppBackupTools plans={plans} setPlans={setPlans} setTasks={setTasks} />
           </>
         ) : tab === 'مكتبة الخطط' ? (
           <PlanLibrary
