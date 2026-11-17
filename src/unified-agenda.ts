@@ -25,7 +25,7 @@ export function buildAgenda({ today, tasks, plans, visits, topics, programs }: I
   for (const v of visits.filter(visit => visit.status !== 'completed' || visit.date <= today)) add({ id: 'visit:' + v.id, title: 'زيارة ' + v.teacher, detail: 'زيارة إشرافية للمتابعة والتوثيق' + (v.activityId ? ' · مرتبطة بنشاط خطة' : ''), date: v.date, completionDate: v.status === 'completed' ? v.date : null, section: 'الزيارات الإشرافية' }, v.status === 'completed' && v.date <= today);
   for (const t of topics) add({ id: 'topic:' + t.id, title: t.title, detail: 'متابعة فنية · ' + t.teacher + ' · ' + t.taughtLessons + '/' + t.plannedLessons + ' حصص', date: t.targetDate, completionDate: null, section: 'المتابعة الفنية' }, t.taughtLessons >= t.plannedLessons);
   // A program date is a scheduled event, not proof of completion.
-  for (const p of programs) if (p.date >= today) add({ id: 'program:' + p.id, title: p.title, detail: 'برنامج إنماء مهني', date: p.date, completionDate: null, section: 'الإنماء المهني' }, false);
+  for (const p of programs) if (!p.completed && p.date >= today) add({ id: 'program:' + p.id, title: p.title, detail: 'برنامج إنماء مهني', date: p.date, completionDate: null, section: 'الإنماء المهني' }, false);
   for (const list of Object.values(result)) list.sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999') || a.title.localeCompare(b.title, 'ar'));
   return result;
 }

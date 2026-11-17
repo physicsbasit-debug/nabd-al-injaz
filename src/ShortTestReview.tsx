@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react';
+import WorkEvidencePanel from './WorkEvidencePanel';
+import { listWorkEvidence } from './work-evidence';
 import { checkShortTest, isReviewRecord, readShortTests, SHORT_TEST_KEY, type Grade, type ReviewRecord, type ShortTestNumbers } from './short-test-model';
 import { withAssessmentLock } from './assessment-lock';
 import './short-test-review.css';
@@ -43,6 +45,7 @@ export default function ShortTestReview() {
     let next: ReviewRecord[];
     try { next = await withAssessmentLock(async () => {
       const current = readShortTests();
+      if ((await listWorkEvidence()).some(file => file.ownerType === 'review' && file.ownerId === record.id)) throw new Error('احذف شواهد السجل أولًا.');
       if (JSON.stringify(current.find(item => item.id === record.id)) !== JSON.stringify(record)) throw new Error('تغيّر السجل في نافذة أخرى؛ أعد فتح القسم قبل الحذف.');
       const updated = current.filter(item => item.id !== record.id);
       localStorage.setItem(SHORT_TEST_KEY, JSON.stringify(updated));
@@ -83,6 +86,7 @@ export default function ShortTestReview() {
       {issues.length ? <ul>{issues.map((issue) => <li key={issue}>{issue}</li>)}</ul> : <p>الأعداد المدخلة توافق البنود العددية المفحوصة؛ بقية البنود تحتاج مراجعة يدوية.</p>}
       <p>تحقق يدويًا من مراجعة الاختبار ونموذج الإجابة قبل التطبيق، وتنوع أهداف التعلم، ومناسبة الأسئلة والزمن، وتغطية الاختيار من متعدد لأهداف التقويم حيث ينطبق.</p>
       {record.notes && <p>ملاحظات المراجع: {record.notes}</p>}
+      <WorkEvidencePanel ownerType="review" ownerId={record.id} title={record.title} />
       <button type="button" disabled={saving} onClick={() => edit(record)}>تعديل سجل الاختبار</button>
       <button type="button" disabled={saving} onClick={() => void remove(record)}>حذف سجل الاختبار</button>
     </details>; })}
