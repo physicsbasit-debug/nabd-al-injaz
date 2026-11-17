@@ -5,7 +5,7 @@ test('توثيق المهمة يرتبط بسجلها ويُحفظ في النس
  await page.goto('/');
  const go=async(name:string)=>{if(testInfo.project.name==='phone') await page.getByRole('button',{name:/عرض الأقسام/}).click();await page.getByRole('navigation',{name:testInfo.project.name==='phone'?'أقسام الهاتف':'الأقسام الرئيسية'}).getByRole('button',{name,exact:true}).click()};
  await go('الخطط والمهام');
- const panel=page.locator('.work-evidence').filter({hasText:'توثيق المهمة'});await panel.locator('summary').click();
+ const panel=page.locator('.work-evidence[aria-label="شواهد: توثيق المهمة"]');await panel.locator('summary').click();
  await panel.getByLabel('إرفاق شاهد').setInputFiles({name:'task.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 task')});
  await expect(panel.getByRole('status')).toContainText('حُفظ الشاهد');
  await page.getByRole('checkbox').check();
@@ -31,7 +31,7 @@ test('شاهد المتابعة الفنية يظهر في سجل الإنجاز
  await page.goto('/');
  const go=async(name:string)=>{if(testInfo.project.name==='phone') await page.getByRole('button',{name:/عرض الأقسام/}).click();await page.getByRole('navigation',{name:testInfo.project.name==='phone'?'أقسام الهاتف':'الأقسام الرئيسية'}).getByRole('button',{name,exact:true}).click()};
  await go('المتابعة الفنية');
- const panel=page.locator('.work-evidence').filter({hasText:'متابعة الدروس'});await panel.locator('summary').click();
+ const panel=page.locator('.work-evidence[aria-label="شواهد: متابعة الدروس"]');await panel.locator('summary').click();
  await panel.getByLabel('إرفاق شاهد').setInputFiles({name:'topic.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 topic')});await expect(panel.getByRole('status')).toContainText('حُفظ الشاهد');
  await go('الإنجازات والشواهد');const register=page.getByRole('region',{name:'سجل الإنجاز والشواهد'});await expect(register.getByRole('button',{name:'تنزيل الشاهد: topic.pdf'})).toBeVisible();
 });

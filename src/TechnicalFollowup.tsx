@@ -267,7 +267,7 @@ export default function TechnicalFollowup() {
             <p>{topics.length} موضوع مسجل</p>
           </div>
         </div>
-        {teachers.length === 0 ? (
+        {teachers.length === 0 && topics.length === 0 ? (
           <div className="technical-empty">
             <BookOpenCheck size={28} />
             <strong>ارفع جدول المعلمين أولًا</strong>
