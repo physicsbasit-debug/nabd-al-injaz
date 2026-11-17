@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import WorkEvidencePanel from './WorkEvidencePanel';
+import { listWorkEvidence } from './work-evidence';
+import { withAssessmentLock } from './assessment-lock';
 import type { Schedule } from './schedule-model';
 import { COVER_DRAFT_KEY, addCoverAssignment, autoAssignCovers, clearCoverDay, draftCandidates, draftSlots, getCoverBalance, getCoverDailySummary, getCoverDay, getCoverTeacherPolicy, processCoverDay, readCoverStore, removeCoverAssignment, reopenCoverDay, setCoverAbsences, setCoverTeacherPolicy, validateAssignment, weekdayForDate } from './cover-planning';
 import './cover-draft.css';
@@ -51,14 +54,18 @@ export default function CoverDraftPanel({ schedule }: { schedule: Schedule }) {
     try { setStore(processCoverDay(schedule, store, date)); setMessage('حُفظت معالجة اليوم على هذا الجهاز.'); }
     catch (error) { setMessage(error instanceof Error ? error.message : 'تعذر حفظ معالجة اليوم.'); }
   };
-  const editProcessedDay = () => {
-    if (!window.confirm('سيُعاد اليوم إلى حالة المسودة لتعديل الغياب والتكليفات. هل تريد المتابعة؟')) return;
-    setStore(reopenCoverDay(store, date)); setMessage('أُعيد اليوم إلى المسودة ويمكنك تعديله.');
+  const protectDay = async (mode:'reopen'|'delete') => {
+    if (!window.confirm(mode === 'reopen' ? 'سيُعاد اليوم إلى المسودة. هل تريد المتابعة؟' : 'سيُحذف سجل هذا اليوم بالكامل. هل تريد المتابعة؟')) return;
+    try { await withAssessmentLock(async () => {
+      if ((await listWorkEvidence()).some(f => f.ownerType === 'cover' && f.ownerId === date)) throw new Error('احذف شواهد هذا اليوم أولًا حتى لا تنفصل عن السجل.');
+      const current=readCoverStore();
+      const next=mode==='reopen'?reopenCoverDay(current,date):clearCoverDay(current,date);
+      localStorage.setItem(COVER_DRAFT_KEY,JSON.stringify(next));setStore(next);
+    }); setMessage(mode==='reopen'?'أُعيد اليوم إلى المسودة ويمكنك تعديله.':'حُذف سجل اليوم من هذا الجهاز.'); }
+    catch(error){setMessage(error instanceof Error?error.message:'تعذر تعديل سجل اليوم.');}
   };
-  const undoDay = () => {
-    if (!window.confirm('سيُحذف سجل هذا اليوم بالكامل، بما فيه الغياب والتكليفات. هل تريد المتابعة؟')) return;
-    setStore(clearCoverDay(store, date)); setMessage('حُذف سجل اليوم من هذا الجهاز.');
-  };
+  const editProcessedDay = () => void protectDay('reopen');
+  const undoDay = () => void protectDay('delete');
   const invalidCount = record.assignments.filter((a) => validateAssignment(schedule, store, a)).length;
   return (
     <section className="card cover-draft" aria-label="مسودة توزيع الاحتياط">
@@ -69,6 +76,7 @@ export default function CoverDraftPanel({ schedule }: { schedule: Schedule }) {
         <div><strong>{summary.absentCount}</strong><span>معلم غائب</span></div><div><strong>{summary.required}</strong><span>حصة مطلوبة</span></div><div><strong>{summary.assigned}</strong><span>لها بديل</span></div><div className={summary.uncovered ? 'needs-attention' : ''}><strong>{summary.uncovered}</strong><span>دون بديل</span></div>
       </div>}
       {processed && <p className="cover-processed" role="status">اليوم محفوظ كمعالَج محليًا · {new Intl.DateTimeFormat('ar-OM', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(record.processedAt!))}</p>}
+      {processed && <WorkEvidencePanel key={date} ownerType="cover" ownerId={date} title={"احتياط " + date} />}
       <h4>سياسة توزيع البدائل</h4>
       <p>الترتيب المقترح: الأقل رصيدًا حتى هذا التاريخ، ثم معلم القسم نفسه بحسب المادة الظاهرة في الجدول، ثم الأقل تكليفًا اليوم. عند استمرار التعادل تُراعى الأولوية اليدوية ثم الاسم. راجع المقترحات قبل الحفظ.</p>
       {hasProcessedDays && <p className="cover-warning">خيارات الاستثناء والأولوية والرصيد مقفلة لوجود يوم محفوظ؛ افتح الأيام المحفوظة للتعديل أولًا حتى لا يتغير تقييم تكليفاتها السابقة.</p>}

@@ -235,7 +235,11 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
 function validateWorkLinks(data:Record<string,string>, files:WorkEvidence[]) {
   const tasks:unknown = JSON.parse(data[STORAGE_KEY] ?? '[]');
   const topics:unknown = JSON.parse(data[TECHNICAL_FOLLOWUP_STORAGE_KEY] ?? '[]');
-  if (!Array.isArray(tasks) || !Array.isArray(topics) || files.some(file => !(file.ownerType === 'task' ? tasks : topics).some(item => isRecord(item) && item.id === file.ownerId))) throw new Error('توجد شواهد غير مرتبطة بأعمالها؛ لم تتغير بياناتك.');
+  const assessments:unknown = JSON.parse(data[ASSESSMENT_KEY] ?? '[]');
+  const reviews:unknown = JSON.parse(data[SHORT_TEST_KEY] ?? '[]');
+  const cover:unknown = JSON.parse(data[COVER_DRAFT_KEY] ?? '{"days":{}}');
+  const collections = {task:tasks,topic:topics,assessment:assessments,review:reviews};
+  if (!Array.isArray(tasks) || !Array.isArray(topics) || !Array.isArray(assessments) || !Array.isArray(reviews) || files.some(file => file.ownerType === 'cover' ? !(isRecord(cover) && isRecord(cover.days) && isRecord(cover.days[file.ownerId])) : !Array.isArray(collections[file.ownerType]) || !(collections[file.ownerType] as unknown[]).some(item => isRecord(item) && item.id === file.ownerId))) throw new Error('توجد شواهد غير مرتبطة بأعمالها؛ لم تتغير بياناتك.');
 }
 async function checkedWorkEvidence(data:Record<string,string>):Promise<WorkEvidence[]> {
   const files = await listWorkEvidence();

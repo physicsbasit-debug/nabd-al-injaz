@@ -11,6 +11,18 @@ describe('سجل الإنجاز', () => {
     expect(rows.find(r=>r.id==='task:t')?.date).toBeNull();
     expect(rows.find(r=>r.id==='activity:p:a')?.person).toBe('أحمد');
   });
+  it('يعرض الاحتياط المحفوظ والاختبار المكتمل دون افتراض إنجاز السجلات الناقصة', () => {
+    const cover={version:1 as const,days:{'2026-11-16':{absent:['أحمد'],assignments:[],processedAt:'2026-11-16T09:00:00Z'},'2026-11-17':{absent:['أحمد'],assignments:[]}}};
+    const assessments=[{id:'x',title:'اختبار',teacher:'أحمد',subject:'فيزياء',grade:'9',submitted:true,analyzed:true,reviewed:true,notes:''},{id:'y',title:'آخر',teacher:'أحمد',subject:'فيزياء',grade:'9',submitted:false,analyzed:true,reviewed:true,notes:''}];
+    const rows=buildAchievements({tasks:[],plans:[],visits:[],topics:[],today:'2026-11-17',cover,assessments,reviews:[]});
+    expect(rows.map(r=>r.id).sort()).toEqual(['assessment:x','cover:2026-11-16']);
+  });
+  it('يعرض البرنامج عند تأكيد تنفيذه فقط', () => {
+    const base={id:'pr',title:'مشغل',kind:'مشغل' as const,date:'2026-11-16',period:'',presenter:'أحمد',notes:'',attendance:{}};
+    const input={tasks:[],plans:[],visits:[],topics:[],today:'2026-11-17'};
+    expect(buildAchievements({...input,programs:[base]})).toHaveLength(0);
+    expect(buildAchievements({...input,programs:[{...base,completed:true}]}).map(r=>r.id)).toEqual(['program:pr']);
+  });
   it('filters by recorded completion date and responsible person, excluding unknown dates from a date range', () => {
     const rows = buildAchievements({tasks:[{...task,done:true,progress:'مكتملة'}],plans:[plan],visits:[],topics:[],today:'2026-11-17'});
     expect(filterAchievements(rows,{from:'2026-11-01',to:'2026-11-10',section:'الكل',person:'أحمد'}).map(r=>r.id)).toEqual(['activity:p:a']);

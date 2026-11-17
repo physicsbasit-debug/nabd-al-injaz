@@ -1,10 +1,10 @@
 import { VISIT_MAX_BYTES, VISIT_MIMES } from './supervisory-visit-files';
-export type WorkEvidence = {id:string;ownerType:'task'|'topic';ownerId:string;name:string;mime:string;size:number;createdAt:string;blob:Blob};
+export type WorkEvidence = {id:string;ownerType:'task'|'topic'|'cover'|'assessment'|'review';ownerId:string;name:string;mime:string;size:number;createdAt:string;blob:Blob};
 type Entry=Omit<WorkEvidence,'blob'> & {base64:string};
 function validEntry(x:unknown):x is Entry {
   if(!x || typeof x!=='object' || Array.isArray(x)) return false;
   const v=x as Record<string,unknown>;
-  return ['id','ownerId','name','mime','createdAt','base64'].every(k=>typeof v[k]==='string' && !!v[k]) && (v.ownerType==='task'||v.ownerType==='topic') && VISIT_MIMES.includes(String(v.mime)) && Number.isInteger(v.size) && Number(v.size)>0 && Number(v.size)<=VISIT_MAX_BYTES;
+  return ['id','ownerId','name','mime','createdAt','base64'].every(k=>typeof v[k]==='string' && !!v[k]) && ['task','topic','cover','assessment','review'].includes(String(v.ownerType)) && VISIT_MIMES.includes(String(v.mime)) && Number.isInteger(v.size) && Number(v.size)>0 && Number(v.size)<=VISIT_MAX_BYTES;
 }
 export async function encodeWorkEvidence(records:WorkEvidence[]):Promise<Entry[]> {
   return Promise.all(records.map(async ({blob,...row})=>{

@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import WorkEvidencePanel from './WorkEvidencePanel';
+import { listWorkEvidence } from './work-evidence';
 import { ASSESSMENT_KEY, SUBJECTS, isAssessmentRecord, readAssessments, summarizeAssessments, type AssessmentRecord } from './assessment-tracking';
 import { ASSESSMENT_MAX_BYTES, ASSESSMENT_MIMES, listAssessmentFiles, saveAssessmentFile, deleteAssessmentFile, type AssessmentFile } from './assessment-files';
 import { readSchedule } from './schedule-model';
@@ -94,6 +96,7 @@ export default function AssessmentTracking() {
         const current = readAssessments();
         const saved = current.find(r => r.id === record.id);
         if (JSON.stringify(saved) !== JSON.stringify(record)) throw new Error('تغيّر السجل في نافذة أخرى؛ أعد فتح القسم قبل الحذف.');
+        if ((await listWorkEvidence()).some(f => f.ownerType === 'assessment' && f.ownerId === record.id)) throw new Error('احذف شواهد السجل أولًا أو احتفظ بالسجل للحفاظ عليها.');
         if ((await listAssessmentFiles()).some(f => f.recordId === record.id)) throw new Error('احذف ملفات السجل أولًا أو احتفظ بالسجل للحفاظ عليها.');
         const updated = current.filter(r => r.id !== record.id);
         localStorage.setItem(ASSESSMENT_KEY, JSON.stringify(updated));
@@ -134,9 +137,10 @@ export default function AssessmentTracking() {
         {files.filter(f=>f.recordId===r.id && f.kind===kind).map(f=><div className="assessment-file-row" key={f.id}><span>{f.name}</span><div><button type="button" onClick={()=>download(f)}>تنزيل الملف</button> <button type="button" onClick={()=>void removeFile(f)}>حذف الملف</button></div></div>)}
         <label className="assessment-file-upload">{kind === 'اختبار' ? 'إرفاق نسخة الاختبار' : 'إرفاق التحليل'}<input type="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" onChange={e=>{void addFile(r,kind,e.target.files?.[0]); e.currentTarget.value='';}}/></label>
       </div>)}
+      <WorkEvidencePanel ownerType="assessment" ownerId={r.id} title={r.title} />
       <p><button type="button" disabled={saving} onClick={()=>{editSnapshot.current = r;setEditing(r.id);setForm({teacher:r.teacher,subject:r.subject,title:r.title,grade:r.grade,submitted:r.submitted,analyzed:r.analyzed,reviewed:r.reviewed,notes:r.notes});}}>تعديل المتابعة</button> <button type="button" disabled={saving || pendingRecords.includes(r.id)} onClick={()=>void removeRecord(r)}>حذف سجل المتابعة</button></p>
     </details>)}
     {legacyError && <p role="alert">تعذر قراءة سجلات المراجعة السابقة؛ لم تُحذف بياناتها.</p>}
-    {legacyReviews.length > 0 && <details className="short-test-item"><summary><strong>سجلات المراجعة السابقة ({legacyReviews.length})</strong></summary><p>سجلات محفوظة من الإصدار السابق، للرجوع إليها فقط. لم تُربط تلقائيًا بسجلات المتابعة.</p>{legacyReviews.map(r => <div key={r.id}><h4>{r.title} · {r.teacher}</h4><p>{r.subject} · الصف {r.grade} · {r.status}</p>{r.notes && <p>ملاحظات: {r.notes}</p>}</div>)}</details>}
+    {legacyReviews.length > 0 && <details className="short-test-item"><summary><strong>سجلات المراجعة السابقة ({legacyReviews.length})</strong></summary><p>سجلات محفوظة من الإصدار السابق، للرجوع إليها فقط. لم تُربط تلقائيًا بسجلات المتابعة.</p>{legacyReviews.map(r => <div key={r.id}><h4>{r.title} · {r.teacher}</h4><p>{r.subject} · الصف {r.grade} · {r.status}</p>{r.notes && <p>ملاحظات: {r.notes}</p>}<WorkEvidencePanel ownerType="review" ownerId={r.id} title={r.title} /></div>)}</details>}
   </section>;
 }
