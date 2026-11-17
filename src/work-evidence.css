@@ -1,0 +1,2 @@
+.work-evidence { margin:10px 0; border:1px solid #d8e7df; border-radius:10px; padding:10px; background:#f7fbf8; color:#285447; font-size:13px; }
+.work-evidence summary {cursor:pointer;font-weight:700}.work-evidence p{margin:7px 0}.work-evidence label{display:grid;gap:6px;margin-top:8px}.work-evidence-file{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.work-evidence button{padding:5px 9px;border:1px solid #c8ddd0;border-radius:7px;background:white;color:#245b4a;cursor:pointer}.work-evidence input{max-width:100%}

@@ -20,6 +20,7 @@ import { createProfessionalArchive, decodeProfessionalArchive, listProfessionalF
 import { SUPERVISORY_VISITS_KEY, isSupervisoryVisit } from './supervisory-visits-model';
 import { createVisitArchive, decodeVisitArchive, listVisitFiles, replaceVisitFiles, type VisitFile } from './supervisory-visit-files';
 import { assertVisitBackupCapacity, projectedBackupBytes } from './backup-capacity';
+import { listWorkEvidence, encodeWorkEvidence, decodeWorkEvidence, replaceWorkEvidence, type WorkEvidence } from './work-evidence';
 
 const FORMAT = 'nabd-al-injaz-full-backup';
 const VERSION = 1;
@@ -44,6 +45,7 @@ type AppBackup = {
   assessmentFiles: Awaited<ReturnType<typeof createAssessmentArchive>>;
   professionalFiles: Awaited<ReturnType<typeof createProfessionalArchive>>;
   supervisoryVisitFiles: Awaited<ReturnType<typeof createVisitArchive>>;
+  workEvidence: Awaited<ReturnType<typeof encodeWorkEvidence>>;
 };
 
 /** Caller holds the shared lock. Calculate payload size without encoding existing files. */
@@ -67,8 +69,9 @@ export async function ensureVisitFileFitsBackup(plans: Plan[], candidate: VisitF
   };
   const planSizes = planFiles.map(file => file.size);
   if (projectedBackupBytes(planArchive, planSizes) > MAX_PLANS_BACKUP_BYTES) throw new Error('الخطط والشواهد تتجاوز الحد المدعوم للنسخ؛ خفف حجم الملفات أولًا.');
-  const archive = { format: FORMAT, version: VERSION, createdAt: new Date().toISOString(), localData, plansAndEvidence: planArchive, assessmentFiles: assessmentFiles.map(fileStub), professionalFiles: professionalFiles.map(fileStub), supervisoryVisitFiles: visitFiles.map(fileStub) };
-  const sizes = [...planSizes, ...assessmentFiles.map(file => file.size), ...professionalFiles.map(file => file.size), ...visitFiles.map(file => file.size)];
+  const workFiles = await listWorkEvidence();
+  const archive = { format: FORMAT, version: VERSION, createdAt: new Date().toISOString(), localData, plansAndEvidence: planArchive, assessmentFiles: assessmentFiles.map(fileStub), professionalFiles: professionalFiles.map(fileStub), supervisoryVisitFiles: visitFiles.map(fileStub), workEvidence: workFiles.map(({blob, ...file}) => { void blob; return {...file, base64:''}; }) };
+  const sizes = [...planSizes, ...assessmentFiles.map(file => file.size), ...professionalFiles.map(file => file.size), ...visitFiles.map(file => file.size), ...workFiles.map(file => file.size)];
   assertVisitBackupCapacity(projectedBackupBytes(archive, sizes), MAX_BACKUP_BYTES, visitFiles.length);
 }
 
@@ -228,6 +231,34 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
       throw new Error('بيانات المتابعة الفنية في ملف النسخة غير صالحة.');
   }
 }
+
+function validateWorkLinks(data:Record<string,string>, files:WorkEvidence[]) {
+  const tasks:unknown = JSON.parse(data[STORAGE_KEY] ?? '[]');
+  const topics:unknown = JSON.parse(data[TECHNICAL_FOLLOWUP_STORAGE_KEY] ?? '[]');
+  if (!Array.isArray(tasks) || !Array.isArray(topics) || files.some(file => !(file.ownerType === 'task' ? tasks : topics).some(item => isRecord(item) && item.id === file.ownerId))) throw new Error('توجد شواهد غير مرتبطة بأعمالها؛ لم تتغير بياناتك.');
+}
+async function checkedWorkEvidence(data:Record<string,string>):Promise<WorkEvidence[]> {
+  const files = await listWorkEvidence();
+  validateWorkLinks(data, files);
+  return files;
+}
+/** Caller holds the shared lock; reject any file which would prevent a full backup. */
+export async function ensureWorkEvidenceFitsBackup(plans:Plan[], candidate:WorkEvidence):Promise<void> {
+  const localData:Record<string,string> = {};
+  for (const key of APP_STORAGE_KEYS) { const value=localStorage.getItem(key); if(value!==null)localData[key]=value; }
+  localData[SUPERVISORY_VISITS_KEY] ??= '[]';
+  validateLocalData(localData);
+  const workFiles=[...await checkedWorkEvidence(localData), candidate];
+  validateWorkLinks(localData, workFiles);
+  const archive={format:FORMAT,version:VERSION,createdAt:new Date().toISOString(),localData,
+    plansAndEvidence:await createPlansBackupArchive(plans),
+    assessmentFiles:await createAssessmentArchive(await listAssessmentFiles()),
+    professionalFiles:await createProfessionalArchive(await listProfessionalFiles()),
+    supervisoryVisitFiles:await createVisitArchive(await listVisitFiles()),
+    workEvidence:await encodeWorkEvidence(workFiles)};
+  if(workFiles.length>1000 || new Blob([JSON.stringify(archive)]).size>MAX_BACKUP_BYTES) throw new Error('لا يمكن إرفاق الشاهد لأن النسخة الكاملة ستتجاوز الحد المدعوم.');
+}
+
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
@@ -272,6 +303,7 @@ async function exportAppBackupLocked(plans: Plan[]): Promise<void> {
     assessmentFiles: await createAssessmentArchive(savedFiles),
     professionalFiles: await createProfessionalArchive(professionalFiles),
     supervisoryVisitFiles: await createVisitArchive(visitFiles),
+    workEvidence: await encodeWorkEvidence(await checkedWorkEvidence(localData)),
   };
   const backupBlob = new Blob([JSON.stringify(archive)], { type: 'application/json' });
   if (new Blob([JSON.stringify(archive.plansAndEvidence)]).size > MAX_PLANS_BACKUP_BYTES)
@@ -301,6 +333,14 @@ async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plan
     throw new Error('ملف النسخة لا يطابق نسخة المنظومة المعتمدة.');
   validateLocalData(parsed.localData);
 
+  const hasWorkFiles = Object.hasOwn(parsed, 'workEvidence');
+  const existingWorkFiles = await listWorkEvidence();
+  if (!hasWorkFiles && existingWorkFiles.length) {
+    try { validateWorkLinks(parsed.localData, existingWorkFiles); }
+    catch { throw new Error('هذه النسخة القديمة لا تتضمن بعض الأعمال المرتبطة بشواهدك الحالية؛ لم تُستعد البيانات.'); }
+  }
+  const nextWorkFiles = hasWorkFiles ? decodeWorkEvidence(parsed.workEvidence) : null;
+  if (nextWorkFiles) validateWorkLinks(parsed.localData, nextWorkFiles);
   const hasVisitFiles = Object.hasOwn(parsed, 'supervisoryVisitFiles');
   if (!hasVisitFiles && Object.hasOwn(parsed.localData, SUPERVISORY_VISITS_KEY)) throw new Error('نسخة الزيارات الإشرافية غير مكتملة؛ لم تُستعد البيانات.');
   if (hasVisitFiles && !Object.hasOwn(parsed.localData, SUPERVISORY_VISITS_KEY)) throw new Error('نسخة الزيارات الإشرافية غير مكتملة؛ لم تُستعد البيانات.');
@@ -347,6 +387,7 @@ async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plan
     if (nextAssessmentFiles) await replaceAssessmentFiles(nextAssessmentFiles);
     if (nextProfessionalFiles) await replaceProfessionalFiles(nextProfessionalFiles);
     if (nextVisitFiles) await replaceVisitFiles(nextVisitFiles);
+    if (nextWorkFiles) await replaceWorkEvidence(nextWorkFiles);
     const tasks = readTasks();
     return { tasks, plans };
   } catch (error) {
@@ -359,6 +400,7 @@ async function restoreAppBackupLocked(file: File): Promise<{ tasks: Task[]; plan
       if (previousAssessmentFiles) await replaceAssessmentFiles(previousAssessmentFiles);
       if (previousProfessionalFiles) await replaceProfessionalFiles(previousProfessionalFiles);
       if (previousVisitFiles) await replaceVisitFiles(previousVisitFiles);
+      if (nextWorkFiles) await replaceWorkEvidence(existingWorkFiles);
     } catch {
       throw new Error(
         'فشلت الاستعادة وتعذّر التراجع الآلي بالكامل؛ لا تغلق الصفحة، وحاول استعادة آخر نسخة سليمة.',
