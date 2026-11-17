@@ -130,11 +130,7 @@ test('home shows a truthful daily summary for every section', async ({ page }) =
   await expect(board.getByRole('button', { name: /الاختبارات والتحصيل.*لا توجد اختبارات مسجلة/ })).toBeVisible();
   await expect(board.getByRole('button', { name: /الإنماء المهني.*لا توجد برامج مسجلة/ })).toBeVisible();
   for (const name of ['الزيارات الإشرافية', 'الزيارات المتبادلة', 'الاجتماعات الدورية', 'رفع المستوى التحصيلي']) await expect(board.getByRole('button', { name: new RegExp(name) })).toBeVisible();
-  for (const name of ['التقارير']) {
-    await expect(
-      board.getByRole('button', { name: new RegExp(name + '.*القسم لم يُفعّل بعد') }),
-    ).toBeVisible();
-  }
+  await expect(board.getByRole('button', { name: /التقارير.*تقارير العمل والمتابعة/ })).toBeVisible();
 
   await board.getByRole('button', { name: /الجداول والاحتياط/ }).click();
   await expect(page.getByRole('heading', { name: 'الجداول والاحتياط', level: 1 })).toBeVisible();
