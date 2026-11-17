@@ -164,9 +164,8 @@ export default function DailySectionBoard({ tasks, plans, onNavigate }: Props) {
     {
       name: 'التقارير',
       icon: FileText,
-      status: 'القسم لم يُفعّل بعد',
-      detail: 'ستظهر التقارير بعد تنفيذ وظائف القسم',
-      pending: true,
+      status: 'تقارير العمل والمتابعة',
+      detail: 'تصفية السجلات وتجهيزها للطباعة',
     },
   ];
 

@@ -14,6 +14,7 @@ import ExecutiveDashboard from './ExecutiveDashboard';
 import DailySectionBoard from './DailySectionBoard';
 import UnifiedAgenda from './UnifiedAgenda';
 import AchievementRegister from './AchievementRegister';
+import Reports from './Reports';
 import PlanOverview from './PlanOverview';
 import PlanLibrary from './PlanLibrary';
 import ScheduleManager from './ScheduleManager';
@@ -191,6 +192,8 @@ export default function App() {
             /></details>
             <AppBackupTools plans={plans} setPlans={setPlans} setTasks={setTasks} />
           </>
+        ) : tab === 'التقارير' ? (
+          <Reports tasks={tasks} plans={plans} />
         ) : tab === 'الإنجازات والشواهد' ? (
           <AchievementRegister tasks={tasks} plans={plans} navigate={(section, planId, activityId) => {
             if (planId) { setSelectedPlanId(planId); setFocusedActivityId(activityId ?? null); setPlanCreateRequested(false); }
