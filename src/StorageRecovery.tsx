@@ -1,0 +1,10 @@
+import { useState } from 'react';
+import { restoreAppBackup } from './app-backup';
+import { STORAGE_KEY } from './task-model';
+import { PLAN_STORAGE_KEY } from './plan-model';
+import './storage-recovery.css';
+export default function StorageRecovery({issues}:{issues:string[]}){
+ const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
+ function downloadRaw(){try{const data={description:'بيانات الخطط والمهام الخام للفحص، وليست نسخة كاملة للاستعادة',tasks:localStorage.getItem(STORAGE_KEY),plans:localStorage.getItem(PLAN_STORAGE_KEY)};const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='nabd-raw-recovery.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch{setMessage('تعذر الوصول للبيانات الخام أو تنزيلها على هذا الجهاز.')}}
+ return <main className="storage-recovery" dir="rtl"><section><h1>تعذر فتح البيانات بأمان</h1><p role="alert">تعذرت قراءة بيانات: {issues.join('، ')}. أوقفنا الحفظ التلقائي حتى لا تُستبدل البيانات المحفوظة بقائمة فارغة.</p><p>يمكن تنزيل بيانات الخطط والمهام الخام للاحتفاظ بها، أو استعادة نسخة احتياطية كاملة سليمة من هذا التطبيق. ملف البيانات الخام للفحص فقط، ولا يشمل الشواهد أو بقية البيانات.</p><div className="storage-recovery-actions"><button type="button" onClick={downloadRaw} disabled={busy}>تنزيل البيانات الخام</button><label>استعادة نسخة كاملة<input type="file" accept=".json,application/json" disabled={busy} onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(!file||!window.confirm('ستستبدل النسخة المختارة بيانات هذا المتصفح. هل تريد الاستعادة؟'))return;setBusy(true);setMessage('جارٍ فحص النسخة واستعادتها…');void restoreAppBackup(file).then(()=>{setMessage('استُعيدت النسخة. أعد فتح التطبيق.');window.location.reload()}).catch((error:unknown)=>setMessage(error instanceof Error?error.message:'تعذرت استعادة النسخة.')).finally(()=>setBusy(false))}}/></label></div><p>إذا لم تتوفر نسخة كاملة، احتفظ بالبيانات الخام ولا تمسح بيانات المتصفح.</p>{message&&<p role="status">{message}</p>}</section></main>;
+}
