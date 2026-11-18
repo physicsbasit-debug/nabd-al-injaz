@@ -15,6 +15,8 @@ import DailySectionBoard from './DailySectionBoard';
 import UnifiedAgenda from './UnifiedAgenda';
 import AchievementRegister from './AchievementRegister';
 import Reports from './Reports';
+import StorageRecovery from './StorageRecovery';
+import { inspectStartupStorage } from './storage-safety';
 import PlanOverview from './PlanOverview';
 import PlanLibrary from './PlanLibrary';
 import ScheduleManager from './ScheduleManager';
@@ -43,6 +45,10 @@ const sections = [
   ['التقارير', FileText],
 ] as const;
 export default function App() {
+  const [issues] = useState(inspectStartupStorage);
+  return issues.length ? <StorageRecovery issues={issues} /> : <Workspace />;
+}
+function Workspace() {
   const [tab, setTab] = useState<string>('الرئيسية');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>(readTasks);
