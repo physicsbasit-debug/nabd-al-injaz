@@ -15,6 +15,7 @@ import { listProfessionalFiles } from './professional-development-files';
 import { buildReport, filterReport, type ReportRow } from './report-model';
 import './reports.css';
 import VisitReport from './VisitReport';
+import PlansReport from './PlansReport';
 type Props={tasks:Task[];plans:Plan[]};
 type Counts={plans:Set<string>;work:Set<string>;visits:Set<string>;programs:Set<string>};
 function GeneralReport({tasks,plans}:Props){
@@ -43,6 +44,6 @@ function GeneralReport({tasks,plans}:Props){
 }
 
 export default function Reports(props:Props){
- const [type,setType]=useState<'general'|'visits'>('general');
- return <div className="reports-container"><div className="report-type" role="group" aria-label="نوع التقرير"><button type="button" aria-pressed={type==='general'} onClick={()=>setType('general')}>تقرير العمل والمتابعة</button><button type="button" aria-pressed={type==='visits'} onClick={()=>setType('visits')}>تقرير الزيارات الإشرافية</button></div>{type==='general'?<GeneralReport {...props}/>:<VisitReport/>}</div>;
+ const [type,setType]=useState<'general'|'visits'|'plans'>('general');
+ return <div className="reports-container"><div className="report-type" role="group" aria-label="نوع التقرير"><button type="button" aria-pressed={type==='general'} onClick={()=>setType('general')}>تقرير العمل والمتابعة</button><button type="button" aria-pressed={type==='visits'} onClick={()=>setType('visits')}>تقرير الزيارات الإشرافية</button><button type="button" aria-pressed={type==='plans'} onClick={()=>setType('plans')}>تقرير الخطط والمهام</button></div>{type==='general'?<GeneralReport {...props}/>:type==='visits'?<VisitReport/>:<PlansReport {...props}/>}</div>;
 }
