@@ -7,5 +7,5 @@ test('تقرير العمل يصفي السجلات ويجهز تخطيط الط
 });
 
 test('يمنع تقريرًا مضللًا عند تعذر قراءة المتابعة الفنية',async({page},info)=>{
- await page.addInitScript(()=>localStorage.setItem('nabd-al-injaz:technical-followup:v1','{invalid'));await page.goto('/');if(info.project.name==='phone')await page.getByRole('button',{name:/عرض الأقسام/}).click();await page.getByRole('navigation',{name:info.project.name==='phone'?'أقسام الهاتف':'الأقسام الرئيسية'}).getByRole('button',{name:'التقارير',exact:true}).click();await expect(page.getByRole('alert')).toContainText('تعذرت قراءة بعض السجلات');await expect(page.getByRole('button',{name:'طباعة أو حفظ PDF'})).toBeDisabled();
+ await page.goto('/');await page.evaluate(()=>localStorage.setItem('nabd-al-injaz:technical-followup:v1','{invalid'));if(info.project.name==='phone')await page.getByRole('button',{name:/عرض الأقسام/}).click();await page.getByRole('navigation',{name:info.project.name==='phone'?'أقسام الهاتف':'الأقسام الرئيسية'}).getByRole('button',{name:'التقارير',exact:true}).click();await expect(page.getByRole('alert')).toContainText('تعذرت قراءة بعض السجلات');await expect(page.getByRole('button',{name:'طباعة أو حفظ PDF'})).toBeDisabled();
 });
