@@ -1,0 +1,4 @@
+import type {ProfessionalProgram} from './professional-development-model';
+export type ProfessionalFilters={teacher:string;status:string;from:string;to:string};
+export function filterProfessionalReport(programs:ProfessionalProgram[],f:ProfessionalFilters){const teacher=f.teacher.trim().toLocaleLowerCase('ar');return programs.filter(p=>(!teacher||p.presenter.toLocaleLowerCase('ar').includes(teacher)||Object.keys(p.attendance).some(n=>n.toLocaleLowerCase('ar').includes(teacher)))&&(f.status==='all'||(f.status==='done'?p.completed===true:p.completed!==true))&&(!f.from||p.date>=f.from)&&(!f.to||p.date<=f.to)).sort((a,b)=>b.date.localeCompare(a.date)||a.title.localeCompare(b.title,'ar'));}
+export function professionalReportStatus(p:ProfessionalProgram,today:string){return p.completed===true?(p.date>today?'مؤكد التنفيذ بتاريخ مستقبلي — تحقق من التاريخ':'مؤكد التنفيذ'):'لم يؤكد التنفيذ';}
