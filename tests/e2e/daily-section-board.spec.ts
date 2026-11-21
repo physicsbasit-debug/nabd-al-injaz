@@ -86,18 +86,18 @@ test('home shows a truthful daily summary for every section', async ({ page }) =
       'nabd-al-injaz:schedules:v1',
       JSON.stringify({
         teachers: ['أحمد', 'سالم'],
-        lessons: [{ id: 'lesson', teacher: 'أحمد', day, period: 1, description: '10/1 فيزياء' }],
-        verifiedDays: [
+        lessons: day ? [{ id: 'lesson', teacher: 'أحمد', day, period: 1, description: '10/1 فيزياء' }] : [],
+        verifiedDays: day ? [
           { teacher: 'أحمد', day },
           { teacher: 'سالم', day },
-        ],
+        ] : [],
       }),
     );
     localStorage.setItem(
       'nabd-al-injaz:cover-drafts:v1',
       JSON.stringify({
         version: 1,
-        days: { [today]: { absent: ['أحمد'], assignments: [] } },
+        days: day ? { [today]: { absent: ['أحمد'], assignments: [] } } : {},
       }),
     );
   });
