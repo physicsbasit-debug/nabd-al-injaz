@@ -16,3 +16,4 @@
   .report-type{grid-template-columns:repeat(2,minmax(0,1fr))}
   .report-type button{padding:9px 8px}
 }
+.pdf-export-control{align-self:end;min-width:0}.pdf-export-control p{font-size:13px;line-height:1.6;margin:8px 0 0}.pdf-export-control a{display:inline-block;color:#176754;font-weight:700}.pdf-export-control [role=alert]{color:#984021}
