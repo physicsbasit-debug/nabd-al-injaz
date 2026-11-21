@@ -1,3 +1,4 @@
+import { PdfExport } from './PdfExport';
 import { useEffect, useState } from 'react';
 import { localDateKey } from './dashboard-metrics';
 import { readSupervisoryVisits, type SupervisoryVisit } from './supervisory-visits-model';
@@ -21,7 +22,7 @@ export default function VisitReport(){
    <label>حالة الزيارة<select value={filters.status} onChange={e=>setFilters({...filters,status:e.target.value as VisitReportFilters['status']})}><option value="all">الجميع</option><option value="planned">مخططة</option><option value="completed">منفذة</option></select></label>
    <label>من تاريخ<input type="date" value={filters.from} onChange={e=>setFilters({...filters,from:e.target.value})}/></label>
    <label>إلى تاريخ<input type="date" value={filters.to} onChange={e=>setFilters({...filters,to:e.target.value})}/></label>
-   <button type="button" disabled={!!error||!visits||!files||invalid} onClick={()=>window.print()}>طباعة أو حفظ PDF</button>
+   <PdfExport disabled={!!error||!visits||!files||invalid} filename="visits-report.pdf" />
   </div>
   {invalid&&<p role="alert">تاريخ البداية بعد تاريخ النهاية.</p>}{error&&<p role="alert">{error}</p>}
   {!error&&visits&&files&&<div className="report-preview" dir="rtl">
