@@ -26,7 +26,7 @@ export default function VisitReport(){
   </div>
   {invalid&&<p role="alert">تاريخ البداية بعد تاريخ النهاية.</p>}{error&&<p role="alert">{error}</p>}
   {!error&&visits&&files&&<div className="report-preview" dir="rtl">
-   <header className="report-document-header"><p>سلطنة عُمان · مدرسة الباسط للتعليم الأساسي (8–10)</p><h2>تقرير الزيارات الإشرافية</h2><p>تاريخ إعداد التقرير: {today}</p></header>
+   <header className="report-document-header"><div className="report-official-identity"><p>سلطنة عُمان</p><p>وزارة التعليم</p><p>مدرسة الباسط للتعليم الأساسي (8–10)</p></div><h2>تقرير الزيارات الإشرافية</h2><p>تاريخ إعداد التقرير: {today}</p></header>
    <div className="report-scope"><span>المعلم: {filters.teacher||'الجميع'}</span><span>الحالة: {filters.status==='all'?'الجميع':filters.status==='planned'?'مخططة':'منفذة'}</span><span>الفترة: {filters.from||'البداية'} — {filters.to||'دون حد'}</span><span>عدد الزيارات: {visible.length}</span></div>
    <p className="report-note">يعرض التقرير حالة الزيارة المسجلة ومتابعتها، ولا يتضمن تقييمًا للمعلم. عند تحديد فترة تُستبعد الزيارات بلا تاريخ. الشواهد المشار إليها محفوظة في التطبيق ولا تُضمّن ملفاتها داخل التقرير.</p>
    <div className="visit-report-list">{visible.map(v=>{const witnesses=files.filter(f=>f.recordId===v.id);return <article className="visit-report-card" key={v.id}>
