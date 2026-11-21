@@ -13,3 +13,15 @@ test('لوحة المتابعة تعرض البنود المسجلة وتفتح 
   await agenda.getByRole('button', {name: /نشاط للمتابعة/}).click();
   await expect(page.locator('.plan-activity-list')).toContainText('نشاط للمتابعة');
 });
+
+test('تظهر متابعة الاختبارات والبرامج السابقة والأعمال البعيدة في الكشاف', async ({page}) => {
+ await page.addInitScript(() => {
+  localStorage.setItem('nabd-al-injaz:professional-development:v1', JSON.stringify([{id:'past',title:'برنامج سابق',kind:'مشغل',date:'2000-01-01',period:'',presenter:'معلم',notes:'',attendance:{},completed:false}]));
+  localStorage.setItem('nabd-al-injaz:assessment-tracking:v1', JSON.stringify([{id:'exam',title:'اختبار مفتوح',teacher:'معلم',subject:'فيزياء',grade:'10',reviewed:true,submitted:false,analyzed:false,notes:''}]));
+ });
+ await page.goto('/');
+ const agenda=page.getByRole('region',{name:'متابعة الأعمال الموحدة'});
+ await expect(agenda.getByRole('button',{name:/برنامج سابق/})).toBeVisible();
+ await agenda.getByText('دون موعد',{exact:true}).click();
+ await expect(agenda.getByRole('button',{name:/اختبار مفتوح/})).toBeVisible();
+});

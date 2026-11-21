@@ -9,6 +9,7 @@ describe('unified agenda', () => {
     expect(result.week.map(x => x.id)).toEqual(['visit:v']);
     expect(result.overdue.map(x => x.id)).toEqual(['task:late']);
     expect(result.undated.map(x => x.id)).toEqual(['task:undated']);
+    expect(result.later.map(x => x.id)).toEqual(['task:future']);
     expect(result.completed[0].completionDate).toBeNull();
   });
   it('keeps archived completed activities and excludes archived open activities', () => {
@@ -17,5 +18,13 @@ describe('unified agenda', () => {
     const result = buildAgenda({today: '2026-11-17', tasks: [], plans, visits: [], topics: [], programs: []});
     expect(result.completed.map(x => x.id)).toEqual(['activity:p:a']);
     expect(result.undated).toHaveLength(0);
+  });
+});
+
+describe('open work coverage', () => {
+  it('shows past unconfirmed programs as overdue and open assessment and review records without inventing dates', () => {
+    const result = buildAgenda({today:'2026-11-17',tasks:[],plans:[],visits:[],topics:[],programs:[{id:'p',title:'برنامج سابق',date:'2026-11-10',completed:false} as never], assessments:[{id:'a',title:'اختبار',teacher:'سالم',reviewed:true,submitted:false,analyzed:false} as never], reviews:[{id:'r',title:'مراجعة',teacher:'خالد',status:'يحتاج تعديلًا'} as never]});
+    expect(result.overdue.map(x=>x.id)).toContain('program:p');
+    expect(result.undated.map(x=>x.id)).toEqual(expect.arrayContaining(['assessment:a','review:r']));
   });
 });
