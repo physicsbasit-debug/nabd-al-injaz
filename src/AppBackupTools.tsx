@@ -3,6 +3,7 @@ import { exportAppBackup, restoreAppBackup } from './app-backup';
 import type { Plan } from './plan-model';
 import type { Task } from './task-model';
 import './app-backup.css';
+import GoogleDriveBackup from './GoogleDriveBackup';
 
 type Props = {
   plans: Plan[];
@@ -75,6 +76,7 @@ export default function AppBackupTools({ plans, setPlans, setTasks }: Props) {
         مكان موثوق.
       </small>
       {message && <p role="status">{message}</p>}
+      <GoogleDriveBackup plans={plans} setPlans={setPlans} setTasks={setTasks} />
     </details>
   );
 }

@@ -72,3 +72,4 @@
     min-height: 42px;
   }
 }
+.drive-backup{margin-top:12px;padding:12px;border:1px solid #d1e4d8;border-radius:10px;background:#f8fcf9}.drive-backup summary{cursor:pointer;font-weight:700}.drive-backup p{line-height:1.6}.drive-backup label{display:grid;gap:5px;margin:8px 0}.drive-backup input{max-width:100%;padding:8px;border:1px solid #c9ddd1;border-radius:7px;font:inherit}.drive-backup button{margin:4px;padding:8px 12px;border:1px solid #bdd6c8;border-radius:7px;background:white;color:#14533e;font:inherit;cursor:pointer}.drive-backup ul{padding-inline-start:20px}

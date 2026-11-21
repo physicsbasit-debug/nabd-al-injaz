@@ -274,10 +274,14 @@ function download(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export async function exportAppBackup(plans: Plan[]): Promise<void> {
-  return withAssessmentLock(() => exportAppBackupLocked(plans));
+export async function createAppBackupBlob(plans: Plan[]): Promise<Blob> {
+  return withAssessmentLock(() => createAppBackupBlobLocked(plans));
 }
-async function exportAppBackupLocked(plans: Plan[]): Promise<void> {
+export async function exportAppBackup(plans: Plan[]): Promise<void> {
+  const blob = await createAppBackupBlob(plans);
+  download(blob, 'nabd-al-injaz-backup-' + new Date().toISOString().slice(0, 10) + '.json');
+}
+async function createAppBackupBlobLocked(plans: Plan[]): Promise<Blob> {
   const localData: Record<string, string> = {};
   for (const key of APP_STORAGE_KEYS) {
     const value = localStorage.getItem(key);
@@ -313,7 +317,7 @@ async function exportAppBackupLocked(plans: Plan[]): Promise<void> {
   if (new Blob([JSON.stringify(archive.plansAndEvidence)]).size > MAX_PLANS_BACKUP_BYTES)
     throw new Error('حجم الخطط والشواهد يتجاوز الحد المدعوم للنسخ.');
   if (backupBlob.size > MAX_BACKUP_BYTES) throw new Error('حجم النسخة الكاملة يتجاوز 128MB.');
-  download(backupBlob, 'nabd-al-injaz-backup-' + new Date().toISOString().slice(0, 10) + '.json');
+  return backupBlob;
 }
 
 export async function restoreAppBackup(file: File): Promise<{ tasks: Task[]; plans: Plan[] }> {
