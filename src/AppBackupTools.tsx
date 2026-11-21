@@ -15,6 +15,7 @@ export default function AppBackupTools({ plans, setPlans, setTasks }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   return (
+    <>
     <details className="app-backup-tools">
       <summary>نقل نسخة المنظومة بين الأجهزة</summary>
       <p>ملف واحد يحوي المهام والخطط والشواهد والجداول وسجل الاحتياط والمتابعة الفنية والاختبارات والإنماء المهني والزيارات الإشرافية.</p>
@@ -76,7 +77,8 @@ export default function AppBackupTools({ plans, setPlans, setTasks }: Props) {
         مكان موثوق.
       </small>
       {message && <p role="status">{message}</p>}
-      <GoogleDriveBackup plans={plans} setPlans={setPlans} setTasks={setTasks} />
     </details>
+    <GoogleDriveBackup plans={plans} setPlans={setPlans} setTasks={setTasks} />
+    </>
   );
 }
