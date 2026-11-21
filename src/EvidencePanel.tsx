@@ -1,3 +1,4 @@
+import EvidenceSuggestions from './EvidenceSuggestions';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import {
@@ -90,6 +91,7 @@ export default function EvidencePanel({ planId, activityId, activityTitle, onClo
           إغلاق
         </button>
       </div>
+      <EvidenceSuggestions context="activity" title={activityTitle} />
       <p className="evidence-info">
         رفع الشاهد لا يغيّر حالة تنفيذ النشاط. تُحفظ الملفات في هذا المتصفح فقط، وقد تُفقد عند مسح
         بياناته.
