@@ -17,3 +17,5 @@
   .report-type button{padding:9px 8px}
 }
 .pdf-export-control{align-self:end;min-width:0}.pdf-export-control p{font-size:13px;line-height:1.6;margin:8px 0 0}.pdf-export-control a{display:inline-block;color:#176754;font-weight:700}.pdf-export-control [role=alert]{color:#984021}
+
+.report-official-identity{display:grid;gap:2px;margin-bottom:10px}.report-official-identity p{margin:0;font-weight:700;line-height:1.45;color:#325c4d}.general-report-table{table-layout:fixed}.general-report-table th,.general-report-table td{overflow-wrap:anywhere}
