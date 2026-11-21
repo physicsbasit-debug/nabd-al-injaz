@@ -22,6 +22,6 @@ test('تظهر متابعة الاختبارات والبرامج السابقة
  await page.goto('/');
  const agenda=page.getByRole('region',{name:'متابعة الأعمال الموحدة'});
  await expect(agenda.getByRole('button',{name:/برنامج سابق/})).toBeVisible();
- await agenda.getByText('دون موعد',{exact:true}).click();
+ await agenda.locator('summary').filter({hasText:'دون موعد'}).click();
  await expect(agenda.getByRole('button',{name:/اختبار مفتوح/})).toBeVisible();
 });
