@@ -1,3 +1,4 @@
+import EvidenceSuggestions from './EvidenceSuggestions';
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { readPlans, type Plan } from './plan-model';
 import { activitiesForDestination } from './plan-routing';
@@ -181,7 +182,7 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
         {plan && activity && <button type="button" onClick={() => onOpenPlan(plan.id, activity.id)}>فتح نشاط الخطة</button>}
         {record.documentation && <p><strong>ملاحظة التوثيق:</strong> {record.documentation}</p>}
         {(record.strengths || record.improvements || record.recommendations || record.followUp) && <details className="visit-legacy-notes"><summary>ملاحظات محفوظة من إصدار سابق</summary>{record.strengths && <p><strong>الجوانب الإيجابية:</strong> {record.strengths}</p>}{record.improvements && <p><strong>جوانب التحسين:</strong> {record.improvements}</p>}{record.recommendations && <p><strong>التوصيات:</strong> {record.recommendations}</p>}{record.followUp && <p><strong>المتابعة اللاحقة:</strong> {record.followUp}</p>}</details>}
-        <div className="assessment-file-group"><h4>شواهد الزيارة</h4>
+        <div className="assessment-file-group"><h4>شواهد الزيارة</h4><EvidenceSuggestions context="visit" />
           {files.filter(file => file.recordId === record.id).map(file => <div className="assessment-file-row" key={file.id}><span>{file.name}</span><div><button type="button" onClick={() => download(file)}>تنزيل الشاهد</button> <button type="button" disabled={busy} onClick={() => void removeFile(file)}>حذف الشاهد</button></div></div>)}
           <label className="assessment-file-upload">إرفاق شاهد للزيارة<input type="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" disabled={busy} onChange={e => { const file = e.target.files?.[0]; e.currentTarget.value = ''; void addFile(record, file); }} /></label>
         </div>
