@@ -26,7 +26,7 @@ test('approved imported activity appears in its section after reload', async ({ 
   await page.getByRole('button', { name: 'تحديد الكل' }).click();
   await page.getByRole('button', { name: /اعتماد 1 نشاط/ }).click();
   await navigate('الزيارات المتبادلة');
-  const section = page.getByRole('region', { name: 'أنشطة الخطط: الزيارات المتبادلة' });
+  const section = page.getByRole('region', { name: 'سجل الزيارات المتبادلة' });
   await expect(section.getByText('الزيارات المتبادلة بين المعلمين', { exact: true })).toHaveCount(1);
   await page.reload();
   await navigate('الزيارات المتبادلة');
@@ -58,7 +58,7 @@ test('opening a section activity selects its page in a long plan', async ({ page
   if (phone) await page.getByRole('button', { name: /عرض الأقسام/ }).click();
   await page.getByRole('navigation', { name: phone ? 'أقسام الهاتف' : 'الأقسام الرئيسية' })
     .getByRole('button', { name: 'الزيارات المتبادلة', exact: true }).click();
-  await page.getByRole('region', { name: 'أنشطة الخطط: الزيارات المتبادلة' })
+  await page.getByRole('region', { name: 'سجل الزيارات المتبادلة' })
     .getByRole('button', { name: 'فتح الخطة' }).click();
   await expect(page.locator('.plan-activity-list')).toContainText('نشاط رقم 9');
 });

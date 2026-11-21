@@ -25,6 +25,7 @@ import AssessmentTracking from './AssessmentTracking';
 import ProfessionalDevelopment from './ProfessionalDevelopment';
 import AppBackupTools from './AppBackupTools';
 import PlanSectionActivities from './PlanSectionActivities';
+import SectionRegister from './SectionRegister';
 import SupervisoryVisits from './SupervisoryVisits';
 import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, type SupervisoryVisit, type SupervisoryVisitForm } from './supervisory-visits-model';
 import { PLAN_DESTINATIONS, type PlanDestination } from './plan-routing';
@@ -250,7 +251,7 @@ function Workspace() {
             }} />
           </>
         ) : PLAN_DESTINATIONS.includes(tab as PlanDestination) ? (
-          <PlanSectionActivities plans={plans} destination={tab as PlanDestination} onOpenPlan={(id, activityId) => {
+          <SectionRegister key={tab} plans={plans} setPlans={setPlans} destination={tab as 'الاجتماعات الدورية' | 'الزيارات المتبادلة' | 'رفع المستوى التحصيلي'} onOpenPlan={(id, activityId) => {
             setSelectedPlanId(id);
             setFocusedActivityId(activityId);
             setPlanCreateRequested(false);
