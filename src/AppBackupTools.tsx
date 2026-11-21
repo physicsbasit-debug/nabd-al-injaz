@@ -3,6 +3,7 @@ import { exportAppBackup, restoreAppBackup } from './app-backup';
 import type { Plan } from './plan-model';
 import type { Task } from './task-model';
 import './app-backup.css';
+import GoogleDriveBackup from './GoogleDriveBackup';
 
 type Props = {
   plans: Plan[];
@@ -14,6 +15,7 @@ export default function AppBackupTools({ plans, setPlans, setTasks }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   return (
+    <>
     <details className="app-backup-tools">
       <summary>نقل نسخة المنظومة بين الأجهزة</summary>
       <p>ملف واحد يحوي المهام والخطط والشواهد والجداول وسجل الاحتياط والمتابعة الفنية والاختبارات والإنماء المهني والزيارات الإشرافية.</p>
@@ -76,5 +78,7 @@ export default function AppBackupTools({ plans, setPlans, setTasks }: Props) {
       </small>
       {message && <p role="status">{message}</p>}
     </details>
+    <GoogleDriveBackup plans={plans} setPlans={setPlans} setTasks={setTasks} />
+    </>
   );
 }
