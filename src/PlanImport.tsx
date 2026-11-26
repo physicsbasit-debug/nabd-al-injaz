@@ -87,6 +87,9 @@ export default function PlanImport({ onApprove, existingTitles }: Props) {
             {valid.length}
           </p>
           <p>
+            اختر الأنشطة أولًا؛ الرقم صفر يعني عدم اختيار أي نشاط بعد، وليس فشل القراءة.
+          </p>
+          <p>
             راجع العنوان والمسؤول وتاريخ الاستحقاق لكل نشاط. الحقول غير الموجودة في الملف تظل غير
             محددة.
           </p>
@@ -123,6 +126,9 @@ export default function PlanImport({ onApprove, existingTitles }: Props) {
                     )
                   }
                 />
+                {c.details && <label>تفاصيل النشاط
+                  <textarea aria-label={'تفاصيل النشاط: ' + c.source} value={c.details} maxLength={1000} onChange={e => setItems(old => old.map(x => x.key === c.key ? {...x, details:e.target.value} : x))} />
+                </label>}
                 <label>القسم المقترح
                   <select aria-label={'قسم النشاط: ' + c.source} value={c.destination ?? ''} onChange={(e) => setItems(old => old.map(x => x.key === c.key ? { ...x, destination: (e.target.value || undefined) as PlanDestination | undefined } : x))}>
                     <option value="">غير محدد — اختر القسم</option>
