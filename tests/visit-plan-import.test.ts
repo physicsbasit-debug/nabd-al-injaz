@@ -10,7 +10,7 @@ describe('visit plan tables', () => {
       ['تنبيه: التواريخ مقترحة'],
     ]);
     expect(supervisory).toHaveLength(1);
-    expect(supervisory?.[0]).toMatchObject({ title: 'زيارة إشرافية إلى معلم تجريبي – الفصل الأول', assignee: 'معلم تجريبي', dueDate: '2026-09-15', destination: 'الزيارات الإشرافية' });
+    expect(supervisory?.[0]).toMatchObject({ title: 'زيارة إشرافية إلى معلم تجريبي – الفصل الأول', assignee: '', dueDate: '2026-09-15', destination: 'الزيارات الإشرافية' });
     const peer = visitPlanRows('الفصل الثاني', [
       ['م', 'التخصص', 'المعلم الزائر', 'المعلم المستضيف', 'التاريخ المقترح', 'التاريخ الفعلي', 'حالة المتابعة'],
       [1, 'الكيمياء', 'معلم زائر', 'معلم مستضيف', '2027/02/09', '', 'لم تنفذ'],

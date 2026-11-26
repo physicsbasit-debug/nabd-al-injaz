@@ -36,6 +36,6 @@ export function visitPlanRows(sheet: string, rows: unknown[][]): ImportCandidate
       dueDate ? `التاريخ المقترح: ${dueDate}` : '',
       ...fields.map((field) => { const index = col(field); const value = index < 0 ? '' : row[index]; return value ? `${field}: ${value instanceof Date ? dateValue(value) : clean(value)}` : ''; }),
     ].filter(Boolean).join(' | ');
-    return [{ key: `${sheet}:${headerIndex + offset + 2}`, source: `${sheet}، صف ${headerIndex + offset + 2}`, title, assignee: name, dueDate, details, destination: peer ? 'الزيارات المتبادلة' as const : 'الزيارات الإشرافية' as const }];
+    return [{ key: `${sheet}:${headerIndex + offset + 2}`, source: `${sheet}، صف ${headerIndex + offset + 2}`, title, assignee: peer ? name : '', dueDate, details, destination: peer ? 'الزيارات المتبادلة' as const : 'الزيارات الإشرافية' as const }];
   });
 }
