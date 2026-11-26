@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 
 const SPREADSHEET_NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 
-async function excelJsCompatibleData(data: ArrayBuffer): Promise<Uint8Array> {
+export async function excelJsCompatibleData(data: ArrayBuffer): Promise<Uint8Array> {
   const archive = await JSZip.loadAsync(data);
   for (const entry of Object.values(archive.files)) {
     if (entry.dir || !entry.name.startsWith('xl/') || !entry.name.endsWith('.xml')) continue;
