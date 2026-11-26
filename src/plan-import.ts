@@ -1,5 +1,7 @@
 import { proposePlanDestination, type PlanDestination } from './plan-routing';
 import type { PlanActivity } from './plan-model';
+import { visitPlanRows } from './visit-plan-import';
+import { excelJsCompatibleData } from './schedule-import';
 import { extractPlanActivities, type PdfPlanPage } from './pdf-plan-layout';
 
 export type ImportCandidate = {
@@ -58,9 +60,18 @@ export async function previewPlanFile(file: File): Promise<ImportPreview> {
   if (ext === 'xlsx') {
     const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(buffer as Parameters<typeof workbook.xlsx.load>[0]);
+    await workbook.xlsx.load((await excelJsCompatibleData(buffer)) as Parameters<typeof workbook.xlsx.load>[0]);
     const candidates: ImportCandidate[] = [];
+    let foundVisitPlan = false;
     for (const sheet of workbook.worksheets.slice(0, 20)) {
+      const rows: unknown[][] = [];
+      sheet.eachRow({ includeEmpty: true }, (row) => { rows.push((row.values as unknown[]).slice(1)); });
+      const visitRows = visitPlanRows(sheet.name, rows);
+      if (visitRows !== null) {
+        foundVisitPlan = true;
+        candidates.push(...visitRows.slice(0, Math.max(0, MAX_CANDIDATES - candidates.length)));
+        continue;
+      }
       sheet.eachRow((row, index) => {
         if (candidates.length >= MAX_CANDIDATES) return;
         const values = row.values as unknown[];
@@ -106,6 +117,7 @@ export async function previewPlanFile(file: File): Promise<ImportPreview> {
       filename,
       candidates,
       warnings: [
+        ...(foundVisitPlan ? ['تواريخ الزيارات مقترحة؛ راجعها ونسّقها قبل الاعتماد. تُستورد كسجلات في الخطة للمتابعة، ولا تُعد زيارات منفذة.'] : []),
         'صفوف Excel مقترحات فقط. تحقق من عنوان النشاط والحقول قبل الاستيراد. لا يتم استيراد المعادلات أو الصور أو تنسيق الخطة.',
       ],
     };

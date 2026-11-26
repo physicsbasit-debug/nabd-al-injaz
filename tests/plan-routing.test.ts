@@ -1,3 +1,4 @@
+import './visit-plan-import.test';
 import { describe, expect, it } from 'vitest';
 import { activitiesForDestination, proposePlanDestination } from '../src/plan-routing';
 describe('plan destination suggestions', () => {
