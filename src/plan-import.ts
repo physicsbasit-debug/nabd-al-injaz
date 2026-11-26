@@ -1,5 +1,6 @@
 import { proposePlanDestination, type PlanDestination } from './plan-routing';
 import type { PlanActivity } from './plan-model';
+import { extractPlanActivities, type PdfPlanPage } from './pdf-plan-layout';
 
 export type ImportCandidate = {
   key: string;
@@ -122,10 +123,12 @@ export async function previewPlanFile(file: File): Promise<ImportPreview> {
   const pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer), useSystemFonts: true })
     .promise;
   const lines: string[] = [];
+  const layoutPages: PdfPlanPage[] = [];
   const pages = Math.min(pdf.numPages, 40);
   for (let i = 1; i <= pages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
+    layoutPages.push({page:i,items:content.items.flatMap(item=>'str' in item && 'transform' in item ? [{str:item.str,x:item.transform[4],y:item.transform[5],width:item.width}] : [])});
     let line = '';
     for (const item of content.items) {
       if (!('str' in item)) continue;
@@ -136,6 +139,20 @@ export async function previewPlanFile(file: File): Promise<ImportPreview> {
       }
     }
     if (line.trim()) lines.push(line);
+  }
+  const structured = extractPlanActivities(layoutPages);
+  if (structured !== null) {
+    const candidates = structured.slice(0, MAX_CANDIDATES).map((item, index) => {
+      const full = item.text.replace(/\s+/g, ' ').trim().slice(0, 1000);
+      const title = full.length > 160 ? full.slice(0, 157).trimEnd() + '…' : full;
+      return {key:'pdf-activity-'+index,source:'صفحة '+item.page+'، نشاط '+(index+1),title,assignee:'',dueDate:'',details:full,destination:proposePlanDestination(full) ?? undefined};
+    });
+    const warnings = ['استُخرجت الأنشطة من عمود الأساليب والأنشطة. راجع النصوص والأقسام قبل الاعتماد؛ قد تؤثر خطوط PDF في دقة الحروف.'];
+    if (structured.some(item => item.text.length > 1000)) warnings.push('اختُصرت تفاصيل بعض الأنشطة الطويلة إلى 1000 حرف؛ راجع الأصل.');
+    if (structured.length > MAX_CANDIDATES) warnings.push('عُرض أول 300 نشاط فقط.');
+    if (pdf.numPages > pages) warnings.push('تم فحص أول 40 صفحة فقط.');
+    if (!candidates.length) warnings.push('لم تُكتشف أنشطة مرقمة في الجدول؛ راجع الملف أو استخدم نسخة Excel.');
+    return {filename,candidates,warnings};
   }
   const preview = fromLines(lines, filename, 'مقطع');
   if (pdf.numPages > pages) preview.warnings.push('تم فحص أول 40 صفحة فقط.');
