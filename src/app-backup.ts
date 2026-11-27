@@ -19,6 +19,7 @@ import { PROFESSIONAL_DEVELOPMENT_KEY, isProfessionalProgram } from './professio
 import { createProfessionalArchive, decodeProfessionalArchive, listProfessionalFiles, replaceProfessionalFiles } from './professional-development-files';
 import { SUPERVISORY_VISITS_KEY, isSupervisoryVisit } from './supervisory-visits-model';
 import { DUTY_ROUTINE_KEY, isRoutineStore } from './duty-routine';
+import { TEACHER_PROFILES_KEY, isTeacherStore } from './teacher-profile-model';
 import { createVisitArchive, decodeVisitArchive, listVisitFiles, replaceVisitFiles, type VisitFile } from './supervisory-visit-files';
 import { assertVisitBackupCapacity, projectedBackupBytes } from './backup-capacity';
 import { listWorkEvidence, encodeWorkEvidence, decodeWorkEvidence, replaceWorkEvidence, type WorkEvidence } from './work-evidence';
@@ -37,6 +38,7 @@ const APP_STORAGE_KEYS = [
   PROFESSIONAL_DEVELOPMENT_KEY,
   SUPERVISORY_VISITS_KEY,
   DUTY_ROUTINE_KEY,
+  TEACHER_PROFILES_KEY,
 ];
 type AppBackup = {
   format: string;
@@ -196,6 +198,10 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
           )))
     )
       throw new Error('سجل الاحتياط في ملف النسخة غير صالح.');
+  }
+  if (data[TEACHER_PROFILES_KEY] !== undefined) {
+    const profiles = parseJson(data[TEACHER_PROFILES_KEY], 'ملفات المعلمين');
+    if (!isTeacherStore(profiles)) throw new Error('بيانات ملفات المعلمين في النسخة غير صالحة.');
   }
   if (data[DUTY_ROUTINE_KEY] !== undefined) {
     const routine = parseJson(data[DUTY_ROUTINE_KEY], 'روتين الواجبات');

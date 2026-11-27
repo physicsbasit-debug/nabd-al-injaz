@@ -8,6 +8,7 @@ import {
   Medal,
   FileText,
   BookOpenCheck,
+  Contact,
 } from 'lucide-react';
 import TaskManager, { readTasks, STORAGE_KEY, type Task } from './TaskManager';
 import { toggleTaskCompletion } from './task-model';
@@ -16,6 +17,7 @@ import DailySectionBoard from './DailySectionBoard';
 import UnifiedAgenda from './UnifiedAgenda';
 import MorningBrief from './MorningBrief';
 import DutyGuide from './DutyGuide';
+import TeacherProfiles from './TeacherProfiles';
 import AchievementRegister from './AchievementRegister';
 import Reports from './Reports';
 import StorageRecovery from './StorageRecovery';
@@ -36,6 +38,7 @@ import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
   ['الرئيسية', Activity],
   ['دليل الواجبات', BookOpenCheck],
+  ['ملفات المعلمين', Contact],
   ['الخطط والمهام', ClipboardCheck],
   ['مكتبة الخطط', ClipboardCheck],
   ['الجداول والاحتياط', CalendarDays],
@@ -258,6 +261,8 @@ function Workspace() {
               setTab('مكتبة الخطط');
             }} />
           </>
+        ) : tab === 'ملفات المعلمين' ? (
+          <TeacherProfiles plans={plans} onNavigate={(section) => { setTab(section); setMobileMenuOpen(false); }} />
         ) : tab === 'دليل الواجبات' ? (
           <DutyGuide tasks={tasks} plans={plans} onNavigate={(section) => { setTab(section); setMobileMenuOpen(false); }} />
         ) : PLAN_DESTINATIONS.includes(tab as PlanDestination) ? (
