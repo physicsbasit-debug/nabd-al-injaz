@@ -1,4 +1,10 @@
 import { test, expect } from '@playwright/test';
+
+// اللوحة التفصيلية في الرئيسية مطوية افتراضيًا؛ هذه الاختبارات تتحقق من محتواها فتفتحها كما يفعل المستخدم مرة واحدة.
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => localStorage.setItem('nabd-al-injaz:ui:home-details-open', '1'));
+});
+
 test('creates independent plans and updates home indicators from real activities', async ({
   page,
 }, testInfo) => {

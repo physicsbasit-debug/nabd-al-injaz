@@ -1,5 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { exportAppBackup, restoreAppBackup } from './app-backup';
+import { markBackupDone } from './backup-reminder';
 import type { Plan } from './plan-model';
 import type { Task } from './task-model';
 import './app-backup.css';
@@ -27,7 +28,10 @@ export default function AppBackupTools({ plans, setPlans, setTasks }: Props) {
             setBusy(true);
             setMessage('');
             void exportAppBackup(plans)
-              .then(() => setMessage('جُهزت النسخة للتنزيل.'))
+              .then(() => {
+                markBackupDone();
+                setMessage('جُهزت النسخة للتنزيل.');
+              })
               .catch((error: unknown) =>
                 setMessage(error instanceof Error ? error.message : 'تعذّر إنشاء النسخة.'),
               )

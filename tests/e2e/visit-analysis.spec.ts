@@ -5,6 +5,10 @@ test('أسلوب الإشراف ومؤشرات الأداء يغذيان الت�
     if (localStorage.getItem('seeded')) return;
     localStorage.setItem('seeded', '1');
     localStorage.setItem(
+      'nabd-al-injaz:duty-routine:v1',
+      JSON.stringify({ version: 1, done: {}, frequency: { 7: 'فصلي', 12: 'شهري', 15: 'شهري' } }),
+    );
+    localStorage.setItem(
       'nabd-al-injaz:schedules:v1',
       JSON.stringify({ teachers: ['أحمد سعيد', 'سالم الهنائي'], lessons: [], verifiedDays: [] }),
     );

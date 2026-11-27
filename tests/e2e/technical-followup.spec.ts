@@ -1,6 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
 import { SCHEDULE_STORAGE_KEY } from '../../src/schedule-model';
 
+// اللوحة التفصيلية في الرئيسية مطوية افتراضيًا؛ هذه الاختبارات تتحقق من محتواها فتفتحها كما يفعل المستخدم مرة واحدة.
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => localStorage.setItem('nabd-al-injaz:ui:home-details-open', '1'));
+});
+
+
 async function dateOffset(page: Page, days: number) {
   return page.evaluate((offset) => {
     const date = new Date();

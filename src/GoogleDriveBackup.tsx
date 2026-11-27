@@ -1,5 +1,6 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { createAppBackupBlob, restoreAppBackup } from './app-backup';
+import { markBackupDone } from './backup-reminder';
 import { listDriveBackups, uploadDriveBackup, downloadDriveBackup, type DriveBackup } from './drive-backup';
 import type { Plan } from './plan-model';
 import type { Task } from './task-model';
@@ -39,7 +40,7 @@ export default function GoogleDriveBackup({plans,setPlans,setTasks}:Props){
    },error_callback:()=>{setMessage('أُغلق اتصال Google أو تعذر فتحه.');setBusy(false);}}).requestAccessToken({prompt:'consent'});
   }catch(error){setMessage(error instanceof Error?error.message:'تعذر الاتصال بحساب Google.');setBusy(false);}
  }
- async function upload(){if(!token)return;setBusy(true);setMessage('');try{const blob=await createAppBackupBlob(plans);await uploadDriveBackup(token,blob);try{setBackups(await listDriveBackups(token));setMessage('حُفظت نسخة جديدة في Google Drive.');}catch{setBackups(null);setMessage('حُفظت النسخة، لكن تعذر تحديث قائمة النسخ. أعد الاتصال لعرضها.');}}catch(error){setMessage(error instanceof Error?error.message:'تعذر حفظ النسخة.');}finally{setBusy(false)}}
+ async function upload(){if(!token)return;setBusy(true);setMessage('');try{const blob=await createAppBackupBlob(plans);await uploadDriveBackup(token,blob);markBackupDone();try{setBackups(await listDriveBackups(token));setMessage('حُفظت نسخة جديدة في Google Drive.');}catch{setBackups(null);setMessage('حُفظت النسخة، لكن تعذر تحديث قائمة النسخ. أعد الاتصال لعرضها.');}}catch(error){setMessage(error instanceof Error?error.message:'تعذر حفظ النسخة.');}finally{setBusy(false)}}
  async function restore(item:DriveBackup){
   if(!token||!window.confirm('ستستبدل النسخة المختارة بيانات هذا المتصفح وشواهده. نزّل نسخة محلية أولًا إذا كانت لديك تغييرات مهمة. هل تتابع؟'))return;
   setBusy(true);setMessage('');try{const file=await downloadDriveBackup(token,item);const restored=await restoreAppBackup(file);setTasks(restored.tasks);setPlans(restored.plans);setMessage('استُعيدت النسخة المختارة. أعد فتح الأقسام للاطلاع على البيانات.');}catch(error){setMessage(error instanceof Error?error.message:'تعذرت استعادة النسخة.');}finally{setBusy(false)}

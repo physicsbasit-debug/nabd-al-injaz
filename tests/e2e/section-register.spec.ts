@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
 
+// اللوحة التفصيلية في الرئيسية مطوية افتراضيًا؛ هذه الاختبارات تتحقق من محتواها فتفتحها كما يفعل المستخدم مرة واحدة.
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => localStorage.setItem('nabd-al-injaz:ui:home-details-open', '1'));
+});
+
+
 test('السجلات الثلاثة تظهر في المتابعة ويمكن توثيق الاجتماع', async ({page}, info) => {
  const navigate = async (name:string) => {
   if(info.project.name==='phone') await page.getByRole('button',{name:/عرض الأقسام/}).click();

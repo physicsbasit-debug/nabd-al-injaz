@@ -1,4 +1,10 @@
 import { test, expect } from '@playwright/test';
+
+// اللوحة التفصيلية في الرئيسية مطوية افتراضيًا؛ هذه الاختبارات تتحقق من محتواها فتفتحها كما يفعل المستخدم مرة واحدة.
+test.beforeEach(async ({ context }) => {
+  await context.addInitScript(() => localStorage.setItem('nabd-al-injaz:ui:home-details-open', '1'));
+});
+
 test('dashboard and task manager share the same data and progress',async({page})=>{
  await page.goto('/');
  await expect(page.locator('html')).toHaveAttribute('lang','ar');
