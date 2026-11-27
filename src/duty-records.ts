@@ -4,6 +4,7 @@ import { readSupervisoryVisits, type SupervisoryVisit } from './supervisory-visi
 import { readProfessionalPrograms } from './professional-development-model';
 import { readCoverStore } from './cover-planning';
 import { CHECK_KINDS, readTeacherStore } from './teacher-profile-model';
+import { activityDutyRecords, readActivitiesStore } from './activities-inventory-model';
 import type { Task } from './task-model';
 import type { DutyRecord } from './duty-routine';
 
@@ -18,7 +19,7 @@ export const AUTO_SECTION_DUTY: Record<string, number> = {
 };
 
 /** الواجبات التي تُغلق تلقائيًا من أقسامها (إضافة إلى أي واجب تُربط به مهمة). */
-export const AUTO_CLOSING_DUTIES = new Set([...Object.values(AUTO_SECTION_DUTY), 5, 7, 24, 30]);
+export const AUTO_CLOSING_DUTIES = new Set([...Object.values(AUTO_SECTION_DUTY), 5, 7, 9, 13, 19, 20, 24, 30, 34]);
 
 /**
  * يحوّل سجل الإنجازات إلى شواهد للواجبات:
@@ -60,7 +61,7 @@ export function readDutyRecords(tasks: Task[], plans: Plan[], today: string): Du
     const kind = CHECK_KINDS.find((k) => k.kind === c.kind)!;
     return { dutyId: kind.duty, date: c.date, title: `${kind.label}: ${c.teacher}`, section: 'ملفات المعلمين' };
   });
-  return [...dutyRecordsFrom(achievements, tasks), ...checkRecords, ...visitMethodRecords(visits, today)];
+  return [...dutyRecordsFrom(achievements, tasks), ...checkRecords, ...visitMethodRecords(visits, today), ...activityRecords(today)];
 }
 
 /** الدرس التطبيقي يُحتسب للواجب 7، وكل أسلوب غير الزيارة الصفية يُحتسب تنويعًا للواجب 12. */
@@ -73,4 +74,12 @@ export function visitMethodRecords(visits: SupervisoryVisit[], today: string): D
     if (v.method !== 'زيارة صفية') records.push({ dutyId: 12, date: v.date, title, section: 'الزيارات الإشرافية' });
   }
   return records;
+}
+
+function activityRecords(today: string): DutyRecord[] {
+  try {
+    return activityDutyRecords(readActivitiesStore()).filter((r) => r.date <= today);
+  } catch {
+    return [];
+  }
 }

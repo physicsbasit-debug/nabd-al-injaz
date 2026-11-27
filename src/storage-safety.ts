@@ -11,7 +11,8 @@ import { DUTY_ROUTINE_KEY } from './duty-routine';
 import { TEACHER_PROFILES_KEY, isTeacherStore } from './teacher-profile-model';
 import { SEMESTER_REPORT_KEY, isSemesterReportStore } from './semester-report-model';
 import { MEETING_DECISIONS_KEY, isMeetingDecisionStore } from './meeting-decisions-model';
-export const RECOVERY_KEYS=[STORAGE_KEY,PLAN_STORAGE_KEY,SCHEDULE_STORAGE_KEY,COVER_DRAFT_KEY,TECHNICAL_FOLLOWUP_STORAGE_KEY,SHORT_TEST_KEY,ASSESSMENT_KEY,PROFESSIONAL_DEVELOPMENT_KEY,SUPERVISORY_VISITS_KEY,DUTY_ROUTINE_KEY,TEACHER_PROFILES_KEY,SEMESTER_REPORT_KEY,MEETING_DECISIONS_KEY];
+import { ACTIVITIES_INVENTORY_KEY, isActivitiesStore } from './activities-inventory-model';
+export const RECOVERY_KEYS=[STORAGE_KEY,PLAN_STORAGE_KEY,SCHEDULE_STORAGE_KEY,COVER_DRAFT_KEY,TECHNICAL_FOLLOWUP_STORAGE_KEY,SHORT_TEST_KEY,ASSESSMENT_KEY,PROFESSIONAL_DEVELOPMENT_KEY,SUPERVISORY_VISITS_KEY,DUTY_ROUTINE_KEY,TEACHER_PROFILES_KEY,SEMESTER_REPORT_KEY,MEETING_DECISIONS_KEY,ACTIVITIES_INVENTORY_KEY];
 const record=(x:unknown):x is Record<string,unknown> => !!x && typeof x==='object'&&!Array.isArray(x);
 
 export function inspectStartupStorage():string[]{
@@ -27,6 +28,7 @@ export function inspectStartupStorage():string[]{
    ,[TEACHER_PROFILES_KEY,'ملفات المعلمين',data=>isTeacherStore(data)]
    ,[SEMESTER_REPORT_KEY,'ملاحظات التقرير الفصلي',data=>isSemesterReportStore(data)]
    ,[MEETING_DECISIONS_KEY,'قرارات الاجتماعات',data=>isMeetingDecisionStore(data)]
+   ,[ACTIVITIES_INVENTORY_KEY,'الأنشطة والجرد',data=>isActivitiesStore(data)]
   ];
   for(const [key,name,valid] of checks){const raw=localStorage.getItem(key);if(raw!==null){try{if(!valid(JSON.parse(raw)))issues.push(name)}catch{issues.push(name)}}}
   return issues;
