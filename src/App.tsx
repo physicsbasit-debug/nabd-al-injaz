@@ -23,6 +23,7 @@ import ExecutiveDashboard from './ExecutiveDashboard';
 import DailySectionBoard from './DailySectionBoard';
 import UnifiedAgenda from './UnifiedAgenda';
 import MorningBrief from './MorningBrief';
+import HomeDetails from './HomeDetails';
 import DutyGuide from './DutyGuide';
 import TeacherProfiles from './TeacherProfiles';
 import ActivitiesInventory from './ActivitiesInventory';
@@ -191,6 +192,7 @@ function Workspace() {
               if (planId) { setSelectedPlanId(planId); setFocusedActivityId(activityId ?? null); setPlanCreateRequested(false); }
               setTab(section); setMobileMenuOpen(false);
             }} />
+            <HomeDetails>
             <UnifiedAgenda tasks={tasks} plans={plans} navigate={(section, planId, activityId) => {
               if (planId) { setSelectedPlanId(planId); setFocusedActivityId(activityId ?? null); setPlanCreateRequested(false); }
               setTab(section); setMobileMenuOpen(false);
@@ -233,6 +235,7 @@ function Workspace() {
                 setTasks((old) => old.map((x) => (x.id === id ? toggleTaskCompletion(x) : x)))
               }
             /></details>
+            </HomeDetails>
             <AppBackupTools plans={plans} setPlans={setPlans} setTasks={setTasks} />
           </>
         ) : tab === 'التقارير' ? (

@@ -12,6 +12,14 @@ test('سجل الأنشطة والجرد يغلق الواجبات 9 و20 و34 �
       .getByRole('button', { name, exact: true })
       .click();
   };
+  await page.addInitScript(() => {
+    if (localStorage.getItem('seeded')) return;
+    localStorage.setItem('seeded', '1');
+    localStorage.setItem(
+      'nabd-al-injaz:duty-routine:v1',
+      JSON.stringify({ version: 1, done: {}, frequency: { 9: 'فصلي', 34: 'فصلي' } }),
+    );
+  });
   await page.goto('/');
   await navigate('الأنشطة والجرد');
   const section = page.getByRole('region', { name: 'الأنشطة والجرد' });
@@ -46,11 +54,9 @@ test('سجل الأنشطة والجرد يغلق الواجبات 9 و20 و34 �
   await brief.getByRole('button', { name: /روتين الواجبات/ }).click();
   await brief.locator('summary').filter({ hasText: 'واجبات فصلية' }).click();
   const duty = (title: string) =>
-    brief
-      .locator('.brief-item')
-      .filter({
-        has: page.locator('.brief-item-text strong', { hasText: new RegExp(`^${title}$`) }),
-      });
+    brief.locator('.brief-item').filter({
+      has: page.locator('.brief-item-text strong', { hasText: new RegExp(`^${title}$`) }),
+    });
   await expect(duty('تقنيات التعليم والوسائل وجردها')).toContainText('أُنجز من السجلات: جرد 1 صنفًا');
   await expect(duty('التعاون مع البيت والمجتمع')).toContainText(
     'فعالية مع البيت والمجتمع: لقاء أولياء أمور الصف التاسع',

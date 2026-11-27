@@ -127,3 +127,45 @@ test('ربط مهمة بواجب وإكمالها يغلق الواجب في م�
   await expect(duty.getByText('من السجلات', { exact: true })).toBeVisible();
   await expect(duty.getByRole('button', { name: 'تم', exact: true })).toHaveCount(0);
 });
+
+test('الرئيسية تعرض الموجز وحده واللوحة التفصيلية مطوية وتتذكر الفتح ومع تذكير النسخة', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    if (localStorage.getItem('seeded')) return;
+    localStorage.setItem('seeded', '1');
+    localStorage.setItem(
+      'nabd-al-injaz:tasks:v1',
+      JSON.stringify([
+        {
+          id: 'a',
+          title: 'مهمة',
+          dueDate: '',
+          priority: 'عادية',
+          done: false,
+          createdAt: '2026-11-01',
+          category: 'أخرى',
+          assignedTo: '',
+          progress: 'لم تبدأ',
+          notes: '',
+        },
+      ]),
+    );
+  });
+  await page.goto('/');
+  const details = page.locator('details.home-details');
+  await expect(details).not.toHaveAttribute('open', '');
+  await expect(page.getByRole('heading', { name: 'متابعة اليوم والأسبوع' })).toHaveCount(0);
+  await expect(page.locator('.brief-tips')).toContainText('لم تُؤخذ نسخة احتياطية');
+  await details.locator('summary').click();
+  await expect(page.getByRole('heading', { name: 'متابعة اليوم والأسبوع' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'متابعة اليوم والأسبوع' })).toBeVisible();
+
+  await page.locator('.app-backup-tools summary').click();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'تنزيل نسخة كاملة' }).click();
+  await download;
+  await page.reload();
+  await expect(page.locator('.brief-tips')).not.toContainText('نسخة احتياطية');
+});

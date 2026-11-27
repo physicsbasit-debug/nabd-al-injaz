@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DUTIES, DUTY_FREQUENCIES, DUTY_GROUPS, type DutyFrequency } from './duties';
+import { CORE_DUTIES, DUTIES, DUTY_FREQUENCIES, DUTY_GROUPS, type DutyFrequency } from './duties';
 import { effectiveFrequency, readRoutineStore, semesterCompletions, semesterOf, setDutyFrequency, writeRoutineStore } from './duty-routine';
 import { localDateKey } from './dashboard-metrics';
 import { AUTO_CLOSING_DUTIES, readDutyRecords } from './duty-records';
@@ -29,7 +29,7 @@ export default function DutyGuide({ tasks, plans, onNavigate }: Props) {
       <h2>واجبات المعلم الأول ومسؤولياته</h2>
       <p className="brief-summary">
         44 واجبًا من بطاقة الوصف الوظيفي (دليل مهام الوظائف المدرسية، 2015م). لكل واجب طريقة إنجاز مقترحة والشاهد المطلوب.
-        الواجبات ذات التكرار اليومي والأسبوعي والشهري والفصلي تظهر تلقائيًا في موجز اليوم ({routineCount} واجبًا).
+        روتين الموجز يبدأ بالواجبات <b>الأساسية العشرة</b> التي تصنع أغلب الأثر؛ وأي واجب آخر تجعل تكراره دوريًا يدخل الروتين ({routineCount} واجبًا الآن). والواجبات غير الدورية تُحتسب كلما سجّلتها.
         في {semesterOf(today).label} سجّلت إنجازًا في <b>{touched}</b> من 44 واجبًا.
       </p>
       <label className="duty-search">بحث في الواجبات
@@ -48,6 +48,7 @@ export default function DutyGuide({ tasks, plans, onNavigate }: Props) {
                   <summary>
                     <span className="duty-number">{duty.id}</span>
                     <strong>{duty.short}</strong>
+                    {CORE_DUTIES.has(duty.id) && <span className="duty-chip duty-chip-core">أساسي</span>}
                     <span className="duty-chip">{frequency}</span>
                     {AUTO_CLOSING_DUTIES.has(duty.id) && <span className="duty-chip">يُحتسب من قسمه</span>}
                     {counts[duty.id] ? <span className="duty-chip duty-chip-done">أُنجز {counts[duty.id]} مرة هذا الفصل</span> : null}
@@ -59,7 +60,7 @@ export default function DutyGuide({ tasks, plans, onNavigate }: Props) {
                   <div className="duty-controls">
                     <label>التكرار في روتيني
                       <select value={frequency} onChange={(e) => change(duty.id, e.target.value as DutyFrequency)}>
-                        {DUTY_FREQUENCIES.map((f) => <option key={f} value={f}>{f}{f === duty.frequency ? ' (مقترح)' : ''}</option>)}
+                        {DUTY_FREQUENCIES.map((f) => <option key={f} value={f}>{f}{f === duty.frequency ? ' (تكراره الطبيعي)' : ''}</option>)}
                       </select>
                     </label>
                     {duty.section && duty.section !== 'دليل الواجبات' && <button type="button" className="brief-secondary" onClick={() => onNavigate(duty.section!)}>فتح قسم {duty.section}</button>}

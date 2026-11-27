@@ -220,6 +220,12 @@ export const DUTIES: Duty[] = [
 
 export const dutyById = (id: number) => DUTIES.find((duty) => duty.id === id);
 
+/**
+ * الواجبات الأساسية: الدورية التي تصنع أغلب الأثر (مبدأ القليل الحيوي).
+ * تدخل روتين الموجز افتراضيًا، وبقية الواجبات تُسجَّل عند حدوثها أو تُفعَّل من دليل الواجبات.
+ */
+export const CORE_DUTIES = new Set([4, 5, 8, 11, 16, 24, 26, 27, 30, 32]);
+
 // يربط بنود المتابعة الحالية بالواجب الأقرب ليظهر بجانبها «طريقة الإنجاز».
 export const SECTION_DUTY: Record<string, number> = {
   'الجداول والاحتياط': 4,

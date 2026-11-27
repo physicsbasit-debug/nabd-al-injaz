@@ -1,4 +1,4 @@
-import { DUTIES, DUTY_FREQUENCIES, ROUTINE_FREQUENCIES, type Duty, type DutyFrequency } from './duties';
+import { CORE_DUTIES, DUTIES, DUTY_FREQUENCIES, ROUTINE_FREQUENCIES, type Duty, type DutyFrequency } from './duties';
 
 export const DUTY_ROUTINE_KEY = 'nabd-al-injaz:duty-routine:v1';
 
@@ -102,8 +102,10 @@ export type RoutineItem = {
   urgent: boolean;
 };
 
+/** التكرار الافتراضي: تكرار الواجب الطبيعي للأساسي، و«عند الحاجة» لغيره، ما لم يختر المستخدم غير ذلك. */
+export const defaultFrequency = (duty: Duty): DutyFrequency => (CORE_DUTIES.has(duty.id) ? duty.frequency : 'عند الحاجة');
 export const effectiveFrequency = (duty: Duty, store: RoutineStore): DutyFrequency =>
-  store.frequency[String(duty.id)] ?? duty.frequency;
+  store.frequency[String(duty.id)] ?? defaultFrequency(duty);
 
 export function buildRoutine(today: string, store: RoutineStore, records: DutyRecord[] = []): RoutineItem[] {
   const items: RoutineItem[] = [];
@@ -148,7 +150,7 @@ export function unmarkRoutine(store: RoutineStore, item: Pick<RoutineItem, 'duty
 
 export function setDutyFrequency(store: RoutineStore, duty: Duty, frequency: DutyFrequency): RoutineStore {
   const map = { ...store.frequency };
-  if (frequency === duty.frequency) delete map[String(duty.id)];
+  if (frequency === defaultFrequency(duty)) delete map[String(duty.id)];
   else map[String(duty.id)] = frequency;
   return { ...store, frequency: map };
 }

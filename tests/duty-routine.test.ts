@@ -26,13 +26,26 @@ describe('duties catalog', () => {
   });
 });
 
+describe('core routine', () => {
+  it('includes only the ten core duties by default', () => {
+    expect(buildRoutine('2026-11-27', emptyRoutineStore()).map((i) => i.duty.id)).toEqual([
+      4, 5, 8, 11, 16, 24, 26, 27, 30, 32,
+    ]);
+  });
+});
+
 describe('school periods', () => {
   it('uses the Omani Sunday–Thursday school week', () => {
     expect(schoolWeekStart('2026-11-29')).toBe('2026-11-29'); // الأحد
     expect(schoolWeekStart('2026-12-03')).toBe('2026-11-29'); // الخميس
     expect(schoolWeekStart('2026-11-27')).toBe('2026-11-29'); // الجمعة تتبع الأسبوع القادم
     expect(schoolWeekStart('2026-11-28')).toBe('2026-11-29'); // السبت
-    expect(periodFor('أسبوعي', '2026-12-01')).toEqual({ key: 'W2026-11-29', start: '2026-11-29', end: '2026-12-03', label: 'هذا الأسبوع' });
+    expect(periodFor('أسبوعي', '2026-12-01')).toEqual({
+      key: 'W2026-11-29',
+      start: '2026-11-29',
+      end: '2026-12-03',
+      label: 'هذا الأسبوع',
+    });
   });
   it('computes month and semester ends', () => {
     expect(periodFor('شهري', '2026-02-10')?.end).toBe('2026-02-28');
@@ -50,20 +63,30 @@ describe('routine', () => {
     expect(items.every((i) => ['يومي', 'أسبوعي', 'شهري', 'فصلي'].includes(i.frequency))).toBe(true);
     const visits = items.find((i) => i.duty.id === 11)!;
     expect(visits.urgent).toBe(true);
-    const store = markRoutine(emptyRoutineStore(), visits, '  زيارة المعلم أحمد  ', '2026-12-03T05:00:00.000Z');
+    const store = markRoutine(
+      emptyRoutineStore(),
+      visits,
+      '  زيارة المعلم أحمد  ',
+      '2026-12-03T05:00:00.000Z',
+    );
     const after = buildRoutine(today, store).find((i) => i.duty.id === 11)!;
     expect(after.done).toEqual({ at: '2026-12-03T05:00:00.000Z', note: 'زيارة المعلم أحمد' });
     expect(after.urgent).toBe(false);
     // The next school week starts fresh.
     expect(buildRoutine('2026-12-06', store).find((i) => i.duty.id === 11)!.done).toBeNull();
-    expect(buildRoutine(today, unmarkRoutine(store, visits)).find((i) => i.duty.id === 11)!.done).toBeNull();
+    expect(
+      buildRoutine(today, unmarkRoutine(store, visits)).find((i) => i.duty.id === 11)!.done,
+    ).toBeNull();
     expect(semesterCompletions(store, today)[11]).toBe(1);
   });
   it('lets the user change a duty frequency and validates stored data', () => {
-    const duty = dutyById(1)!; // مستمر by default
+    const duty = dutyById(1)!; // غير أساسي: «عند الحاجة» افتراضيًا
+    expect(buildRoutine('2026-11-27', emptyRoutineStore()).some((i) => i.duty.id === 1)).toBe(
+      false,
+    );
     const store = setDutyFrequency(emptyRoutineStore(), duty, 'شهري');
     expect(buildRoutine('2026-11-27', store).some((i) => i.duty.id === 1)).toBe(true);
-    expect(setDutyFrequency(store, duty, 'مستمر').frequency).toEqual({});
+    expect(setDutyFrequency(store, duty, 'عند الحاجة').frequency).toEqual({});
     expect(isRoutineStore(store)).toBe(true);
     expect(isRoutineStore({ version: 1, done: { '1|x': { at: 5 } }, frequency: {} })).toBe(false);
     expect(isRoutineStore({ version: 1, done: {}, frequency: { 1: 'أحيانًا' } })).toBe(false);
@@ -76,16 +99,40 @@ import type { Achievement } from '../src/achievement-register';
 
 describe('auto-closing duties from records', () => {
   const row = (over: Partial<Achievement>): Achievement => ({
-    id: 'x', title: 'سجل', section: 'الخطط والمهام', person: '', date: '2026-12-01', source: 'task', sourceId: 't', detail: '', ...over,
+    id: 'x',
+    title: 'سجل',
+    section: 'الخطط والمهام',
+    person: '',
+    date: '2026-12-01',
+    source: 'task',
+    sourceId: 't',
+    detail: '',
+    ...over,
   });
   const task = (over: Partial<Task>): Task => ({
-    id: 't', title: 'مهمة', dueDate: '', priority: 'عادية', done: true, createdAt: '', category: 'أخرى', assignedTo: '', progress: 'مكتملة', notes: '', ...over,
+    id: 't',
+    title: 'مهمة',
+    dueDate: '',
+    priority: 'عادية',
+    done: true,
+    createdAt: '',
+    category: 'أخرى',
+    assignedTo: '',
+    progress: 'مكتملة',
+    notes: '',
+    ...over,
   });
 
   it('maps section records and linked tasks to duties and skips undated or unlinked rows', () => {
     const records = dutyRecordsFrom(
       [
-        row({ id: 'visit:1', title: 'زيارة أحمد', section: 'الزيارات الإشرافية', source: 'visit', sourceId: '1' }),
+        row({
+          id: 'visit:1',
+          title: 'زيارة أحمد',
+          section: 'الزيارات الإشرافية',
+          source: 'visit',
+          sourceId: '1',
+        }),
         row({ id: 'cover:d', section: 'الجداول والاحتياط', source: 'cover', sourceId: 'd' }),
         row({ id: 'topic:1', section: 'الزيارات الإشرافية', source: 'topic', date: null }),
         row({ id: 'task:t', title: 'فحص سجلات القسم', source: 'task', sourceId: 't' }),
@@ -111,7 +158,10 @@ describe('auto-closing duties from records', () => {
     // A November record does not close December's monthly duty.
     expect(items.find((i) => i.duty.id === 30)!.complete).toBe(false);
     // The following school week opens the weekly duty again.
-    expect(buildRoutine('2026-12-06', emptyRoutineStore(), records).find((i) => i.duty.id === 11)!.complete).toBe(false);
+    expect(
+      buildRoutine('2026-12-06', emptyRoutineStore(), records).find((i) => i.duty.id === 11)!
+        .complete,
+    ).toBe(false);
     expect(semesterCompletions(emptyRoutineStore(), '2026-12-03', records)[11]).toBe(2);
   });
 
@@ -120,8 +170,18 @@ describe('auto-closing duties from records', () => {
     expect(withDutyId(task({ dutyId: 11 }), '')).not.toHaveProperty('dutyId');
     expect(withDutyId(task({}), '99')).not.toHaveProperty('dutyId');
     const store = new Map<string, string>();
-    globalThis.localStorage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) } as Storage;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([task({ id: 'a', dutyId: 16 }), task({ id: 'b', dutyId: 77 }), task({ id: 'c', dutyId: '5' as unknown as number })]));
+    globalThis.localStorage = {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+    } as Storage;
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([
+        task({ id: 'a', dutyId: 16 }),
+        task({ id: 'b', dutyId: 77 }),
+        task({ id: 'c', dutyId: '5' as unknown as number }),
+      ]),
+    );
     expect(readTasks().map((t) => t.dutyId)).toEqual([16, undefined, undefined]);
   });
 });

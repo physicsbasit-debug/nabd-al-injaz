@@ -8,6 +8,7 @@ import { dutyById, SECTION_DUTY, TASK_CATEGORY_DUTY, type Duty } from './duties'
 import { AUTO_CLOSING_DUTIES } from './duty-records';
 import { readDecisionStore, setDecisionDone, writeDecisionStore, type MeetingDecision } from './meeting-decisions-model';
 import { buildRoutine, markRoutine, readRoutineStore, unmarkRoutine, writeRoutineStore, type RoutineItem } from './duty-routine';
+import { BACKUP_REMINDER_DAYS, daysSinceBackup } from './backup-reminder';
 import './morning-brief.css';
 
 type Props = { tasks: Task[]; plans: Plan[]; navigate: (section: string, planId?: string, activityId?: string) => void };
@@ -97,6 +98,14 @@ export default function MorningBrief({ tasks, plans, navigate }: Props) {
 
   const weekday = new Date(today + 'T00:00:00Z').getUTCDay();
   const tips: string[] = [];
+  const backupAge = daysSinceBackup();
+  const hasData = tasks.length > 0 || plans.length > 0 || routineDone.length > 0;
+  if (hasData && (backupAge === null || backupAge >= BACKUP_REMINDER_DAYS))
+    tips.push(
+      backupAge === null
+        ? 'لم تُؤخذ نسخة احتياطية من هذا المتصفح بعد. بياناتك محفوظة هنا فقط؛ نزّل نسخة كاملة من أسفل الرئيسية.'
+        : `آخر نسخة احتياطية قبل ${backupAge} يومًا. نزّل نسخة جديدة من أسفل الرئيسية حتى لا تفقد عمل الأسبوع.`,
+    );
   if (evidenceReady && withoutEvidence.length) tips.push(`وثّق أولًا بأول: ${withoutEvidence.length} من الأعمال المكتملة بلا شاهد. خمس دقائق الآن توفر ساعات قبل التقرير الفصلي.`);
   if (weekday === 0) tips.push('بداية الأسبوع الدراسي: ثبّت مواعيد زيارات هذا الأسبوع ومتابعة التحضير قبل أن تزدحم الأيام.');
   if (weekday === 4) tips.push('الخميس نهاية الأسبوع الدراسي: أغلق واجبات الأسبوع المفتوحة أو انقلها بموعد جديد.');

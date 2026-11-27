@@ -114,3 +114,9 @@
 .brief-auto { align-self: center; background: #e9f3ff; color: #1f4e79; border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
 .brief-auto-hint { color: #1f4e79 !important; font-size: 13px !important; }
 .brief-auto-list { margin: 0 0 6px; padding-inline-start: 1.2rem; color: #344f48; font-size: 13px; }
+.home-details { margin: 0 0 18px; border: 1px solid #d6e5dd; border-radius: 16px; background: #fff; }
+.home-details > summary { cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 14px 18px; color: #174d44; }
+.home-details > summary span { color: #557067; font-size: 13px; }
+.home-details > summary:focus-visible { outline: 3px solid #109480; outline-offset: 2px; }
+.home-details-body { padding: 0 12px 12px; }
+.duty-chip-core { background: #176d5c; color: #fff; }
