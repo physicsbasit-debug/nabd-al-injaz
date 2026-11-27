@@ -1,3 +1,5 @@
+import { MeetingDecisionList, OpenDecisionsSummary } from './MeetingDecisions';
+import './meeting-decisions.css';
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import EvidencePanel from './EvidencePanel';
 import type { Plan, PlanActivity, PlanKind } from './plan-model';
@@ -45,10 +47,12 @@ export default function SectionRegister({plans,setPlans,destination,onOpenPlan}:
    <label>{config.details}<textarea value={draft.details} onChange={e=>setDraft({...draft,details:e.target.value})} rows={4}/></label>
    <button type="button" onClick={save}>حفظ السجل</button>{editing&&<button type="button" onClick={()=>{setEditing(null);setDraft(blank());}}>إلغاء التعديل</button>}
   </details>{message&&<p role="status">{message}</p>}
+  {destination==='الاجتماعات الدورية'&&<OpenDecisionsSummary/>}
   {rows.length===0?<p>لا توجد سجلات لهذا القسم بعد.</p>:<div className="section-register-list">{rows.map(({plan,activity})=><article key={plan.id+':'+activity.id}>
    <h3>{activity.title}</h3><p>الخطة: {plan.title} · المسؤول: {activity.assignee||'غير مسجل'} · التاريخ: {activity.dueDate||'غير مسجل'}</p>{activity.details&&<p className="section-register-details">{activity.details}</p>}
    <label>حالة التنفيذ<select aria-label={'حالة '+activity.title} value={activity.progress} onChange={e=>updateProgress(plan.id,activity.id,e.target.value as PlanActivity['progress'])}><option value="not_started">لم يبدأ</option><option value="in_progress">قيد التنفيذ</option><option value="completed">مكتمل</option></select></label>
    <div className="section-register-actions"><button type="button" onClick={()=>{setEditing({planId:plan.id,id:activity.id});setDraft({title:activity.title,assignee:activity.assignee,dueDate:activity.dueDate,details:activity.details});setMessage('');}}>تعديل</button><button type="button" onClick={()=>setProof({planId:plan.id,id:activity.id,title:activity.title})}>الشواهد والتوثيق</button><button type="button" onClick={()=>onOpenPlan(plan.id,activity.id)}>فتح الخطة</button></div>
+   {destination==='الاجتماعات الدورية'&&<MeetingDecisionList meeting={{planId:plan.id,meetingId:activity.id,meetingTitle:activity.title}}/>}
    {proof?.planId===plan.id&&proof.id===activity.id&&<EvidencePanel planId={plan.id} activityId={activity.id} activityTitle={activity.title} onClose={()=>setProof(null)}/>}
   </article>)}</div>}
  </section>;

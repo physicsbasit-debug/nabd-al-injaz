@@ -21,6 +21,7 @@ import { SUPERVISORY_VISITS_KEY, isSupervisoryVisit } from './supervisory-visits
 import { DUTY_ROUTINE_KEY, isRoutineStore } from './duty-routine';
 import { TEACHER_PROFILES_KEY, isTeacherStore } from './teacher-profile-model';
 import { SEMESTER_REPORT_KEY, isSemesterReportStore } from './semester-report-model';
+import { MEETING_DECISIONS_KEY, isMeetingDecisionStore } from './meeting-decisions-model';
 import { createVisitArchive, decodeVisitArchive, listVisitFiles, replaceVisitFiles, type VisitFile } from './supervisory-visit-files';
 import { assertVisitBackupCapacity, projectedBackupBytes } from './backup-capacity';
 import { listWorkEvidence, encodeWorkEvidence, decodeWorkEvidence, replaceWorkEvidence, type WorkEvidence } from './work-evidence';
@@ -41,6 +42,7 @@ const APP_STORAGE_KEYS = [
   DUTY_ROUTINE_KEY,
   TEACHER_PROFILES_KEY,
   SEMESTER_REPORT_KEY,
+  MEETING_DECISIONS_KEY,
 ];
 type AppBackup = {
   format: string;
@@ -200,6 +202,10 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
           )))
     )
       throw new Error('سجل الاحتياط في ملف النسخة غير صالح.');
+  }
+  if (data[MEETING_DECISIONS_KEY] !== undefined) {
+    const decisions = parseJson(data[MEETING_DECISIONS_KEY], 'قرارات الاجتماعات');
+    if (!isMeetingDecisionStore(decisions)) throw new Error('قرارات الاجتماعات في النسخة غير صالحة.');
   }
   if (data[SEMESTER_REPORT_KEY] !== undefined) {
     const notes = parseJson(data[SEMESTER_REPORT_KEY], 'ملاحظات التقرير الفصلي');

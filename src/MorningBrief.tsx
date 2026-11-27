@@ -6,12 +6,13 @@ import { useAgendaData } from './UnifiedAgenda';
 import type { AgendaItem } from './unified-agenda';
 import { dutyById, SECTION_DUTY, TASK_CATEGORY_DUTY, type Duty } from './duties';
 import { AUTO_CLOSING_DUTIES } from './duty-records';
+import { readDecisionStore, setDecisionDone, writeDecisionStore, type MeetingDecision } from './meeting-decisions-model';
 import { buildRoutine, markRoutine, readRoutineStore, unmarkRoutine, writeRoutineStore, type RoutineItem } from './duty-routine';
 import './morning-brief.css';
 
 type Props = { tasks: Task[]; plans: Plan[]; navigate: (section: string, planId?: string, activityId?: string) => void };
 type View = 'today' | 'overdue' | 'done' | 'evidence' | 'routine';
-type BriefItem = { id: string; title: string; meta: string; section?: string; planId?: string; activityId?: string; duty?: Duty; routine?: RoutineItem; tone?: 'late' | 'urgent' };
+type BriefItem = { id: string; title: string; meta: string; section?: string; planId?: string; activityId?: string; duty?: Duty; routine?: RoutineItem; decision?: MeetingDecision; tone?: 'late' | 'urgent' };
 
 const formatDay = (today: string) =>
   new Intl.DateTimeFormat('ar-OM', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(today + 'T00:00:00Z'));
@@ -43,6 +44,27 @@ export default function MorningBrief({ tasks, plans, navigate }: Props) {
   const [view, setView] = useState<View>('today');
   const [notes, setNotes] = useState<Record<string, string>>({});
   const routine = buildRoutine(today, store, dutyRecords);
+  const [decisions, setDecisions] = useState(() => {
+    try {
+      return readDecisionStore();
+    } catch {
+      return null;
+    }
+  });
+  const fromDecision = (d: MeetingDecision, tone?: BriefItem['tone']): BriefItem => ({
+    id: 'decision:' + d.id, title: 'قرار اجتماع: ' + d.text, section: 'الاجتماعات الدورية', duty: dutyById(16), decision: d, tone,
+    meta: `${d.meetingTitle} · ${d.owner || 'دون مسؤول'}${d.doneAt ? ' · نُفّذ' : d.dueDate ? ' · الموعد: ' + d.dueDate : ''}`,
+  });
+  const decisionList = decisions?.decisions ?? [];
+  const decisionsToday = decisionList.filter((d) => !d.doneAt && d.dueDate === today).map((d) => fromDecision(d));
+  const decisionsLate = decisionList.filter((d) => !d.doneAt && d.dueDate && d.dueDate < today).map((d) => fromDecision(d, 'late'));
+  const decisionsDone = decisionList.filter((d) => d.doneAt?.slice(0, 10) === today).map((d) => fromDecision(d));
+  const toggleDecision = (d: MeetingDecision) => {
+    if (!decisions) return;
+    const next = setDecisionDone(decisions, d.id, !d.doneAt);
+    writeDecisionStore(next);
+    setDecisions(next);
+  };
   const save = (next: typeof store) => { setStore(next); writeRoutineStore(next); };
 
   const fromAgenda = (item: AgendaItem, tone?: BriefItem['tone']): BriefItem => ({
@@ -55,19 +77,20 @@ export default function MorningBrief({ tasks, plans, navigate }: Props) {
   });
 
   const openRoutine = routine.filter((r) => !r.complete);
-  const todayItems = [...agenda.today.map((i) => fromAgenda(i)), ...openRoutine.filter((r) => r.frequency === 'يومي').map(fromRoutine)];
+  const todayItems = [...agenda.today.map((i) => fromAgenda(i)), ...decisionsToday, ...openRoutine.filter((r) => r.frequency === 'يومي').map(fromRoutine)];
   const weekItems = openRoutine.filter((r) => r.frequency === 'أسبوعي').map(fromRoutine);
   const soonItems = openRoutine.filter((r) => r.urgent && r.frequency !== 'أسبوعي').sort((a, b) => a.daysLeft - b.daysLeft).map(fromRoutine);
-  const overdueItems = agenda.overdue.map((i) => fromAgenda(i, 'late'));
+  const overdueItems = [...agenda.overdue.map((i) => fromAgenda(i, 'late')), ...decisionsLate];
   const doneToday = agenda.completed.filter((i) => i.completionDate?.slice(0, 10) === today);
   const routineDone = routine.filter((r) => r.complete);
-  const doneItems = [...doneToday.map((i) => fromAgenda(i)), ...routineDone.map(fromRoutine)];
+  const doneItems = [...doneToday.map((i) => fromAgenda(i)), ...decisionsDone, ...routineDone.map(fromRoutine)];
   const evidenceItems = withoutEvidence.map((i) => ({ ...fromAgenda(i), meta: i.detail + ' · أرفق الشاهد من قسمه' }));
   const pulse = routine.length ? Math.round((routineDone.length / routine.length) * 100) : 0;
 
   const priorities: BriefItem[] = [
     ...overdueItems,
     ...agenda.today.map((i) => fromAgenda(i)),
+    ...decisionsToday,
     ...openRoutine.filter((r) => r.urgent).map(fromRoutine),
     ...openRoutine.filter((r) => r.frequency === 'يومي').map(fromRoutine),
   ].slice(0, 3);
@@ -98,6 +121,11 @@ export default function MorningBrief({ tasks, plans, navigate }: Props) {
       <div className="brief-item-head">
         <span className="brief-item-text"><strong>{item.title}</strong><small>{item.meta}</small></span>
         <span className="brief-actions">
+          {item.decision && (
+            <button type="button" className={item.decision.doneAt ? 'brief-secondary' : 'brief-primary'} onClick={() => toggleDecision(item.decision!)}>
+              {item.decision.doneAt ? 'تراجع' : 'نُفّذ'}
+            </button>
+          )}
           {item.routine && !item.routine.done && item.routine.auto.length > 0 && <span className="brief-auto">من السجلات</span>}
           {item.routine && (item.routine.auto.length > 0 && !item.routine.done ? null : item.routine.done ? (
             <button type="button" className="brief-secondary" onClick={() => save(unmarkRoutine(store, item.routine!))}>تراجع</button>

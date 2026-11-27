@@ -10,7 +10,8 @@ import { SUPERVISORY_VISITS_KEY } from './supervisory-visits-model';
 import { DUTY_ROUTINE_KEY } from './duty-routine';
 import { TEACHER_PROFILES_KEY, isTeacherStore } from './teacher-profile-model';
 import { SEMESTER_REPORT_KEY, isSemesterReportStore } from './semester-report-model';
-export const RECOVERY_KEYS=[STORAGE_KEY,PLAN_STORAGE_KEY,SCHEDULE_STORAGE_KEY,COVER_DRAFT_KEY,TECHNICAL_FOLLOWUP_STORAGE_KEY,SHORT_TEST_KEY,ASSESSMENT_KEY,PROFESSIONAL_DEVELOPMENT_KEY,SUPERVISORY_VISITS_KEY,DUTY_ROUTINE_KEY,TEACHER_PROFILES_KEY,SEMESTER_REPORT_KEY];
+import { MEETING_DECISIONS_KEY, isMeetingDecisionStore } from './meeting-decisions-model';
+export const RECOVERY_KEYS=[STORAGE_KEY,PLAN_STORAGE_KEY,SCHEDULE_STORAGE_KEY,COVER_DRAFT_KEY,TECHNICAL_FOLLOWUP_STORAGE_KEY,SHORT_TEST_KEY,ASSESSMENT_KEY,PROFESSIONAL_DEVELOPMENT_KEY,SUPERVISORY_VISITS_KEY,DUTY_ROUTINE_KEY,TEACHER_PROFILES_KEY,SEMESTER_REPORT_KEY,MEETING_DECISIONS_KEY];
 const record=(x:unknown):x is Record<string,unknown> => !!x && typeof x==='object'&&!Array.isArray(x);
 
 export function inspectStartupStorage():string[]{
@@ -25,6 +26,7 @@ export function inspectStartupStorage():string[]{
    [COVER_DRAFT_KEY,'الاحتياط',data=>{if(!record(data)||data.version!==1||!record(data.days))return false;const value=readCoverStore();if(Object.keys(value.days).length!==Object.keys(data.days).length)return false;for(const [date,day] of Object.entries(data.days)){const saved=value.days[date];if(!record(day)||!saved||!Array.isArray(day.absent)||!Array.isArray(day.assignments)||saved.absent.length!==day.absent.length||saved.assignments.length!==day.assignments.length||(day.processedAt!==undefined&&saved.processedAt!==day.processedAt))return false}if(data.teacherPolicies!==undefined){if(!record(data.teacherPolicies)||Object.keys(value.teacherPolicies??{}).length!==Object.keys(data.teacherPolicies).length)return false;for(const [name,p] of Object.entries(data.teacherPolicies)){if(!record(p))return false;const normalized=value.teacherPolicies?.[name];if(!normalized||['exempt','carryInBalance','priority'].some(k=>p[k]!==undefined&&p[k]!==normalized[k as keyof typeof normalized]))return false}}return true}]
    ,[TEACHER_PROFILES_KEY,'ملفات المعلمين',data=>isTeacherStore(data)]
    ,[SEMESTER_REPORT_KEY,'ملاحظات التقرير الفصلي',data=>isSemesterReportStore(data)]
+   ,[MEETING_DECISIONS_KEY,'قرارات الاجتماعات',data=>isMeetingDecisionStore(data)]
   ];
   for(const [key,name,valid] of checks){const raw=localStorage.getItem(key);if(raw!==null){try{if(!valid(JSON.parse(raw)))issues.push(name)}catch{issues.push(name)}}}
   return issues;
