@@ -18,6 +18,7 @@ import { withAssessmentLock } from './assessment-lock';
 import { PROFESSIONAL_DEVELOPMENT_KEY, isProfessionalProgram } from './professional-development-model';
 import { createProfessionalArchive, decodeProfessionalArchive, listProfessionalFiles, replaceProfessionalFiles } from './professional-development-files';
 import { SUPERVISORY_VISITS_KEY, isSupervisoryVisit } from './supervisory-visits-model';
+import { DUTY_ROUTINE_KEY, isRoutineStore } from './duty-routine';
 import { createVisitArchive, decodeVisitArchive, listVisitFiles, replaceVisitFiles, type VisitFile } from './supervisory-visit-files';
 import { assertVisitBackupCapacity, projectedBackupBytes } from './backup-capacity';
 import { listWorkEvidence, encodeWorkEvidence, decodeWorkEvidence, replaceWorkEvidence, type WorkEvidence } from './work-evidence';
@@ -35,6 +36,7 @@ const APP_STORAGE_KEYS = [
   ASSESSMENT_KEY,
   PROFESSIONAL_DEVELOPMENT_KEY,
   SUPERVISORY_VISITS_KEY,
+  DUTY_ROUTINE_KEY,
 ];
 type AppBackup = {
   format: string;
@@ -194,6 +196,10 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
           )))
     )
       throw new Error('سجل الاحتياط في ملف النسخة غير صالح.');
+  }
+  if (data[DUTY_ROUTINE_KEY] !== undefined) {
+    const routine = parseJson(data[DUTY_ROUTINE_KEY], 'روتين الواجبات');
+    if (!isRoutineStore(routine)) throw new Error('بيانات روتين الواجبات في النسخة غير صالحة.');
   }
   if (data[PROFESSIONAL_DEVELOPMENT_KEY] !== undefined) {
     const programs = parseJson(data[PROFESSIONAL_DEVELOPMENT_KEY], 'الإنماء المهني');

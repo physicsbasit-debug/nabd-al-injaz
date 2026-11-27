@@ -17,7 +17,7 @@ import { buildAgenda, type AgendaItem } from './unified-agenda';
 import './unified-agenda.css';
 
 type Props = { tasks: Task[]; plans: Plan[]; navigate: (section: string, planId?: string, activityId?: string) => void };
-export default function UnifiedAgenda({ tasks, plans, navigate }: Props) {
+export function useAgendaData(tasks: Task[], plans: Plan[]) {
   const [counts, setCounts] = useState<Record<string, number> | null>(null);
   const [programKeys, setProgramKeys] = useState<Set<string> | null>(null);
   const [workKeys, setWorkKeys] = useState<Set<string> | null>(null);
@@ -40,6 +40,10 @@ export default function UnifiedAgenda({ tasks, plans, navigate }: Props) {
   try { for (const row of buildAchievements({today,tasks:[],plans:[],visits:[],topics:[],cover:readCoverStore(),assessments:readAssessments(),reviews:readShortTests(),programs})) agenda.completed.push({id:row.id,title:row.title,detail:row.detail,date:'',completionDate:row.date,section:row.section}); } catch { errors.push('سجلات الاختبارات'); }
   const evidenceReady = counts !== null && workKeys !== null && visitKeys !== null && programKeys !== null;
   const withoutEvidence = evidenceReady ? agenda.completed.filter(item => item.activityId ? !counts[item.activityId] : item.id.startsWith('visit:') ? !visitKeys.has(item.id) : item.id.startsWith('program:') ? !programKeys.has(item.id) : !workKeys.has(item.id)) : [];
+  return { today, agenda, errors, evidenceError, evidenceReady, withoutEvidence };
+}
+export default function UnifiedAgenda({ tasks, plans, navigate }: Props) {
+  const { agenda, errors, evidenceError, evidenceReady, withoutEvidence } = useAgendaData(tasks, plans);
   const sections: Array<{title: string; detail: string; items: AgendaItem[]}> = [
     {title: 'اليوم', detail: 'المستحق اليوم', items: agenda.today},
     {title: 'الأيام الستة القادمة', detail: 'حتى نهاية الأيام السبعة بدءًا من اليوم', items: agenda.week},
