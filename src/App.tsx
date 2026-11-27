@@ -7,12 +7,15 @@ import {
   GraduationCap,
   Medal,
   FileText,
+  BookOpenCheck,
 } from 'lucide-react';
 import TaskManager, { readTasks, STORAGE_KEY, type Task } from './TaskManager';
 import { toggleTaskCompletion } from './task-model';
 import ExecutiveDashboard from './ExecutiveDashboard';
 import DailySectionBoard from './DailySectionBoard';
 import UnifiedAgenda from './UnifiedAgenda';
+import MorningBrief from './MorningBrief';
+import DutyGuide from './DutyGuide';
 import AchievementRegister from './AchievementRegister';
 import Reports from './Reports';
 import StorageRecovery from './StorageRecovery';
@@ -32,6 +35,7 @@ import { PLAN_DESTINATIONS, type PlanDestination } from './plan-routing';
 import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
 const sections = [
   ['الرئيسية', Activity],
+  ['دليل الواجبات', BookOpenCheck],
   ['الخطط والمهام', ClipboardCheck],
   ['مكتبة الخطط', ClipboardCheck],
   ['الجداول والاحتياط', CalendarDays],
@@ -155,6 +159,10 @@ function Workspace() {
         </header>
         {tab === 'الرئيسية' ? (
           <>
+            <MorningBrief tasks={tasks} plans={plans} navigate={(section, planId, activityId) => {
+              if (planId) { setSelectedPlanId(planId); setFocusedActivityId(activityId ?? null); setPlanCreateRequested(false); }
+              setTab(section); setMobileMenuOpen(false);
+            }} />
             <UnifiedAgenda tasks={tasks} plans={plans} navigate={(section, planId, activityId) => {
               if (planId) { setSelectedPlanId(planId); setFocusedActivityId(activityId ?? null); setPlanCreateRequested(false); }
               setTab(section); setMobileMenuOpen(false);
@@ -250,6 +258,8 @@ function Workspace() {
               setTab('مكتبة الخطط');
             }} />
           </>
+        ) : tab === 'دليل الواجبات' ? (
+          <DutyGuide onNavigate={(section) => { setTab(section); setMobileMenuOpen(false); }} />
         ) : PLAN_DESTINATIONS.includes(tab as PlanDestination) ? (
           <SectionRegister key={tab} plans={plans} setPlans={setPlans} destination={tab as 'الاجتماعات الدورية' | 'الزيارات المتبادلة' | 'رفع المستوى التحصيلي'} onOpenPlan={(id, activityId) => {
             setSelectedPlanId(id);

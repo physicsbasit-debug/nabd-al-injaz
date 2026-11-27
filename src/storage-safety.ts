@@ -7,7 +7,8 @@ import { SHORT_TEST_KEY } from './short-test-model';
 import { ASSESSMENT_KEY } from './assessment-tracking';
 import { PROFESSIONAL_DEVELOPMENT_KEY } from './professional-development-model';
 import { SUPERVISORY_VISITS_KEY } from './supervisory-visits-model';
-export const RECOVERY_KEYS=[STORAGE_KEY,PLAN_STORAGE_KEY,SCHEDULE_STORAGE_KEY,COVER_DRAFT_KEY,TECHNICAL_FOLLOWUP_STORAGE_KEY,SHORT_TEST_KEY,ASSESSMENT_KEY,PROFESSIONAL_DEVELOPMENT_KEY,SUPERVISORY_VISITS_KEY];
+import { DUTY_ROUTINE_KEY } from './duty-routine';
+export const RECOVERY_KEYS=[STORAGE_KEY,PLAN_STORAGE_KEY,SCHEDULE_STORAGE_KEY,COVER_DRAFT_KEY,TECHNICAL_FOLLOWUP_STORAGE_KEY,SHORT_TEST_KEY,ASSESSMENT_KEY,PROFESSIONAL_DEVELOPMENT_KEY,SUPERVISORY_VISITS_KEY,DUTY_ROUTINE_KEY];
 const record=(x:unknown):x is Record<string,unknown> => !!x && typeof x==='object'&&!Array.isArray(x);
 
 export function inspectStartupStorage():string[]{
