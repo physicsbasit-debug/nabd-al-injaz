@@ -15,9 +15,10 @@ test('navigation and task forms fit narrow and wide screens', async ({ page }) =
       const list = page.getByRole('navigation', { name: 'أقسام الهاتف' });
       await expect(list.getByRole('button')).toHaveCount(15);
       if (width <= 420) {
-        const columns = await list.evaluate(
-          (element) => getComputedStyle(element).gridTemplateColumns.split(' ').length,
-        );
+        const columns = await list
+          .locator('.nav-group')
+          .first()
+          .evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length);
         expect(columns).toBe(2);
       }
       await list.getByRole('button', { name: 'الخطط والمهام' }).click();
