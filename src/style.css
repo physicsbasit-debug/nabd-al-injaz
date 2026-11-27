@@ -24,3 +24,9 @@ body{min-height:100vh;background:#f4f7f6;}
   .layout>aside{width:auto;min-height:100%;height:auto;align-self:stretch;}
   .layout>main{min-height:100vh;min-width:0;}
 }
+.nav-group{display:grid;gap:3px}
+.desktop-navigation{gap:12px;margin-top:22px}
+.nav-group-label{margin:0 13px 2px;font-size:12px;font-weight:700;letter-spacing:0;color:#9fd2c3}
+.desktop-navigation button{padding:10px 13px}
+@media(max-width:800px){.mobile-section-list{display:grid;grid-template-columns:1fr;gap:10px}.mobile-section-list .nav-group{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.mobile-section-list .nav-group-label{grid-column:1/-1;margin:2px 4px 0}}
+@media(min-width:801px){.desktop-navigation .nav-group button{min-height:40px}}

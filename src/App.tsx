@@ -3,12 +3,18 @@ import {
   Activity,
   ClipboardCheck,
   CalendarDays,
-  Users,
   GraduationCap,
   Medal,
   FileText,
   BookOpenCheck,
   Contact,
+  ListChecks,
+  Library,
+  BookOpen,
+  Eye,
+  Handshake,
+  MessagesSquare,
+  TrendingUp,
 } from 'lucide-react';
 import TaskManager, { readTasks, STORAGE_KEY, type Task } from './TaskManager';
 import { toggleTaskCompletion } from './task-model';
@@ -35,22 +41,22 @@ import SupervisoryVisits from './SupervisoryVisits';
 import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, type SupervisoryVisit, type SupervisoryVisitForm } from './supervisory-visits-model';
 import { PLAN_DESTINATIONS, type PlanDestination } from './plan-routing';
 import { PLAN_STORAGE_KEY, readPlans, type Plan } from './plan-model';
-const sections = [
-  ['الرئيسية', Activity],
-  ['دليل الواجبات', BookOpenCheck],
-  ['ملفات المعلمين', Contact],
-  ['الخطط والمهام', ClipboardCheck],
-  ['مكتبة الخطط', ClipboardCheck],
-  ['الجداول والاحتياط', CalendarDays],
-  ['المتابعة الفنية', Users],
-  ['الاختبارات والتحصيل', FileText],
-  ['الإنماء المهني', GraduationCap],
-  ['الزيارات الإشرافية', Users],
-  ['الزيارات المتبادلة', Users],
-  ['الاجتماعات الدورية', Users],
-  ['رفع المستوى التحصيلي', GraduationCap],
-  ['الإنجازات والشواهد', Medal],
-  ['التقارير', FileText],
+const NAV_GROUPS = [
+  ['اليوم والواجبات', [['الرئيسية', Activity], ['دليل الواجبات', BookOpenCheck]]],
+  [
+    'المعلمون والإشراف',
+    [
+      ['ملفات المعلمين', Contact],
+      ['الزيارات الإشرافية', Eye],
+      ['الزيارات المتبادلة', Handshake],
+      ['الاجتماعات الدورية', MessagesSquare],
+      ['الإنماء المهني', GraduationCap],
+      ['المتابعة الفنية', BookOpen],
+    ],
+  ],
+  ['الخطط والجداول', [['الخطط والمهام', ListChecks], ['مكتبة الخطط', Library], ['الجداول والاحتياط', CalendarDays]]],
+  ['التقويم والتحصيل', [['الاختبارات والتحصيل', ClipboardCheck], ['رفع المستوى التحصيلي', TrendingUp]]],
+  ['التوثيق والتقارير', [['الإنجازات والشواهد', Medal], ['التقارير', FileText]]],
 ] as const;
 export default function App() {
   const [issues] = useState(inspectStartupStorage);
@@ -101,16 +107,21 @@ function Workspace() {
         </h2>
         <p>منظومة المعلم الأول</p>
         <nav className="desktop-navigation" aria-label="الأقسام الرئيسية">
-          {sections.map(([s, Icon]) => (
-            <button
-              className={tab === s ? 'active' : ''}
-              aria-current={tab === s ? 'page' : undefined}
-              key={s}
-              onClick={() => setTab(s)}
-            >
-              <Icon size={18} />
-              {s}
-            </button>
+          {NAV_GROUPS.map(([group, items]) => (
+            <div className="nav-group" key={group}>
+              <p className="nav-group-label">{group}</p>
+              {items.map(([s, Icon]) => (
+                <button
+                  className={tab === s ? 'active' : ''}
+                  aria-current={tab === s ? 'page' : undefined}
+                  key={s}
+                  onClick={() => setTab(s)}
+                >
+                  <Icon size={18} aria-hidden="true" />
+                  {s}
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="mobile-navigation">
@@ -132,20 +143,25 @@ function Workspace() {
           </button>
           {mobileMenuOpen && (
             <nav id="mobile-sections" className="mobile-section-list" aria-label="أقسام الهاتف">
-              {sections.map(([s, Icon]) => (
-                <button
-                  key={s}
-                  type="button"
-                  className={tab === s ? 'active' : ''}
-                  aria-current={tab === s ? 'page' : undefined}
-                  onClick={() => {
-                    setTab(s);
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  <Icon size={18} />
-                  {s}
-                </button>
+              {NAV_GROUPS.map(([group, items]) => (
+                <div className="nav-group" key={group}>
+                  <p className="nav-group-label">{group}</p>
+                  {items.map(([s, Icon]) => (
+                    <button
+                      key={s}
+                      type="button"
+                      className={tab === s ? 'active' : ''}
+                      aria-current={tab === s ? 'page' : undefined}
+                      onClick={() => {
+                        setTab(s);
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <Icon size={18} aria-hidden="true" />
+                      {s}
+                    </button>
+                  ))}
+                </div>
               ))}
             </nav>
           )}
