@@ -42,11 +42,32 @@ describe('school periods', () => {
     expect(schoolWeekStart('2026-11-28')).toBe('2026-11-29'); // السبت
     expect(periodFor('أسبوعي', '2026-12-01')).toEqual({
       key: 'W2026-11-29',
-      start: '2026-11-29',
+      start: '2026-11-27',
       end: '2026-12-03',
       label: 'هذا الأسبوع',
     });
   });
+  it('counts weekend work toward the coming school week', () => {
+    const record = {
+      dutyId: 11,
+      date: '2026-11-27',
+      title: 'زيارة الجمعة',
+      section: 'الزيارات الإشرافية',
+    };
+    expect(
+      buildRoutine('2026-11-27', emptyRoutineStore(), [record]).find((i) => i.duty.id === 11)!
+        .complete,
+    ).toBe(true);
+    expect(
+      buildRoutine('2026-12-01', emptyRoutineStore(), [record]).find((i) => i.duty.id === 11)!
+        .complete,
+    ).toBe(true);
+    expect(
+      buildRoutine('2026-11-26', emptyRoutineStore(), [record]).find((i) => i.duty.id === 11)!
+        .complete,
+    ).toBe(false);
+  });
+
   it('computes month and semester ends', () => {
     expect(periodFor('شهري', '2026-02-10')?.end).toBe('2026-02-28');
     expect(semesterOf('2026-11-27')).toMatchObject({ key: '2026-S1', end: '2027-01-31' });

@@ -120,3 +120,18 @@
 .home-details > summary:focus-visible { outline: 3px solid #109480; outline-offset: 2px; }
 .home-details-body { padding: 0 12px 12px; }
 .duty-chip-core { background: #176d5c; color: #fff; }
+.teacher-name-hint { display: block; margin-top: 3px; color: #7a5200; font-weight: 400; font-size: 12px; line-height: 1.6; }
+.brief-capture-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.brief-capture { padding: 10px 18px; font-size: 15px; }
+.brief-captured { margin: 0; color: #1f6a43; font-size: 14px; }
+.quick-capture { margin-top: 12px; border: 1px solid #b7d7ca; border-radius: 16px; background: #fff; padding: 14px; display: grid; gap: 12px; }
+.quick-kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.quick-kinds button { border: 1px solid #c4dbd1; background: #fff; color: #1f5a4c; border-radius: 20px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.quick-kinds button[aria-pressed='true'] { background: #176d5c; border-color: #176d5c; color: #fff; }
+.quick-kinds button:focus-visible { outline: 3px solid #109480; outline-offset: 2px; }
+.quick-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.quick-fields label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; color: #19483a; align-content: start; }
+.quick-fields input, .quick-fields select { border: 1px solid #ccddd3; border-radius: 8px; padding: 8px; font: inherit; font-weight: 400; background: #fff; }
+.quick-wide { grid-column: 1 / -1; }
+.quick-capture [role='alert'] { margin: 0; color: #9a3a16; }
+@media (max-width: 620px) { .quick-fields { grid-template-columns: 1fr; } }

@@ -9,9 +9,10 @@ import { AUTO_CLOSING_DUTIES } from './duty-records';
 import { readDecisionStore, setDecisionDone, writeDecisionStore, type MeetingDecision } from './meeting-decisions-model';
 import { buildRoutine, markRoutine, readRoutineStore, unmarkRoutine, writeRoutineStore, type RoutineItem } from './duty-routine';
 import { BACKUP_REMINDER_DAYS, daysSinceBackup } from './backup-reminder';
+import QuickCapture from './QuickCapture';
 import './morning-brief.css';
 
-type Props = { tasks: Task[]; plans: Plan[]; navigate: (section: string, planId?: string, activityId?: string) => void };
+type Props = { tasks: Task[]; plans: Plan[]; navigate: (section: string, planId?: string, activityId?: string) => void; onAddTask?: (task: Task) => void };
 type View = 'today' | 'overdue' | 'done' | 'evidence' | 'routine';
 type BriefItem = { id: string; title: string; meta: string; section?: string; planId?: string; activityId?: string; duty?: Duty; routine?: RoutineItem; decision?: MeetingDecision; tone?: 'late' | 'urgent' };
 
@@ -39,11 +40,14 @@ function routineMeta(item: RoutineItem): string {
   return `واجب ${item.frequency} · متبقٍ ${item.daysLeft} ${item.daysLeft <= 10 ? 'أيام' : 'يومًا'} على نهاية ${item.periodLabel}`;
 }
 
-export default function MorningBrief({ tasks, plans, navigate }: Props) {
+export default function MorningBrief({ tasks, plans, navigate, onAddTask }: Props) {
   const { today, agenda, errors, evidenceError, evidenceReady, withoutEvidence, dutyRecords } = useAgendaData(tasks, plans);
   const [store, setStore] = useState(readRoutineStore);
   const [view, setView] = useState<View>('today');
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [capturing, setCapturing] = useState(false);
+  const [captured, setCaptured] = useState('');
+  const [, setRefresh] = useState(0);
   const routine = buildRoutine(today, store, dutyRecords);
   const [decisions, setDecisions] = useState(() => {
     try {
@@ -182,6 +186,22 @@ export default function MorningBrief({ tasks, plans, navigate }: Props) {
           <span><b>{pulse}٪</b><small>نبض الفترة</small></span>
         </div>
       </div>
+      <div className="brief-capture-bar">
+        {!capturing && (
+          <button type="button" className="brief-primary brief-capture" onClick={() => { setCapturing(true); setCaptured(''); }}>
+            + سجّل إنجازًا
+          </button>
+        )}
+        {captured && !capturing && <p role="status" className="brief-captured">{captured}</p>}
+      </div>
+      {capturing && (
+        <QuickCapture
+          today={today}
+          onAddTask={(task) => onAddTask?.(task)}
+          onSaved={(message) => { setCaptured(message); setRefresh((n) => n + 1); }}
+          onClose={() => setCapturing(false)}
+        />
+      )}
       {errors.length > 0 && <p role="alert">تعذرت قراءة: {errors.join('، ')}.</p>}
 
       <div className="brief-columns">

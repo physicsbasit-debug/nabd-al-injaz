@@ -188,7 +188,7 @@ function Workspace() {
         </header>
         {tab === 'الرئيسية' ? (
           <>
-            <MorningBrief tasks={tasks} plans={plans} navigate={(section, planId, activityId) => {
+            <MorningBrief tasks={tasks} plans={plans} onAddTask={(task) => setTasks((old) => [task, ...old])} navigate={(section, planId, activityId) => {
               if (planId) { setSelectedPlanId(planId); setFocusedActivityId(activityId ?? null); setPlanCreateRequested(false); }
               setTab(section); setMobileMenuOpen(false);
             }} />
