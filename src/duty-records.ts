@@ -3,6 +3,7 @@ import type { Plan } from './plan-model';
 import { readSupervisoryVisits } from './supervisory-visits-model';
 import { readProfessionalPrograms } from './professional-development-model';
 import { readCoverStore } from './cover-planning';
+import { CHECK_KINDS, readTeacherStore } from './teacher-profile-model';
 import type { Task } from './task-model';
 import type { DutyRecord } from './duty-routine';
 
@@ -17,7 +18,7 @@ export const AUTO_SECTION_DUTY: Record<string, number> = {
 };
 
 /** الواجبات التي تُغلق تلقائيًا من أقسامها (إضافة إلى أي واجب تُربط به مهمة). */
-export const AUTO_CLOSING_DUTIES = new Set(Object.values(AUTO_SECTION_DUTY));
+export const AUTO_CLOSING_DUTIES = new Set([...Object.values(AUTO_SECTION_DUTY), 5, 24, 30]);
 
 /**
  * يحوّل سجل الإنجازات إلى شواهد للواجبات:
@@ -53,5 +54,10 @@ export function readDutyRecords(tasks: Task[], plans: Plan[], today: string): Du
     cover: safe(readCoverStore, undefined),
     programs: safe(readProfessionalPrograms, []),
   });
-  return dutyRecordsFrom(achievements, tasks);
+  const checks = safe(readTeacherStore, null)?.checks ?? [];
+  const checkRecords: DutyRecord[] = checks.map((c) => {
+    const kind = CHECK_KINDS.find((k) => k.kind === c.kind)!;
+    return { dutyId: kind.duty, date: c.date, title: `${kind.label}: ${c.teacher}`, section: 'ملفات المعلمين' };
+  });
+  return [...dutyRecordsFrom(achievements, tasks), ...checkRecords];
 }
