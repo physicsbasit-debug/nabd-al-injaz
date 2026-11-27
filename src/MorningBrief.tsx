@@ -5,6 +5,7 @@ import type { Plan } from './plan-model';
 import { useAgendaData } from './UnifiedAgenda';
 import type { AgendaItem } from './unified-agenda';
 import { dutyById, SECTION_DUTY, TASK_CATEGORY_DUTY, type Duty } from './duties';
+import { AUTO_CLOSING_DUTIES } from './duty-records';
 import { buildRoutine, markRoutine, readRoutineStore, unmarkRoutine, writeRoutineStore, type RoutineItem } from './duty-routine';
 import './morning-brief.css';
 
@@ -26,6 +27,10 @@ function dutyForAgenda(item: AgendaItem, tasks: Task[]): Duty | undefined {
 }
 
 function routineMeta(item: RoutineItem): string {
+  if (!item.done && item.auto.length) {
+    const more = item.auto.length > 1 ? ` و${item.auto.length - 1} غيره` : '';
+    return `واجب ${item.frequency} · أُنجز من السجلات: ${item.auto[0].title}${more}`;
+  }
   if (item.done) return `واجب ${item.frequency} · أُنجز ${item.periodLabel}${item.done.note ? ' · ' + item.done.note : ''}`;
   if (item.frequency === 'يومي') return 'واجب يومي';
   if (item.daysLeft <= 0) return `واجب ${item.frequency} · آخر يوم في فترته`;
@@ -33,11 +38,11 @@ function routineMeta(item: RoutineItem): string {
 }
 
 export default function MorningBrief({ tasks, plans, navigate }: Props) {
-  const { today, agenda, errors, evidenceError, evidenceReady, withoutEvidence } = useAgendaData(tasks, plans);
+  const { today, agenda, errors, evidenceError, evidenceReady, withoutEvidence, dutyRecords } = useAgendaData(tasks, plans);
   const [store, setStore] = useState(readRoutineStore);
   const [view, setView] = useState<View>('today');
   const [notes, setNotes] = useState<Record<string, string>>({});
-  const routine = buildRoutine(today, store);
+  const routine = buildRoutine(today, store, dutyRecords);
   const save = (next: typeof store) => { setStore(next); writeRoutineStore(next); };
 
   const fromAgenda = (item: AgendaItem, tone?: BriefItem['tone']): BriefItem => ({
@@ -49,13 +54,13 @@ export default function MorningBrief({ tasks, plans, navigate }: Props) {
     tone: item.urgent ? 'urgent' : undefined,
   });
 
-  const openRoutine = routine.filter((r) => !r.done);
+  const openRoutine = routine.filter((r) => !r.complete);
   const todayItems = [...agenda.today.map((i) => fromAgenda(i)), ...openRoutine.filter((r) => r.frequency === 'يومي').map(fromRoutine)];
   const weekItems = openRoutine.filter((r) => r.frequency === 'أسبوعي').map(fromRoutine);
   const soonItems = openRoutine.filter((r) => r.urgent && r.frequency !== 'أسبوعي').sort((a, b) => a.daysLeft - b.daysLeft).map(fromRoutine);
   const overdueItems = agenda.overdue.map((i) => fromAgenda(i, 'late'));
   const doneToday = agenda.completed.filter((i) => i.completionDate?.slice(0, 10) === today);
-  const routineDone = routine.filter((r) => r.done);
+  const routineDone = routine.filter((r) => r.complete);
   const doneItems = [...doneToday.map((i) => fromAgenda(i)), ...routineDone.map(fromRoutine)];
   const evidenceItems = withoutEvidence.map((i) => ({ ...fromAgenda(i), meta: i.detail + ' · أرفق الشاهد من قسمه' }));
   const pulse = routine.length ? Math.round((routineDone.length / routine.length) * 100) : 0;
@@ -75,6 +80,8 @@ export default function MorningBrief({ tasks, plans, navigate }: Props) {
   if (overdueItems.length >= 3) tips.push('المتأخرات تتراكم: أنجز ما يمكن اليوم، وحدّث موعد الباقي بدل تركه متأخرًا.');
   const monthlyLeft = openRoutine.filter((r) => r.frequency === 'شهري' && r.urgent).length;
   if (monthlyLeft) tips.push(`اقترب نهاية الشهر: ${monthlyLeft} من الواجبات الشهرية لم تُنجز بعد.`);
+  const unlinked = tasks.filter((t) => !t.done && !t.dutyId).length;
+  if (unlinked >= 3) tips.push(`اربط مهامك المفتوحة (${unlinked}) بأرقام الواجبات من «الخطط والمهام»؛ عند إكمالها تُحتسب في روتينك تلقائيًا.`);
   if (!tips.length) tips.push('اجمع الأعمال المتشابهة في وقت واحد: مثل فحص التحضير لجميع المعلمين في جلسة واحدة.');
 
   const views: Array<{ id: View; label: string; count: number | string; icon: typeof Sunrise; items: BriefItem[]; empty: string }> = [
@@ -87,11 +94,12 @@ export default function MorningBrief({ tasks, plans, navigate }: Props) {
   const routineGroups = (['يومي', 'أسبوعي', 'شهري', 'فصلي'] as const).map((f) => ({ f, items: routine.filter((r) => r.frequency === f) })).filter((g) => g.items.length);
 
   const renderItem = (item: BriefItem) => (
-    <li key={item.id} className={'brief-item' + (item.tone ? ' brief-' + item.tone : '') + (item.routine?.done ? ' brief-checked' : '')}>
+    <li key={item.id} className={'brief-item' + (item.tone ? ' brief-' + item.tone : '') + (item.routine?.complete ? ' brief-checked' : '')}>
       <div className="brief-item-head">
         <span className="brief-item-text"><strong>{item.title}</strong><small>{item.meta}</small></span>
         <span className="brief-actions">
-          {item.routine && (item.routine.done ? (
+          {item.routine && !item.routine.done && item.routine.auto.length > 0 && <span className="brief-auto">من السجلات</span>}
+          {item.routine && (item.routine.auto.length > 0 && !item.routine.done ? null : item.routine.done ? (
             <button type="button" className="brief-secondary" onClick={() => save(unmarkRoutine(store, item.routine!))}>تراجع</button>
           ) : (
             <button type="button" className="brief-primary" onClick={() => { save(markRoutine(store, item.routine!, notes[item.id] ?? '')); setNotes((n) => ({ ...n, [item.id]: '' })); }}>تم</button>
@@ -104,7 +112,13 @@ export default function MorningBrief({ tasks, plans, navigate }: Props) {
           <summary>طريقة الإنجاز · الواجب {item.duty.id}</summary>
           <ol>{item.duty.steps.map((step) => <li key={step}>{step}</li>)}</ol>
           <p><b>الشاهد المطلوب:</b> {item.duty.evidence}</p>
-          {item.routine && !item.routine.done && (
+          {item.routine && AUTO_CLOSING_DUTIES.has(item.duty.id) && item.duty.section && (
+            <p className="brief-auto-hint">يُحتسب تلقائيًا عند تسجيله في قسم «{item.duty.section}»، فلا حاجة للضغط على «تم».</p>
+          )}
+          {item.routine && item.routine.auto.length > 1 && (
+            <ul className="brief-auto-list">{item.routine.auto.map((r) => <li key={r.title + r.date}>{r.title} · {r.date}</li>)}</ul>
+          )}
+          {item.routine && !item.routine.complete && (
             <label className="brief-note">ملاحظة إنجاز اختيارية
               <input value={notes[item.id] ?? ''} maxLength={300} onChange={(e) => setNotes((n) => ({ ...n, [item.id]: e.target.value }))} placeholder="مثال: زيارة المعلم أحمد – الصف التاسع" />
             </label>
@@ -185,7 +199,7 @@ export default function MorningBrief({ tasks, plans, navigate }: Props) {
         <div className="brief-routine">
           {routineGroups.map(({ f, items }) => (
             <details key={f} open={f === 'يومي' || f === 'أسبوعي'}>
-              <summary><strong>{items[0].periodLabel} · واجبات {f === 'يومي' ? 'يومية' : f === 'أسبوعي' ? 'أسبوعية' : f === 'شهري' ? 'شهرية' : 'فصلية'}</strong><span>{items.filter((i) => i.done).length}/{items.length}</span></summary>
+              <summary><strong>{items[0].periodLabel} · واجبات {f === 'يومي' ? 'يومية' : f === 'أسبوعي' ? 'أسبوعية' : f === 'شهري' ? 'شهرية' : 'فصلية'}</strong><span>{items.filter((i) => i.complete).length}/{items.length}</span></summary>
               <ul className="brief-list">{items.map((i) => renderItem(fromRoutine(i)))}</ul>
             </details>
           ))}

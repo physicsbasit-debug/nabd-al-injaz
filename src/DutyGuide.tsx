@@ -2,15 +2,18 @@ import { useState } from 'react';
 import { DUTIES, DUTY_FREQUENCIES, DUTY_GROUPS, type DutyFrequency } from './duties';
 import { effectiveFrequency, readRoutineStore, semesterCompletions, semesterOf, setDutyFrequency, writeRoutineStore } from './duty-routine';
 import { localDateKey } from './dashboard-metrics';
+import { AUTO_CLOSING_DUTIES, readDutyRecords } from './duty-records';
+import type { Task } from './task-model';
+import type { Plan } from './plan-model';
 import './morning-brief.css';
 
-type Props = { onNavigate: (section: string) => void };
+type Props = { tasks: Task[]; plans: Plan[]; onNavigate: (section: string) => void };
 
-export default function DutyGuide({ onNavigate }: Props) {
+export default function DutyGuide({ tasks, plans, onNavigate }: Props) {
   const [store, setStore] = useState(readRoutineStore);
   const [query, setQuery] = useState('');
   const today = localDateKey(new Date());
-  const counts = semesterCompletions(store, today);
+  const counts = semesterCompletions(store, today, readDutyRecords(tasks, plans, today));
   const q = query.trim();
   const visible = DUTIES.filter((d) => !q || d.text.includes(q) || d.short.includes(q) || String(d.id) === q);
   const routineCount = DUTIES.filter((d) => ['يومي', 'أسبوعي', 'شهري', 'فصلي'].includes(effectiveFrequency(d, store))).length;
@@ -46,6 +49,7 @@ export default function DutyGuide({ onNavigate }: Props) {
                     <span className="duty-number">{duty.id}</span>
                     <strong>{duty.short}</strong>
                     <span className="duty-chip">{frequency}</span>
+                    {AUTO_CLOSING_DUTIES.has(duty.id) && <span className="duty-chip">يُحتسب من قسمه</span>}
                     {counts[duty.id] ? <span className="duty-chip duty-chip-done">أُنجز {counts[duty.id]} مرة هذا الفصل</span> : null}
                   </summary>
                   <blockquote>{duty.text}</blockquote>

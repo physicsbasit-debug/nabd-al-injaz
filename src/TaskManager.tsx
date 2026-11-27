@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react';
 import WorkEvidencePanel from './WorkEvidencePanel';
 import { listWorkEvidence } from './work-evidence';
 import { withAssessmentLock } from './assessment-lock';
+import { DUTIES, DUTY_GROUPS, dutyById } from './duties';
 import { readTasks, STORAGE_KEY } from './task-model';
 import {
   TASK_CATEGORIES,
   formatDueDate,
   setTaskProgress,
   toggleTaskCompletion,
+  withDutyId,
   taskCounts,
   type Task,
   type TaskCategory,
@@ -32,6 +34,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
   const [priority, setPriority] = useState<TaskPriority>('عادية');
   const [category, setCategory] = useState<TaskCategory>('أخرى');
   const [assignedTo, setAssignedTo] = useState('');
+  const [dutyId, setDutyId] = useState('');
   const [progress, setProgress] = useState<TaskProgress>('لم تبدأ');
   const [notes, setNotes] = useState('');
 
@@ -44,6 +47,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
   const [editPriority, setEditPriority] = useState<TaskPriority>('عادية');
   const [editCategory, setEditCategory] = useState<TaskCategory>('أخرى');
   const [editAssignedTo, setEditAssignedTo] = useState('');
+  const [editDutyId, setEditDutyId] = useState('');
   const [editProgress, setEditProgress] = useState<TaskProgress>('لم تبدأ');
   const [editNotes, setEditNotes] = useState('');
 
@@ -82,6 +86,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
         assignedTo: assignedTo.trim(),
         progress,
         notes: notes.trim(),
+        ...(dutyId ? { dutyId: Number(dutyId) } : {}),
       },
       ...old,
     ]);
@@ -90,6 +95,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
     setPriority('عادية');
     setCategory('أخرى');
     setAssignedTo('');
+    setDutyId('');
     setProgress('لم تبدأ');
     setNotes('');
     setAddOpen(false);
@@ -105,6 +111,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
     setEditPriority(task.priority);
     setEditCategory(task.category);
     setEditAssignedTo(task.assignedTo);
+    setEditDutyId(task.dutyId ? String(task.dutyId) : '');
     setEditProgress(task.progress);
     setEditNotes(task.notes);
   }
@@ -117,7 +124,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
       old.map((task) =>
         task.id === editing
           ? setTaskProgress(
-              {
+              withDutyId({
                 ...task,
                 title: clean,
                 dueDate: editDate,
@@ -125,7 +132,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                 category: editCategory,
                 assignedTo: editAssignedTo.trim(),
                 notes: editNotes.trim(),
-              },
+              }, editDutyId),
               editProgress,
             )
           : task,
@@ -201,6 +208,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                   ))}
                 </select>
               </label>
+              <DutySelect value={dutyId} onChange={setDutyId} />
               <label>
                 المسؤول عن التنفيذ
                 <input
@@ -344,6 +352,7 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                         ))}
                       </select>
                     </label>
+                    <DutySelect value={editDutyId} onChange={setEditDutyId} />
                     <label>
                       المسؤول عن التنفيذ
                       <input
@@ -423,6 +432,11 @@ export default function TaskManager({ tasks, setTasks }: Props) {
                     </label>
                     <div className="task-meta">
                       <span className="task-chip">{task.category}</span>
+                      {task.dutyId && (
+                        <span className="task-chip task-chip-duty">
+                          الواجب {task.dutyId}: {dutyById(task.dutyId)?.short}
+                        </span>
+                      )}
                       <span
                         className={
                           task.done
@@ -473,5 +487,26 @@ export default function TaskManager({ tasks, setTasks }: Props) {
         إلى جهاز آخر، استخدم أداة النسخ في الصفحة الرئيسية.
       </p>
     </section>
+  );
+}
+
+function DutySelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <label>
+      الواجب الوظيفي
+      <select aria-label="الواجب الوظيفي" value={value} onChange={(event) => onChange(event.target.value)}>
+        <option value="">دون ربط</option>
+        {DUTY_GROUPS.map((group) => (
+          <optgroup key={group} label={group}>
+            {DUTIES.filter((duty) => duty.group === group).map((duty) => (
+              <option key={duty.id} value={duty.id}>
+                {duty.id}. {duty.short}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      <small className="task-date-help">عند إكمال المهمة يُحتسب الواجب منجزًا في موجز اليوم.</small>
+    </label>
   );
 }

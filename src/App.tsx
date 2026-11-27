@@ -259,7 +259,7 @@ function Workspace() {
             }} />
           </>
         ) : tab === 'دليل الواجبات' ? (
-          <DutyGuide onNavigate={(section) => { setTab(section); setMobileMenuOpen(false); }} />
+          <DutyGuide tasks={tasks} plans={plans} onNavigate={(section) => { setTab(section); setMobileMenuOpen(false); }} />
         ) : PLAN_DESTINATIONS.includes(tab as PlanDestination) ? (
           <SectionRegister key={tab} plans={plans} setPlans={setPlans} destination={tab as 'الاجتماعات الدورية' | 'الزيارات المتبادلة' | 'رفع المستوى التحصيلي'} onOpenPlan={(id, activityId) => {
             setSelectedPlanId(id);

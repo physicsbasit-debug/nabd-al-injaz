@@ -23,6 +23,8 @@ export type Task = {
   progress: TaskProgress;
   previousProgress?: Exclude<TaskProgress, 'مكتملة'>;
   notes: string;
+  /** رقم الواجب الوظيفي (1–44) الذي تخدمه المهمة */
+  dutyId?: number;
 };
 
 export const STORAGE_KEY = 'nabd-al-injaz:tasks:v1';
@@ -69,6 +71,7 @@ export function readTasks(): Task[] {
             ? { previousProgress: task.previousProgress }
             : {}),
           notes: typeof task.notes === 'string' ? task.notes.slice(0, 500) : '',
+          ...(Number.isInteger(task.dutyId) && (task.dutyId as number) >= 1 && (task.dutyId as number) <= 44 ? { dutyId: task.dutyId as number } : {}),
           ...(task.done && typeof task.completedAt === 'string' && !Number.isNaN(Date.parse(task.completedAt)) ? { completedAt: task.completedAt } : {}),
         },
       ];
@@ -122,4 +125,12 @@ export function taskCounts(tasks: Task[]) {
     inProgress: tasks.filter((task) => !task.done && task.progress === 'قيد التنفيذ').length,
     notStarted: tasks.filter((task) => !task.done && task.progress !== 'قيد التنفيذ').length,
   };
+}
+
+/** يربط المهمة بواجب وظيفي أو يزيل الربط عند القيمة الفارغة. */
+export function withDutyId(task: Task, value: string): Task {
+  const id = Number(value);
+  const updated: Task = { ...task };
+  delete updated.dutyId;
+  return Number.isInteger(id) && id >= 1 && id <= 44 ? { ...updated, dutyId: id } : updated;
 }
