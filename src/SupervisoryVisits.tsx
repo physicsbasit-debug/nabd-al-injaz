@@ -4,6 +4,8 @@ import { readPlans, type Plan } from './plan-model';
 import { activitiesForDestination } from './plan-routing';
 import { readSchedule, SCHEDULE_STORAGE_KEY } from './schedule-model';
 import { onAssessmentChange, withAssessmentLock } from './assessment-lock';
+import { compactVisit, PERFORMANCE_INDICATORS, VISIT_METHODS, type PerformanceIndicator, type VisitMethod } from './supervisory-visits-model';
+import VisitAnalysisPanel from './VisitAnalysisPanel';
 import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, isFutureCompletedVisit, isSupervisoryVisit, readSupervisoryVisits, summarizeTeacherVisits, SUPERVISORY_VISITS_KEY, VISIT_SUBJECTS, type SupervisoryVisit, type SupervisoryVisitForm } from './supervisory-visits-model';
 import { localDateKey } from './dashboard-metrics';
 import { deleteVisitFile, listVisitFiles, saveVisitFile, VISIT_MAX_BYTES, VISIT_MIMES, type VisitFile } from './supervisory-visit-files';
@@ -58,6 +60,12 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
   }, [requestedLink, onLinkHandled]);
 
   function change<K extends keyof Form>(key: K, value: Form[K]) { setForm(current => ({ ...current, [key]: value })); }
+  function toggleTag(key: 'strengthIndicators' | 'priorityIndicators', tag: PerformanceIndicator) {
+    setForm(current => {
+      const list = current[key] ?? [];
+      return { ...current, [key]: list.includes(tag) ? list.filter(item => item !== tag) : PERFORMANCE_INDICATORS.filter(item => item === tag || list.includes(item)) };
+    });
+  }
   function canReplaceDraft(): boolean {
     return !hasUnsavedVisitChanges(form, editing) || window.confirm('لديك بيانات زيارة غير محفوظة. هل تريد تجاهلها؟');
   }
@@ -75,7 +83,7 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
   }
   async function save() {
     if (busy) return;
-    const record: SupervisoryVisit = { ...form, teacher: form.teacher.trim(), lesson: form.lesson.trim(), documentation: form.documentation?.trim() ?? '', id: editing?.id ?? crypto.randomUUID(), createdAt: editing?.createdAt ?? new Date().toISOString() };
+    const record: SupervisoryVisit = compactVisit({ ...form, teacher: form.teacher.trim(), lesson: form.lesson.trim(), documentation: form.documentation?.trim() ?? '', id: editing?.id ?? crypto.randomUUID(), createdAt: editing?.createdAt ?? new Date().toISOString() });
     if (!isSupervisoryVisit(record)) { setMessage('أدخل اسم المعلم، وتاريخًا صحيحًا عند تسجيل زيارة تمت.'); return; }
     const unchangedFuture = editing?.status === 'completed' && editing.date === record.date;
     if (isFutureCompletedVisit(record, today) && !unchangedFuture) { setMessage('لا يمكن تسجيل زيارة بتاريخ مستقبلي على أنها تمت. اختر تاريخًا حتى اليوم أو اجعلها غير منفذة.'); return; }
@@ -155,16 +163,24 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
         {teacherFollowup.length === 0 ? <p>أضف جداول المعلمين أو سجّل زيارة ليظهر المعلمون هنا.</p> : <ul className="visit-teacher-list">{teacherFollowup.map(item => <li key={item.teacher}><div><strong>{item.teacher}</strong><span className={item.completedCount ? 'visit-done' : 'visit-pending'}>{item.completedCount ? 'تمت الزيارة' : 'لم تُسجّل زيارة منفذة'}</span>{item.lastVisit && <small>آخر زيارة مسجلة: {item.lastVisit}</small>}{item.futureCount > 0 && <small>تاريخ زيارة لاحق يحتاج مراجعة.</small>}</div><button type="button" disabled={busy} aria-label={'تسجيل متابعة: ' + item.teacher} onClick={() => prepareTeacher(item.teacher)}>تسجيل متابعة</button></li>)}</ul>}
       </>}
     </section>
+    {ready && <VisitAnalysisPanel visits={records} today={today} />}
     <h3 ref={formRef}>{editing ? 'تعديل الزيارة' : 'إضافة زيارة'}</h3>
     <fieldset className="short-test-fields" disabled={!ready || busy}>
       <label>المعلم<input list="visit-teachers" value={form.teacher} maxLength={300} onChange={e => change('teacher', e.target.value)} /><datalist id="visit-teachers">{teachers.map(name => <option key={name} value={name} />)}</datalist></label>
       <label>تاريخ الزيارة<input type="date" value={form.date} onChange={e => change('date', e.target.value)} /><small>يلزم عند تسجيل زيارة تمت.</small></label>
+      <label>أسلوب الإشراف<select value={form.method ?? ''} onChange={e => change('method', (e.target.value || undefined) as VisitMethod | undefined)}><option value="">غير محدد</option>{VISIT_METHODS.map(method => <option key={method}>{method}</option>)}</select><small>أي أسلوب غير «زيارة صفية» يُحتسب تنويعًا لأساليب الإشراف.</small></label>
       <label>حالة الزيارة<select value={form.status} onChange={e => change('status', e.target.value as Form['status'])}><option value="planned">لم تُسجّل كمنفذة</option><option value="completed">تمت الزيارة</option></select></label>
       <label>المادة<select value={form.subject} onChange={e => change('subject', e.target.value)}><option value="">غير محددة</option>{VISIT_SUBJECTS.map(subject => <option key={subject}>{subject}</option>)}</select></label>
       <label>الصف<select value={form.grade} onChange={e => change('grade', e.target.value)}><option value="">غير محدد</option><option value="8">الثامن</option><option value="9">التاسع</option><option value="10">العاشر</option></select></label>
       <label>الشعبة<input value={form.section ?? ''} maxLength={100} onChange={e => change('section', e.target.value)} /></label>
       <label>الحصة<select value={form.period} onChange={e => change('period', e.target.value)}><option value="">غير محددة</option>{[1, 2, 3, 4, 5, 6, 7].map(n => <option key={n} value={String(n)}>{n}</option>)}</select></label>
       <label className="short-test-notes">موضوع الدرس<input value={form.lesson} maxLength={300} onChange={e => change('lesson', e.target.value)} /></label>
+      {(['strengthIndicators', 'priorityIndicators'] as const).map(key => (
+        <fieldset className="short-test-notes visit-tags" key={key}>
+          <legend>{key === 'strengthIndicators' ? 'مؤشرات ظهرت جانب قوة' : 'مؤشرات أولوية للتطوير'}</legend>
+          {PERFORMANCE_INDICATORS.map(tag => <label key={tag} className="visit-tag"><input type="checkbox" checked={(form[key] ?? []).includes(tag)} onChange={() => toggleTag(key, tag)} />{tag}</label>)}
+        </fieldset>
+      ))}
       <label className="short-test-notes">النشاط المرتبط من الخطة<select value={linkValue} onChange={e => { const option = options.find(({ plan, activity }) => JSON.stringify([plan.id, activity.id]) === e.target.value); setForm(current => ({ ...current, planId: option?.plan.id ?? '', activityId: option?.activity.id ?? '' })); }}><option value="">زيارة مستقلة — دون ربط بخطة</option>{linkValue && !knownLink && <option value={linkValue}>النشاط المرتبط سابقًا غير متاح حاليًا</option>}{options.map(({ plan, activity }) => <option key={JSON.stringify([plan.id, activity.id])} value={JSON.stringify([plan.id, activity.id])}>{plan.title} — {activity.title}</option>)}</select></label>
       <label className="short-test-notes">ملاحظة التوثيق<textarea value={form.documentation ?? ''} maxLength={4000} onChange={e => change('documentation', e.target.value)} /></label>
     </fieldset>
@@ -180,6 +196,9 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
         <p>{record.grade ? 'الصف: ' + record.grade + ' · ' : ''}{record.section ? 'الشعبة: ' + record.section + ' · ' : ''}{record.period ? 'الحصة: ' + record.period + ' · ' : ''}{record.lesson ? 'الدرس: ' + record.lesson : ''}</p>
         <p>{record.planId ? plan && activity ? 'الخطة: ' + plan.title + ' · النشاط: ' + activity.title : 'النشاط المرتبط غير متاح حاليًا؛ الزيارة محفوظة.' : 'زيارة مستقلة دون ربط بخطة.'}</p>
         {plan && activity && <button type="button" onClick={() => onOpenPlan(plan.id, activity.id)}>فتح نشاط الخطة</button>}
+        {record.method && <p><strong>أسلوب الإشراف:</strong> {record.method}</p>}
+        {record.strengthIndicators?.length ? <p><strong>جوانب القوة:</strong> {record.strengthIndicators.join('، ')}</p> : null}
+        {record.priorityIndicators?.length ? <p><strong>أولويات التطوير:</strong> {record.priorityIndicators.join('، ')}</p> : null}
         {record.documentation && <p><strong>ملاحظة التوثيق:</strong> {record.documentation}</p>}
         {(record.strengths || record.improvements || record.recommendations || record.followUp) && <details className="visit-legacy-notes"><summary>ملاحظات محفوظة من إصدار سابق</summary>{record.strengths && <p><strong>الجوانب الإيجابية:</strong> {record.strengths}</p>}{record.improvements && <p><strong>جوانب التحسين:</strong> {record.improvements}</p>}{record.recommendations && <p><strong>التوصيات:</strong> {record.recommendations}</p>}{record.followUp && <p><strong>المتابعة اللاحقة:</strong> {record.followUp}</p>}</details>}
         <div className="assessment-file-group"><h4>شواهد الزيارة</h4><EvidenceSuggestions context="visit" />

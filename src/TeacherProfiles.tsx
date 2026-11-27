@@ -215,6 +215,10 @@ function ProfileDetail({ profile: p, today, semesterLabel, errorBox, readOnly, n
           {p.visits.done.map((v) => (
             <li key={v.id}>
               <strong>{formatDay(v.date)} · {[v.subject, v.grade && 'الصف ' + v.grade, v.lesson].filter(Boolean).join(' · ')}</strong>
+              {v.method && <p><b>الأسلوب:</b> {v.method}</p>}
+              {v.strengthIndicators?.length ? <p><b>جوانب القوة:</b> {v.strengthIndicators.join('، ')}</p> : null}
+              {v.priorityIndicators?.length ? <p><b>أولويات التطوير:</b> {v.priorityIndicators.join('، ')}</p> : null}
+              {v.documentation && <p><b>التوثيق:</b> {v.documentation}</p>}
               {v.strengths && <p><b>القوة:</b> {v.strengths}</p>}
               {v.improvements && <p><b>أولويات التطوير:</b> {v.improvements}</p>}
               {v.recommendations && <p><b>التوصيات:</b> {v.recommendations}</p>}
