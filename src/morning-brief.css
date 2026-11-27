@@ -111,3 +111,6 @@
 .duty-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; padding-bottom: 14px; }
 .duty-controls label { display: grid; gap: 4px; font-size: 13px; color: #3c574f; }
 .brief-today-list { margin-bottom: 10px; }
+.brief-auto { align-self: center; background: #e9f3ff; color: #1f4e79; border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
+.brief-auto-hint { color: #1f4e79 !important; font-size: 13px !important; }
+.brief-auto-list { margin: 0 0 6px; padding-inline-start: 1.2rem; color: #344f48; font-size: 13px; }

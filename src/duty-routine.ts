@@ -57,35 +57,42 @@ export function schoolWeekStart(today: string): string {
 }
 
 /** الفصل الأول: أغسطس–يناير، الفصل الثاني: فبراير–يوليو (تقريب قابل للمراجعة). */
-export function semesterOf(today: string): { key: string; label: string; end: string } {
+export function semesterOf(today: string): { key: string; label: string; start: string; end: string } {
   const [y, m] = today.split('-').map(Number);
-  if (m >= 8) return { key: `${y}-S1`, label: 'الفصل الدراسي الأول', end: `${y + 1}-01-31` };
-  if (m === 1) return { key: `${y - 1}-S1`, label: 'الفصل الدراسي الأول', end: `${y}-01-31` };
-  return { key: `${y - 1}-S2`, label: 'الفصل الدراسي الثاني', end: `${y}-07-31` };
+  if (m >= 8) return { key: `${y}-S1`, label: 'الفصل الدراسي الأول', start: `${y}-08-01`, end: `${y + 1}-01-31` };
+  if (m === 1) return { key: `${y - 1}-S1`, label: 'الفصل الدراسي الأول', start: `${y - 1}-08-01`, end: `${y}-01-31` };
+  return { key: `${y - 1}-S2`, label: 'الفصل الدراسي الثاني', start: `${y}-02-01`, end: `${y}-07-31` };
 }
 
-export function periodFor(frequency: DutyFrequency, today: string): { key: string; end: string; label: string } | null {
-  if (frequency === 'يومي') return { key: today, end: today, label: 'اليوم' };
+export function periodFor(frequency: DutyFrequency, today: string): { key: string; start: string; end: string; label: string } | null {
+  if (frequency === 'يومي') return { key: today, start: today, end: today, label: 'اليوم' };
   if (frequency === 'أسبوعي') {
     const start = schoolWeekStart(today);
-    return { key: 'W' + start, end: addDays(start, 4), label: 'هذا الأسبوع' };
+    return { key: 'W' + start, start, end: addDays(start, 4), label: 'هذا الأسبوع' };
   }
   if (frequency === 'شهري') {
     const [y, m] = today.split('-').map(Number);
     const end = key(new Date(Date.UTC(y, m, 0)));
-    return { key: today.slice(0, 7), end, label: 'هذا الشهر' };
+    return { key: today.slice(0, 7), start: today.slice(0, 7) + '-01', end, label: 'هذا الشهر' };
   }
   if (frequency === 'فصلي') {
     const s = semesterOf(today);
-    return { key: s.key, end: s.end, label: s.label };
+    return { key: s.key, start: s.start, end: s.end, label: s.label };
   }
   return null;
 }
 
 const URGENT_DAYS: Partial<Record<DutyFrequency, number>> = { أسبوعي: 1, شهري: 5, فصلي: 21 };
 
+/** سجل من أقسام التطبيق يُثبت إنجاز واجب في تاريخ محدد. */
+export type DutyRecord = { dutyId: number; date: string; title: string; section: string };
+
 export type RoutineItem = {
   duty: Duty;
+  /** سجلات الأقسام داخل الفترة؛ وجود أي منها يجعل الواجب منجزًا تلقائيًا */
+  auto: DutyRecord[];
+  /** منجز يدويًا أو تلقائيًا */
+  complete: boolean;
   frequency: DutyFrequency;
   periodKey: string;
   periodLabel: string;
@@ -98,7 +105,7 @@ export type RoutineItem = {
 export const effectiveFrequency = (duty: Duty, store: RoutineStore): DutyFrequency =>
   store.frequency[String(duty.id)] ?? duty.frequency;
 
-export function buildRoutine(today: string, store: RoutineStore): RoutineItem[] {
+export function buildRoutine(today: string, store: RoutineStore, records: DutyRecord[] = []): RoutineItem[] {
   const items: RoutineItem[] = [];
   for (const duty of DUTIES) {
     const frequency = effectiveFrequency(duty, store);
@@ -107,16 +114,22 @@ export function buildRoutine(today: string, store: RoutineStore): RoutineItem[] 
     if (!period) continue;
     const daysLeft = daysBetween(today, period.end);
     const done = store.done[duty.id + '|' + period.key] ?? null;
+    const auto = records
+      .filter((r) => r.dutyId === duty.id && r.date >= period.start && r.date <= period.end && r.date <= today)
+      .sort((a, b) => b.date.localeCompare(a.date));
+    const complete = !!done || auto.length > 0;
     const threshold = URGENT_DAYS[frequency];
     items.push({
       duty,
+      auto,
+      complete,
       frequency,
       periodKey: period.key,
       periodLabel: period.label,
       end: period.end,
       daysLeft,
       done,
-      urgent: !done && threshold !== undefined && daysLeft <= threshold,
+      urgent: !complete && threshold !== undefined && daysLeft <= threshold,
     });
   }
   return items;
@@ -140,17 +153,16 @@ export function setDutyFrequency(store: RoutineStore, duty: Duty, frequency: Dut
   return { ...store, frequency: map };
 }
 
-/** عدد الفترات المنجزة لكل واجب منذ بداية الفصل الحالي (لدليل الواجبات والتقويم الذاتي). */
-export function semesterCompletions(store: RoutineStore, today: string): Record<number, number> {
+/** عدد مرات إنجاز كل واجب منذ بداية الفصل الحالي: يدويًا أو من سجلات الأقسام. */
+export function semesterCompletions(store: RoutineStore, today: string, records: DutyRecord[] = []): Record<number, number> {
   const semester = semesterOf(today);
-  const [startYear, part] = semester.key.split('-S');
-  const start = part === '1' ? `${startYear}-08-01` : `${Number(startYear) + 1}-02-01`;
   const counts: Record<number, number> = {};
+  const inSemester = (day: string) => day >= semester.start && day <= semester.end;
   for (const [k, c] of Object.entries(store.done)) {
-    const day = c.at.slice(0, 10);
-    if (day < start || day > semester.end) continue;
+    if (!inSemester(c.at.slice(0, 10))) continue;
     const id = Number(k.split('|')[0]);
     counts[id] = (counts[id] ?? 0) + 1;
   }
+  for (const r of records) if (inSemester(r.date)) counts[r.dutyId] = (counts[r.dutyId] ?? 0) + 1;
   return counts;
 }

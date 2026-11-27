@@ -14,14 +14,37 @@ test('موجز اليوم يعرض المتأخر والمستحق وطريقة 
     if (localStorage.getItem('seeded')) return;
     localStorage.setItem('seeded', '1');
     const today = new Date();
-    const key = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const key = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const past = new Date(today);
     past.setDate(past.getDate() - 3);
     localStorage.setItem(
       'nabd-al-injaz:tasks:v1',
       JSON.stringify([
-        { id: 'a', title: 'رفع كشف الدرجات', dueDate: key(past), priority: 'عاجلة', done: false, createdAt: key(past), category: 'تقويم وتحصيل', assignedTo: '', progress: 'لم تبدأ', notes: '' },
-        { id: 'b', title: 'اجتماع لجنة التحصيل', dueDate: key(today), priority: 'عادية', done: false, createdAt: key(past), category: 'أخرى', assignedTo: '', progress: 'لم تبدأ', notes: '' },
+        {
+          id: 'a',
+          title: 'رفع كشف الدرجات',
+          dueDate: key(past),
+          priority: 'عاجلة',
+          done: false,
+          createdAt: key(past),
+          category: 'تقويم وتحصيل',
+          assignedTo: '',
+          progress: 'لم تبدأ',
+          notes: '',
+        },
+        {
+          id: 'b',
+          title: 'اجتماع لجنة التحصيل',
+          dueDate: key(today),
+          priority: 'عادية',
+          done: false,
+          createdAt: key(past),
+          category: 'أخرى',
+          assignedTo: '',
+          progress: 'لم تبدأ',
+          notes: '',
+        },
       ]),
     );
   });
@@ -34,11 +57,16 @@ test('موجز اليوم يعرض المتأخر والمستحق وطريقة 
 
   await expect(brief.locator('.brief-today-list')).toContainText('اجتماع لجنة التحصيل');
   await expect(brief.locator('.brief-today-list')).toContainText('توزيع الحصص والاحتياط');
-  await expect(brief.locator('.brief-today-list')).not.toContainText('الزيارات الإشرافية والتغذية الراجعة');
+  await expect(brief.locator('.brief-today-list')).not.toContainText(
+    'الزيارات الإشرافية والتغذية الراجعة',
+  );
   await expect(brief.getByText(/واجبات هذا الأسبوع/)).toBeVisible();
 
   await brief.getByRole('button', { name: /متأخرة/ }).click();
-  await expect(brief.getByRole('button', { name: /متأخرة/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(brief.getByRole('button', { name: /متأخرة/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   const late = brief.locator('.brief-item').filter({ hasText: 'رفع كشف الدرجات' });
   await late.getByText(/طريقة الإنجاز · الواجب 21/).click();
   await expect(late).toContainText('الشاهد المطلوب');
@@ -53,7 +81,10 @@ test('موجز اليوم يعرض المتأخر والمستحق وطريقة 
   await brief.getByRole('button', { name: /منجزة/ }).click();
   await expect(brief.locator('.brief-list')).toContainText('غطيت غياب معلمين');
   await page.reload();
-  await page.getByRole('region', { name: 'موجز اليوم' }).getByRole('button', { name: /منجزة/ }).click();
+  await page
+    .getByRole('region', { name: 'موجز اليوم' })
+    .getByRole('button', { name: /منجزة/ })
+    .click();
   await expect(page.locator('.brief-list')).toContainText('توزيع الحصص والاحتياط');
   await page.getByRole('button', { name: 'تراجع' }).click();
   await expect(page.getByText('لم يُسجل إنجاز اليوم بعد.')).toBeVisible();
@@ -74,4 +105,25 @@ test('دليل الواجبات يعرض الواجبات الأربع والأ�
   const brief = page.getByRole('region', { name: 'موجز اليوم' });
   await brief.getByRole('button', { name: /روتين الواجبات/ }).click();
   await expect(brief.locator('.brief-routine')).toContainText('نشر أخلاقيات المهنة واللوائح');
+});
+
+test('ربط مهمة بواجب وإكمالها يغلق الواجب في موجز اليوم تلقائيًا', async ({ page }) => {
+  await page.goto('/');
+  await openSection(page, 'الخطط والمهام');
+  await page.getByRole('button', { name: 'إضافة مهمة جديدة' }).click();
+  await page.getByPlaceholder('مثال: متابعة تنفيذ الخطة الأسبوعية').fill('فحص سجلات معلمي العلوم');
+  await page.getByRole('combobox', { name: 'الواجب الوظيفي' }).selectOption('30');
+  await page.getByRole('button', { name: /حفظ المهمة|إضافة المهمة/ }).click();
+  const row = page.locator('li').filter({ hasText: 'فحص سجلات معلمي العلوم' });
+  await expect(row.getByText('الواجب 30: متابعة سجلات المعلمين وملفاتهم')).toBeVisible();
+  await row.getByRole('checkbox').check();
+
+  await openSection(page, 'الرئيسية');
+  const brief = page.getByRole('region', { name: 'موجز اليوم' });
+  await brief.getByRole('button', { name: /روتين الواجبات/ }).click();
+  await brief.locator('summary').filter({ hasText: 'واجبات شهرية' }).click();
+  const duty = brief.locator('.brief-item').filter({ hasText: 'متابعة سجلات المعلمين وملفاتهم' });
+  await expect(duty).toContainText('أُنجز من السجلات: فحص سجلات معلمي العلوم');
+  await expect(duty.getByText('من السجلات', { exact: true })).toBeVisible();
+  await expect(duty.getByRole('button', { name: 'تم', exact: true })).toHaveCount(0);
 });

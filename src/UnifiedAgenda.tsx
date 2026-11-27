@@ -14,6 +14,7 @@ import { readShortTests } from './short-test-model';
 import { listProfessionalFiles } from './professional-development-files';
 import { buildAchievements } from './achievement-register';
 import { buildAgenda, type AgendaItem } from './unified-agenda';
+import { readDutyRecords } from './duty-records';
 import './unified-agenda.css';
 
 type Props = { tasks: Task[]; plans: Plan[]; navigate: (section: string, planId?: string, activityId?: string) => void };
@@ -40,7 +41,8 @@ export function useAgendaData(tasks: Task[], plans: Plan[]) {
   try { for (const row of buildAchievements({today,tasks:[],plans:[],visits:[],topics:[],cover:readCoverStore(),assessments:readAssessments(),reviews:readShortTests(),programs})) agenda.completed.push({id:row.id,title:row.title,detail:row.detail,date:'',completionDate:row.date,section:row.section}); } catch { errors.push('سجلات الاختبارات'); }
   const evidenceReady = counts !== null && workKeys !== null && visitKeys !== null && programKeys !== null;
   const withoutEvidence = evidenceReady ? agenda.completed.filter(item => item.activityId ? !counts[item.activityId] : item.id.startsWith('visit:') ? !visitKeys.has(item.id) : item.id.startsWith('program:') ? !programKeys.has(item.id) : !workKeys.has(item.id)) : [];
-  return { today, agenda, errors, evidenceError, evidenceReady, withoutEvidence };
+  const dutyRecords = readDutyRecords(tasks, plans, today);
+  return { today, agenda, errors, evidenceError, evidenceReady, withoutEvidence, dutyRecords };
 }
 export default function UnifiedAgenda({ tasks, plans, navigate }: Props) {
   const { agenda, errors, evidenceError, evidenceReady, withoutEvidence } = useAgendaData(tasks, plans);
