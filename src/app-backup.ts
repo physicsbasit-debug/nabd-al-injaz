@@ -22,6 +22,7 @@ import { DUTY_ROUTINE_KEY, isRoutineStore } from './duty-routine';
 import { TEACHER_PROFILES_KEY, isTeacherStore } from './teacher-profile-model';
 import { SEMESTER_REPORT_KEY, isSemesterReportStore } from './semester-report-model';
 import { MEETING_DECISIONS_KEY, isMeetingDecisionStore } from './meeting-decisions-model';
+import { ACTIVITIES_INVENTORY_KEY, isActivitiesStore } from './activities-inventory-model';
 import { createVisitArchive, decodeVisitArchive, listVisitFiles, replaceVisitFiles, type VisitFile } from './supervisory-visit-files';
 import { assertVisitBackupCapacity, projectedBackupBytes } from './backup-capacity';
 import { listWorkEvidence, encodeWorkEvidence, decodeWorkEvidence, replaceWorkEvidence, type WorkEvidence } from './work-evidence';
@@ -43,6 +44,7 @@ const APP_STORAGE_KEYS = [
   TEACHER_PROFILES_KEY,
   SEMESTER_REPORT_KEY,
   MEETING_DECISIONS_KEY,
+  ACTIVITIES_INVENTORY_KEY,
 ];
 type AppBackup = {
   format: string;
@@ -202,6 +204,10 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
           )))
     )
       throw new Error('سجل الاحتياط في ملف النسخة غير صالح.');
+  }
+  if (data[ACTIVITIES_INVENTORY_KEY] !== undefined) {
+    const activities = parseJson(data[ACTIVITIES_INVENTORY_KEY], 'الأنشطة والجرد');
+    if (!isActivitiesStore(activities)) throw new Error('بيانات الأنشطة والجرد في النسخة غير صالحة.');
   }
   if (data[MEETING_DECISIONS_KEY] !== undefined) {
     const decisions = parseJson(data[MEETING_DECISIONS_KEY], 'قرارات الاجتماعات');

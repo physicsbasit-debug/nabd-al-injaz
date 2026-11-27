@@ -1,0 +1,29 @@
+.activities-inventory h2 { margin: 0 0 0.4rem; color: #153e34; }
+.activities-inventory h3 { margin: 22px 0 10px; color: #174d44; font-size: 18px; }
+.ai-lead { color: #3d5d53; line-height: 1.8; margin: 0; }
+.ai-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; border: 1px solid #d6e5dd; border-radius: 14px; padding: 12px 14px; }
+.ai-form legend { font-weight: 700; color: #174d44; padding: 0 4px; }
+.ai-form label, .ai-list-head label, .ai-check label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; color: #19483a; }
+.ai-form input, .ai-form select, .ai-form textarea, .ai-list-head select, .ai-check input { border: 1px solid #ccddd3; border-radius: 8px; padding: 8px; font: inherit; font-weight: 400; background: #fff; }
+.ai-form small { font-weight: 400; color: #557067; }
+.ai-wide { grid-column: span 2; }
+.ai-actions, .ai-row-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: end; }
+.ai-list-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 10px; margin: 14px 0 8px; }
+.ai-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ai-list li { display: flex; justify-content: space-between; gap: 10px; border: 1px solid #e0ece6; border-inline-start: 4px solid #8cc5b2; border-radius: 12px; padding: 10px 12px; background: #fff; }
+.ai-list li > div:first-child { display: grid; gap: 3px; min-width: 0; }
+.ai-list small { color: #556d66; }
+.ai-list p { margin: 4px 0 0; color: #344f48; }
+.ai-empty { color: #4f6962; }
+.ai-inventory-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.ai-inventory-summary span { display: grid; border: 1px solid #dce9e2; border-radius: 10px; padding: 6px 12px; background: #f6fbf8; font-size: 12px; color: #4f6962; }
+.ai-inventory-summary b { color: #0f5e4f; font-size: 18px; }
+.ai-table { margin-top: 10px; }
+.ai-table tr.ai-issue td { background: #fff7ec; }
+.ai-issues { background: #fff3dc; color: #6b4a00; border-radius: 10px; padding: 8px 10px; }
+.ai-check { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-top: 12px; }
+.ai-check label { flex: 1; min-width: 220px; }
+.ai-history { margin-top: 10px; color: #3c574f; }
+.ai-history summary { cursor: pointer; font-weight: 700; }
+.ai-history summary:focus-visible { outline: 3px solid #109480; outline-offset: 2px; }
+@media (max-width: 820px) { .ai-form { grid-template-columns: 1fr; } .ai-wide { grid-column: auto; } .ai-list li { flex-direction: column; } }

@@ -15,6 +15,7 @@ import {
   Handshake,
   MessagesSquare,
   TrendingUp,
+  Trophy,
 } from 'lucide-react';
 import TaskManager, { readTasks, STORAGE_KEY, type Task } from './TaskManager';
 import { toggleTaskCompletion } from './task-model';
@@ -24,6 +25,7 @@ import UnifiedAgenda from './UnifiedAgenda';
 import MorningBrief from './MorningBrief';
 import DutyGuide from './DutyGuide';
 import TeacherProfiles from './TeacherProfiles';
+import ActivitiesInventory from './ActivitiesInventory';
 import AchievementRegister from './AchievementRegister';
 import Reports from './Reports';
 import StorageRecovery from './StorageRecovery';
@@ -55,7 +57,14 @@ const NAV_GROUPS = [
     ],
   ],
   ['الخطط والجداول', [['الخطط والمهام', ListChecks], ['مكتبة الخطط', Library], ['الجداول والاحتياط', CalendarDays]]],
-  ['التقويم والتحصيل', [['الاختبارات والتحصيل', ClipboardCheck], ['رفع المستوى التحصيلي', TrendingUp]]],
+  [
+    'الطلبة والتحصيل',
+    [
+      ['الاختبارات والتحصيل', ClipboardCheck],
+      ['رفع المستوى التحصيلي', TrendingUp],
+      ['الأنشطة والجرد', Trophy],
+    ],
+  ],
   ['التوثيق والتقارير', [['الإنجازات والشواهد', Medal], ['التقارير', FileText]]],
 ] as const;
 export default function App() {
@@ -277,6 +286,8 @@ function Workspace() {
               setTab('مكتبة الخطط');
             }} />
           </>
+        ) : tab === 'الأنشطة والجرد' ? (
+          <ActivitiesInventory />
         ) : tab === 'ملفات المعلمين' ? (
           <TeacherProfiles plans={plans} onNavigate={(section) => { setTab(section); setMobileMenuOpen(false); }} />
         ) : tab === 'دليل الواجبات' ? (
