@@ -20,6 +20,7 @@ import PlansReport from './PlansReport';
 import ProfessionalReport from './ProfessionalReport';
 import AssessmentReport from './AssessmentReport';
 import CoverReport from './CoverReport';
+import SemesterReport from './SemesterReport';
 type Props={tasks:Task[];plans:Plan[]};
 type Counts={plans:Set<string>;work:Set<string>;visits:Set<string>;programs:Set<string>};
 function GeneralReport({tasks,plans}:Props){
@@ -48,6 +49,6 @@ function GeneralReport({tasks,plans}:Props){
 }
 
 export default function Reports(props:Props){
- const [type,setType]=useState<'general'|'visits'|'plans'|'professional'|'assessment'|'cover'>('general');
- return <div className="reports-container"><div className="report-type" role="group" aria-label="نوع التقرير"><button type="button" aria-pressed={type==='general'} onClick={()=>setType('general')}>تقرير العمل والمتابعة</button><button type="button" aria-pressed={type==='visits'} onClick={()=>setType('visits')}>تقرير الزيارات الإشرافية</button><button type="button" aria-pressed={type==='plans'} onClick={()=>setType('plans')}>تقرير الخطط والمهام</button><button type="button" aria-pressed={type==='professional'} onClick={()=>setType('professional')}>تقرير الإنماء المهني</button><button type="button" aria-pressed={type==='assessment'} onClick={()=>setType('assessment')}>تقرير الاختبارات والتحصيل</button><button type="button" aria-pressed={type==='cover'} onClick={()=>setType('cover')}>تقرير الجداول والاحتياط</button></div>{type==='general'?<GeneralReport {...props}/>:type==='visits'?<VisitReport/>:type==='plans'?<PlansReport {...props}/>:type==='professional'?<ProfessionalReport/>:type==='assessment'?<AssessmentReport plans={props.plans}/>:<CoverReport/>}</div>;
+ const [type,setType]=useState<'semester'|'general'|'visits'|'plans'|'professional'|'assessment'|'cover'>('general');
+ return <div className="reports-container"><div className="report-type" role="group" aria-label="نوع التقرير"><button type="button" aria-pressed={type==='semester'} onClick={()=>setType('semester')}>التقرير الفصلي حسب الواجبات</button><button type="button" aria-pressed={type==='general'} onClick={()=>setType('general')}>تقرير العمل والمتابعة</button><button type="button" aria-pressed={type==='visits'} onClick={()=>setType('visits')}>تقرير الزيارات الإشرافية</button><button type="button" aria-pressed={type==='plans'} onClick={()=>setType('plans')}>تقرير الخطط والمهام</button><button type="button" aria-pressed={type==='professional'} onClick={()=>setType('professional')}>تقرير الإنماء المهني</button><button type="button" aria-pressed={type==='assessment'} onClick={()=>setType('assessment')}>تقرير الاختبارات والتحصيل</button><button type="button" aria-pressed={type==='cover'} onClick={()=>setType('cover')}>تقرير الجداول والاحتياط</button></div>{type==='semester'?<SemesterReport {...props}/>:type==='general'?<GeneralReport {...props}/>:type==='visits'?<VisitReport/>:type==='plans'?<PlansReport {...props}/>:type==='professional'?<ProfessionalReport/>:type==='assessment'?<AssessmentReport plans={props.plans}/>:<CoverReport/>}</div>;
 }
