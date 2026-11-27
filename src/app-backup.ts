@@ -20,6 +20,7 @@ import { createProfessionalArchive, decodeProfessionalArchive, listProfessionalF
 import { SUPERVISORY_VISITS_KEY, isSupervisoryVisit } from './supervisory-visits-model';
 import { DUTY_ROUTINE_KEY, isRoutineStore } from './duty-routine';
 import { TEACHER_PROFILES_KEY, isTeacherStore } from './teacher-profile-model';
+import { SEMESTER_REPORT_KEY, isSemesterReportStore } from './semester-report-model';
 import { createVisitArchive, decodeVisitArchive, listVisitFiles, replaceVisitFiles, type VisitFile } from './supervisory-visit-files';
 import { assertVisitBackupCapacity, projectedBackupBytes } from './backup-capacity';
 import { listWorkEvidence, encodeWorkEvidence, decodeWorkEvidence, replaceWorkEvidence, type WorkEvidence } from './work-evidence';
@@ -39,6 +40,7 @@ const APP_STORAGE_KEYS = [
   SUPERVISORY_VISITS_KEY,
   DUTY_ROUTINE_KEY,
   TEACHER_PROFILES_KEY,
+  SEMESTER_REPORT_KEY,
 ];
 type AppBackup = {
   format: string;
@@ -198,6 +200,10 @@ function validateLocalData(value: unknown): asserts value is Record<string, stri
           )))
     )
       throw new Error('سجل الاحتياط في ملف النسخة غير صالح.');
+  }
+  if (data[SEMESTER_REPORT_KEY] !== undefined) {
+    const notes = parseJson(data[SEMESTER_REPORT_KEY], 'ملاحظات التقرير الفصلي');
+    if (!isSemesterReportStore(notes)) throw new Error('ملاحظات التقرير الفصلي في النسخة غير صالحة.');
   }
   if (data[TEACHER_PROFILES_KEY] !== undefined) {
     const profiles = parseJson(data[TEACHER_PROFILES_KEY], 'ملفات المعلمين');
