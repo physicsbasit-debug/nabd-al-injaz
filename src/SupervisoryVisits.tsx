@@ -6,6 +6,7 @@ import { readSchedule, SCHEDULE_STORAGE_KEY } from './schedule-model';
 import { onAssessmentChange, withAssessmentLock } from './assessment-lock';
 import { compactVisit, PERFORMANCE_INDICATORS, VISIT_METHODS, type PerformanceIndicator, type VisitMethod } from './supervisory-visits-model';
 import VisitAnalysisPanel from './VisitAnalysisPanel';
+import TeacherNameHint from './TeacherNameHint';
 import { emptySupervisoryVisitForm, hasUnsavedVisitChanges, isFutureCompletedVisit, isSupervisoryVisit, readSupervisoryVisits, summarizeTeacherVisits, SUPERVISORY_VISITS_KEY, VISIT_SUBJECTS, type SupervisoryVisit, type SupervisoryVisitForm } from './supervisory-visits-model';
 import { localDateKey } from './dashboard-metrics';
 import { deleteVisitFile, listVisitFiles, saveVisitFile, VISIT_MAX_BYTES, VISIT_MIMES, type VisitFile } from './supervisory-visit-files';
@@ -166,7 +167,7 @@ export default function SupervisoryVisits({ plans, requestedLink, onLinkHandled,
     {ready && <VisitAnalysisPanel visits={records} today={today} />}
     <h3 ref={formRef}>{editing ? 'تعديل الزيارة' : 'إضافة زيارة'}</h3>
     <fieldset className="short-test-fields" disabled={!ready || busy}>
-      <label>المعلم<input list="visit-teachers" value={form.teacher} maxLength={300} onChange={e => change('teacher', e.target.value)} /><datalist id="visit-teachers">{teachers.map(name => <option key={name} value={name} />)}</datalist></label>
+      <label>المعلم<input aria-label="المعلم" list="visit-teachers" value={form.teacher} maxLength={300} onChange={e => change('teacher', e.target.value)} /><datalist id="visit-teachers">{teachers.map(name => <option key={name} value={name} />)}</datalist><TeacherNameHint name={form.teacher} roster={teachers} onPick={name => change('teacher', name)} /></label>
       <label>تاريخ الزيارة<input type="date" value={form.date} onChange={e => change('date', e.target.value)} /><small>يلزم عند تسجيل زيارة تمت.</small></label>
       <label>أسلوب الإشراف<select value={form.method ?? ''} onChange={e => change('method', (e.target.value || undefined) as VisitMethod | undefined)}><option value="">غير محدد</option>{VISIT_METHODS.map(method => <option key={method}>{method}</option>)}</select><small>أي أسلوب غير «زيارة صفية» يُحتسب تنويعًا لأساليب الإشراف.</small></label>
       <label>حالة الزيارة<select value={form.status} onChange={e => change('status', e.target.value as Form['status'])}><option value="planned">لم تُسجّل كمنفذة</option><option value="completed">تمت الزيارة</option></select></label>

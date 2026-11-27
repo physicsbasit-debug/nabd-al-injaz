@@ -68,7 +68,8 @@ export function periodFor(frequency: DutyFrequency, today: string): { key: strin
   if (frequency === 'يومي') return { key: today, start: today, end: today, label: 'اليوم' };
   if (frequency === 'أسبوعي') {
     const start = schoolWeekStart(today);
-    return { key: 'W' + start, start, end: addDays(start, 4), label: 'هذا الأسبوع' };
+    // عمل الجمعة والسبت يُحتسب للأسبوع الدراسي القادم، فتبدأ الفترة من الجمعة السابقة.
+    return { key: 'W' + start, start: addDays(start, -2), end: addDays(start, 4), label: 'هذا الأسبوع' };
   }
   if (frequency === 'شهري') {
     const [y, m] = today.split('-').map(Number);

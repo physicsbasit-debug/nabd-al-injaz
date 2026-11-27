@@ -1,3 +1,5 @@
+import TeacherNameHint from './TeacherNameHint';
+import { readSchedule } from './schedule-model';
 import { MeetingDecisionList, OpenDecisionsSummary } from './MeetingDecisions';
 import './meeting-decisions.css';
 import { useState, type Dispatch, type SetStateAction } from 'react';
@@ -17,6 +19,7 @@ type Draft={title:string;assignee:string;dueDate:string;details:string};
 const blank=():Draft=>({title:'',assignee:'',dueDate:'',details:''});
 export default function SectionRegister({plans,setPlans,destination,onOpenPlan}:Props){
  const [draft,setDraft]=useState<Draft>(blank); const [editing,setEditing]=useState<{planId:string;id:string}|null>(null); const [proof,setProof]=useState<{planId:string;id:string;title:string}|null>(null);const [message,setMessage]=useState('');
+ const [roster]=useState(()=>{try{return readSchedule().teachers;}catch{return [] as string[];}});
  const config=settings[destination]; const rows=activitiesForDestination(plans,destination);
  function save(){
   if(!draft.title.trim()){setMessage('أدخل عنوان السجل أولًا.');return;}
@@ -42,7 +45,7 @@ export default function SectionRegister({plans,setPlans,destination,onOpenPlan}:
   <h2>{destination}</h2><p>{config.hint}</p><p>تظهر أنشطة الخطط المرتبطة هنا أيضًا؛ تُحفظ السجلات في الخطط لتظهر في المتابعة والتقارير.</p>
   <details className="section-register-form" open={editing!==null || undefined}><summary>{editing?'تعديل السجل':'إضافة '+config.singular}</summary>
    <label>العنوان<input value={draft.title} onChange={e=>setDraft({...draft,title:e.target.value})}/></label>
-   <label>المعلم أو المسؤول<input value={draft.assignee} onChange={e=>setDraft({...draft,assignee:e.target.value})}/></label>
+   <label>المعلم أو المسؤول<input aria-label="المعلم أو المسؤول" list={'register-teachers-'+destination} value={draft.assignee} onChange={e=>setDraft({...draft,assignee:e.target.value})}/><datalist id={'register-teachers-'+destination}>{roster.map(name=><option key={name} value={name}/>)}</datalist>{destination==='الزيارات المتبادلة'&&<TeacherNameHint name={draft.assignee} roster={roster} onPick={name=>setDraft({...draft,assignee:name})}/>}</label>
    <label>التاريخ<input type="date" value={draft.dueDate} onChange={e=>setDraft({...draft,dueDate:e.target.value})}/></label>
    <label>{config.details}<textarea value={draft.details} onChange={e=>setDraft({...draft,details:e.target.value})} rows={4}/></label>
    <button type="button" onClick={save}>حفظ السجل</button>{editing&&<button type="button" onClick={()=>{setEditing(null);setDraft(blank());}}>إلغاء التعديل</button>}
